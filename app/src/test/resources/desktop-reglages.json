@@ -1,0 +1,38 @@
+{
+  "app": "readers-podcasts",
+  "version": 1,
+  "exported": 1789733405009,
+  "settings": {
+    "theme": "LIGHT",
+    "font": "SERIF",
+    "auto_refresh": false,
+    "delete_when_played": true,
+    "speed": 1.5
+  },
+  "feeds": [
+    {
+      "url": "https://example.org/grande-table.xml",
+      "title": "La Grande Table",
+      "kind": "RSS",
+      "autoDownload": true,
+      "keepCount": 20
+    },
+    {
+      "url": "https://example.org/cours.xml",
+      "title": "Le Cours de l'histoire & suite",
+      "kind": "RSS",
+      "autoDownload": false,
+      "keepCount": 50
+    }
+  ],
+  "episodes": [
+    {
+      "id": "c02998b7a92116293cf6dc2628694b41a97d0fa5",
+      "feed": "c0fb4e169be02c728409c21bbb291dd6f6670ad9",
+      "title": "Le temps des orages",
+      "positionMs": 754000,
+      "state": "STARTED",
+      "lastPlayed": 1758200000000
+    }
+  ]
+}

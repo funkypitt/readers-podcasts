@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="2.0">
+  <head>
+    <title>Reader's Podcasts</title>
+  </head>
+  <body>
+    <outline type="rss" text="La Grande Table" title="La Grande Table" xmlUrl="https://example.org/grande-table.xml" />
+    <outline type="rss" text="Le Cours de l&apos;histoire &amp; suite" title="Le Cours de l&apos;histoire &amp; suite" xmlUrl="https://example.org/cours.xml" />
+  </body>
+</opml>
