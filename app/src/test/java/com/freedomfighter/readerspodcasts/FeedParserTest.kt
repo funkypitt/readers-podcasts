@@ -9,6 +9,7 @@ import com.freedomfighter.readerspodcasts.data.State
 import com.freedomfighter.readerspodcasts.data.episodeId
 import com.freedomfighter.readerspodcasts.data.Spoken
 import com.freedomfighter.readerspodcasts.data.lengthOf
+import com.freedomfighter.readerspodcasts.data.Prefs
 import com.freedomfighter.readerspodcasts.ui.clipboardUrl
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -175,6 +176,31 @@ class FeedParserTest {
         assertEquals("audio/mp4", e.mime)
     }
 
+    @Test fun `a feed that repeats a guid yields one episode, not two of the same id`() {
+        // Real shape, from the Dharma Seed series: two different talks under one guid. Two rows
+        // with the same id are a list Compose refuses to draw — it throws on the key — so the
+        // parser must not hand them out in the first place.
+        val xml = """
+            <rss version="2.0"><channel><title>Notable Dhamma Teachers</title>
+              <item>
+                <title>Dharma In The Workplace</title><guid>talk-1</guid>
+                <pubDate>Wed, 17 Sep 2026 08:00:00 +0000</pubDate>
+                <enclosure url="https://example.org/a.mp3" type="audio/mpeg" />
+              </item>
+              <item>
+                <title>Dharma In The Workplace — alternate</title><guid>talk-1</guid>
+                <pubDate>Tue, 16 Sep 2026 08:00:00 +0000</pubDate>
+                <enclosure url="https://example.org/b.mp3" type="audio/mpeg" />
+              </item>
+            </channel></rss>
+        """.trimIndent()
+        val episodes = parse(xml).episodes
+        assertEquals(1, episodes.size)
+        assertEquals(episodes.map { it.id }.distinct().size, episodes.size)
+        // The first one listed is the one kept: feeds put their newest at the top.
+        assertEquals("Dharma In The Workplace", episodes.single().title)
+    }
+
     @Test fun `a broken feed yields nothing rather than throwing on the caller`() {
         val parsed = runCatching { parse("<rss><channel><title>x</title></channel>") }
         assertTrue(parsed.isFailure || parsed.getOrNull()?.episodes?.isEmpty() == true)
@@ -228,6 +254,18 @@ class FeedParserTest {
         assertEquals(20, back.feeds.single().keepCount)
         assertTrue(back.feeds.single().autoDownload)
         assertNotNull(back.feeds.single().id)
+    }
+
+    @Test fun `a view stored by an older version still names a list that exists`() {
+        // 0.1 wrote "queue" and "new"; 0.1.1 knows neither, and a screen whose title said
+        // "channels" while the list stayed empty is what an update looked like.
+        assertEquals(Prefs.VIEW_CHANNELS, Prefs.viewOrChannels("queue", false))
+        assertEquals(Prefs.VIEW_EPISODES, Prefs.viewOrChannels("new", false))
+        assertEquals(Prefs.VIEW_FAVOURITES, Prefs.viewOrChannels(Prefs.VIEW_FAVOURITES, false))
+        // A feed's id is a view too, as long as that feed is still subscribed.
+        assertEquals("abc123", Prefs.viewOrChannels("abc123", true))
+        assertEquals(Prefs.VIEW_CHANNELS, Prefs.viewOrChannels("abc123", false))
+        assertEquals(Prefs.VIEW_CHANNELS, Prefs.viewOrChannels(null, false))
     }
 
     @Test fun `the clipboard is offered only when it holds an address`() {

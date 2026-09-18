@@ -167,3 +167,31 @@ Ce que le premier import de 140 flux a montré, et ce qui a été demandé dans 
   ligne dise ce qui va se passer et non le nom de l'app.
 - **Recherche** dans le ⋯, sur les chaînes et les épisodes déjà là — rien n'est demandé à
   l'annuaire de qui que ce soit, ce qui la rend utilisable hors connexion.
+
+
+## 11. La 0.1.2 (2026-09-18) — le plantage à l'ouverture
+
+Signalé juste après la mise à jour : l'app se fermait au lancement. Reproduit sur émulateur en
+recomposant l'état d'un téléphone venu de la 0.1.0, puis diagnostiqué :
+
+```
+FATAL EXCEPTION: main
+java.lang.IllegalArgumentException: Key "3b0cd8d5…" was already used.
+If you are using LazyColumn/Row please make sure you provide a unique key for each item.
+```
+
+**Cause.** `LazyColumn` refuse deux lignes portant la même clé, et la clé est l'identifiant de
+l'épisode, `sha1(feedId|guid)`. Or des flux répètent un guid sur deux épisodes différents : sur
+les 140 abonnements de l'utilisateur, **10 flux** le font (les séries Dharma Seed, *The Glenn
+Beck Program*), dont 6 parmi les 50 épisodes que l'app garde. Il suffisait que la vue enregistrée
+soit l'une de ces chaînes pour que l'app meure à l'ouverture. Le défaut existait donc déjà en
+0.1.0 ; la 0.1.1 l'a simplement rendu fatal au lancement.
+
+**Corrigé à trois endroits**, parce que le fichier déjà écrit sur le téléphone contient les
+doublons : l'analyseur ne rend plus deux fois le même identifiant, le magasin dédoublonne ce
+qu'il relit du disque, et le tri après fusion aussi. Un test reprend la forme exacte de ces flux.
+
+**Deuxième défaut corrigé au passage.** La vue enregistrée par la 0.1.0 valait « queue » ; la
+0.1.1 ne connaissait plus ce nom et affichait une liste vide sous le titre « chaînes ». Les
+anciens noms sont maintenant convertis, et une vue que rien ne reconnaît — un nom inconnu, une
+chaîne supprimée depuis — retombe sur les chaînes plutôt que sur une page blanche.

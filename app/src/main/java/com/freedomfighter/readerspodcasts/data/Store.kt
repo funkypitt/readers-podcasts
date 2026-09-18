@@ -129,6 +129,7 @@ class Store(private val context: Context) {
         val all = (merged + orphans).sortedByDescending { it.published }
         // Trimming keeps the newest, and never throws away a file or a begun episode.
         val trimmed = all.filterIndexed { i, e -> i < keep || e.downloaded || e.state == State.STARTED || e.starred }
+            .distinctBy { it.id }
         _episodes.value = _episodes.value.filterNot { it.feedId == feedId } + trimmed
         saveEpisodes(feedId)
         changed()
@@ -183,6 +184,9 @@ class Store(private val context: Context) {
     }.getOrDefault(emptyList())
         // A file deleted from outside (a cleanup, a restore) must not leave a row claiming to play.
         .map { if (it.downloaded && !File(it.localPath).exists()) it.copy(localPath = "") else it }
+        // Written by a version that let a repeated guid through: one of the two has to go, or
+        // the list it belongs to cannot be drawn.
+        .distinctBy { it.id }
 
     private fun saveEpisodes(feedId: String) {
         val arr = JSONArray()

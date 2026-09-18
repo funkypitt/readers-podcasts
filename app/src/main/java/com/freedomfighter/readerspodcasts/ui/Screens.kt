@@ -304,8 +304,10 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
     var feedMenu by remember { mutableStateOf<String?>(null) }
     var adding by remember { mutableStateOf<String?>(null) }
 
-    val view = settings.view
-    val feed = feeds.firstOrNull { it.id == view }
+    // Whatever is stored, the screen shows something: a feed that is gone, or a name from a
+    // version that knew other lists, falls back to the channels rather than to an empty page.
+    val feed = feeds.firstOrNull { it.id == settings.view }
+    val view = Prefs.viewOrChannels(settings.view, feed != null)
     // `all` and `feeds` are read above so that Compose knows these lists depend on them: the
     // store's queries read the same state, and a download finishing has to redraw its row.
     val episodes = remember(view, all, feeds) {

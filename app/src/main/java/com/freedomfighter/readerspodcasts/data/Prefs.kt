@@ -47,13 +47,23 @@ class Prefs(context: Context) {
         autoRefresh = sp.getBoolean("auto_refresh", true),
         deleteWhenPlayed = sp.getBoolean("delete_when_played", true),
         defaultView = known(sp.getString("default_view", VIEW_CHANNELS)),
-        view = sp.getString("view", null) ?: known(sp.getString("default_view", VIEW_CHANNELS)),
+        // The stored view goes through the same mapping: a phone updated from 0.1 held "queue"
+        // there, and a name nothing answers to left the screen empty under a title that lied.
+        view = stored(sp.getString("view", null)) ?: known(sp.getString("default_view", VIEW_CHANNELS)),
     )
 
     /**
      * A view read from the settings, made sense of. The 0.1 names are mapped rather than
      * dropped: a phone updated from it must not open on a list that no longer exists.
      */
+    /** A stored view: one of the three, a feed's id, or an old name to be mapped. */
+    private fun stored(name: String?): String? = when (name) {
+        null, "" -> null
+        "queue" -> VIEW_CHANNELS
+        "new" -> VIEW_EPISODES
+        else -> name
+    }
+
     private fun known(name: String?): String = when (name) {
         VIEW_CHANNELS, VIEW_EPISODES, VIEW_FAVOURITES -> name
         "new" -> VIEW_EPISODES
@@ -111,6 +121,20 @@ class Prefs(context: Context) {
         const val VIEW_EPISODES = "episodes"
         const val VIEW_FAVOURITES = "favourites"
         val VIEWS = listOf(VIEW_CHANNELS, VIEW_EPISODES, VIEW_FAVOURITES)
+
+        /**
+         * The list a stored view really names. [isFeed] says whether it is the id of a feed one
+         * is still subscribed to; anything else — an old name, a feed since removed — falls back
+         * to the channels, which is the one list that is never empty when there are any.
+         */
+        fun viewOrChannels(stored: String?, isFeed: Boolean): String = when {
+            stored.isNullOrBlank() -> VIEW_CHANNELS
+            isFeed -> stored
+            stored == "queue" -> VIEW_CHANNELS
+            stored == "new" -> VIEW_EPISODES
+            stored in VIEWS -> stored
+            else -> VIEW_CHANNELS
+        }
         val SPEEDS = listOf(0.8f, 1f, 1.25f, 1.5f, 1.75f, 2f)
     }
 }

@@ -73,7 +73,11 @@ object FeedParser {
             }
             event = p.next()
         }
-        return Parsed(feedTitle, feedAuthor, out)
+        // Feeds do repeat a guid — two different talks under one id, in several of the Dharma
+        // Seed series and in more than one news feed. Two episodes with the same id are a list
+        // that cannot be drawn at all, so the first one wins and the other is dropped here,
+        // rather than further down where it would take a screen with it.
+        return Parsed(feedTitle, feedAuthor, out.distinctBy { it.id })
     }
 
     private fun readItemTag(p: XmlPullParser, tag: String, item: Building) {
