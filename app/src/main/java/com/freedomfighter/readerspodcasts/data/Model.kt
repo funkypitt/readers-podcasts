@@ -51,6 +51,13 @@ data class Episode(
     val description: String = "",
     /** Kept by hand, with a star: the one list the app never fills or empties by itself. */
     val starred: Boolean = false,
+    /** Whether what was said has been written down, and in which language whisper heard it. */
+    val transcript: Boolean = false,
+    val transcriptLanguage: String = "",
+    /** The language a translation exists in, or "". */
+    val translation: String = "",
+    /** The exported .txt in Documents/Transcriptions, "" when none was saved. */
+    val transcriptUri: String = "",
 ) {
     val downloaded: Boolean get() = localPath.isNotBlank()
     /** What plays: the file if it is here, the network otherwise. */

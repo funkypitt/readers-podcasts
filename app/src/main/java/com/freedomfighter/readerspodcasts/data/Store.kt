@@ -75,9 +75,12 @@ class Store(private val context: Context) {
         changed()
     }
 
-    /** Unsubscribing takes the episodes and their files with it: nothing is left behind. */
+    /** Unsubscribing takes the episodes, their files and their transcripts: nothing is left. */
     @Synchronized fun removeFeed(id: String) {
-        _episodes.value.filter { it.feedId == id }.forEach { runCatching { File(it.localPath).delete() } }
+        _episodes.value.filter { it.feedId == id }.forEach {
+            runCatching { File(it.localPath).delete() }
+            runCatching { Transcripts.forget(context, it.id) }
+        }
         _episodes.value = _episodes.value.filterNot { it.feedId == id }
         _feeds.value = _feeds.value.filterNot { it.id == id }
         File(dir, "$id.json").delete()
@@ -113,17 +116,19 @@ class Store(private val context: Context) {
             val old = mine[new.id] ?: return@map new
             new.copy(
                 localPath = old.localPath, positionMs = old.positionMs, state = old.state,
-                lastPlayed = old.lastPlayed, starred = old.starred,
+                lastPlayed = old.lastPlayed, starred = old.starred, transcript = old.transcript,
+                transcriptLanguage = old.transcriptLanguage, translation = old.translation,
+                transcriptUri = old.transcriptUri,
                 durationMs = if (new.durationMs > 0) new.durationMs else old.durationMs,
             )
         }
         // Episodes the feed no longer lists are dropped, unless they are on the phone or begun:
         // a feed that only publishes its last ten items must not delete what one is listening to.
         val fresIds = merged.map { it.id }.toSet()
-        val orphans = mine.values.filter { it.id !in fresIds && (it.downloaded || it.state == State.STARTED || it.starred) }
+        val orphans = mine.values.filter { it.id !in fresIds && (it.downloaded || it.state == State.STARTED || it.starred || it.transcript) }
         val all = (merged + orphans).sortedByDescending { it.published }
         // Trimming keeps the newest, and never throws away a file or a begun episode.
-        val trimmed = all.filterIndexed { i, e -> i < keep || e.downloaded || e.state == State.STARTED || e.starred }
+        val trimmed = all.filterIndexed { i, e -> i < keep || e.downloaded || e.state == State.STARTED || e.starred || e.transcript }
             .distinctBy { it.id }
         _episodes.value = _episodes.value.filterNot { it.feedId == feedId } + trimmed
         saveEpisodes(feedId)
@@ -173,7 +178,9 @@ class Store(private val context: Context) {
                 positionMs = o.optLong("positionMs"),
                 state = runCatching { State.valueOf(o.optString("state", "NEW")) }.getOrDefault(State.NEW),
                 lastPlayed = o.optLong("lastPlayed"), description = o.optString("description"),
-                starred = o.optBoolean("starred"),
+                starred = o.optBoolean("starred"), transcript = o.optBoolean("transcript"),
+                transcriptLanguage = o.optString("transcriptLanguage"), translation = o.optString("translation"),
+                transcriptUri = o.optString("transcriptUri"),
             )
         }
     }.getOrDefault(emptyList())
@@ -191,6 +198,8 @@ class Store(private val context: Context) {
                 put("mime", e.mime); put("bytes", e.bytes); put("durationMs", e.durationMs); put("localPath", e.localPath)
                 put("positionMs", e.positionMs); put("state", e.state.name); put("lastPlayed", e.lastPlayed)
                 put("description", e.description); put("starred", e.starred)
+                put("transcript", e.transcript); put("transcriptLanguage", e.transcriptLanguage)
+                put("translation", e.translation); put("transcriptUri", e.transcriptUri)
             })
         }
         runCatching { File(dir, "$feedId.json").writeText(arr.toString()) }

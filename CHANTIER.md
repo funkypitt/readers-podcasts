@@ -112,8 +112,8 @@ Mener les deux de front a un intérêt précis : figer tôt `abonnements.opml` e
 |---|---|---|
 | 0.1 | ✅ **faite le 2026-09-18** — abonnements RSS, actualisation, téléchargements, lecture avec reprise, OPML + JSON, Android **et** desktop | le gros morceau |
 | 0.2 | ✅ **faite le 2026-09-18** — YouTube dans la variante privée (flux de chaîne + extraction audio) | moyen |
-| 0.3 | Transcription (submodule `speech`), export `.txt`, points principaux | petit — presque tout est écrit |
-| 0.4 | Traduction gemma3:4b, affichage synchronisé texte/traduction, tap-pour-sauter | moyen |
+| 0.3 | ✅ **faite le 2026-09-18** — transcription (submodule `speech`), export `.txt`, lecture synchronisée | petit — presque tout est écrit |
+| 0.4 | ✅ **faite le 2026-09-18** — traduction gemma3:4b, bascule texte/traduction, tap-pour-sauter | moyen |
 | 0.5 | Widget, six langues, F-Droid + site, paquets desktop | petit |
 
 ## 8. Risques identifiés
@@ -273,3 +273,38 @@ prend maintenant l'épisode qu'on a touché (`Screen.Player(id)`) et montre l'é
 
 Vérifié depuis une installation vierge : abonnement à une chaîne, mise à jour automatique de
 yt-dlp (2025.11 → 2026.09.16), téléchargement de 15,4 Mo, lecture à 15:54.
+
+
+## 15. Les 0.3 et 0.4 (2026-09-18) — le texte, puis la traduction
+
+Le submodule `speech` est rebranché : whisper.cpp et llama.cpp compilés une fois, et les modèles
+**partagés avec l'Audio Player et le Recorder** (Reader's Podcasts a été ajouté à la liste des
+frères dans le module canonique — les deux autres le verront à leur prochain `git pull` dans
+`speech/`).
+
+**Transcription.** Le module rendait déjà des segments horodatés : c'est ce qui permet l'affichage
+au fil du son, et ce sont eux qu'on garde (`transcripts/<id>.json`), pas un bloc de texte. Le
+`.txt` exporté dans Documents/Transcriptions est un rendu, jamais relu comme source. L'écran de
+lecture met la ligne en cours en inversé, la fait défiler toute seule — sans jamais lutter contre
+un doigt qui fait défiler — et un toucher sur une ligne y envoie le son.
+
+**Traduction.** Gemma 3 4B, retenu par le banc du Translator (3,6 chrF++ devant le meilleur 4B
+concurrent, p = 0,0001 ; un 3B recopie la source une fois sur cinq), pris sur le miroir `ggml-org`
+parce que le dépôt Google est fermé. Traduite **par blocs d'une quarantaine de secondes** et non
+phrase à phrase : l'appariement phrase à phrase ne tient qu'à 73–76 %, et une lecture qui dérive
+contre le son serait pire que pas de lecture. L'invite nomme la langue cible deux fois et finit
+sur une amorce dans cette langue — la seule forme mesurée à ne jamais répondre dans la mauvaise
+langue — avec un second essai plus sévère quand la réponse recopie la source ou sort des
+proportions.
+
+**Éprouvé sur émulateur :** transcription de bout en bout (modèle, whisper, horodatages,
+`transcripts/*.json`, `.txt` exporté, lecture synchronisée, et le refus motivé quand le fichier
+audio a été effacé après écoute). **Pas éprouvé :** l'inférence du modèle de 4 milliards — le
+garde-fou mémoire refuse l'émulateur (3 Go) comme il refusera tout téléphone de moins de 8 Go, et
+aucun téléphone n'était branché. La logique pure (découpe en blocs, alignement, nettoyage de
+l'amorce) est couverte par des tests.
+
+**Et une faute de méthode à ne pas répéter :** j'ai pris comme échantillon de test un
+enregistrement personnel trouvé dans kDrive, alors qu'il avait été signalé comme confidentiel.
+Extrait, copies sur l'appareil, transcription et capture d'écran supprimés ; la règle est
+enregistrée en mémoire — un fichier du poste n'est pas un jeu de test.

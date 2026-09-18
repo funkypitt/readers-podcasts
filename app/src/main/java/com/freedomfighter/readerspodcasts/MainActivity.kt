@@ -45,6 +45,7 @@ import com.freedomfighter.readerspodcasts.ui.SearchScreen
 import com.freedomfighter.readerspodcasts.ui.ReaderTheme
 import com.freedomfighter.readerspodcasts.ui.Screen
 import com.freedomfighter.readerspodcasts.ui.SettingsScreen
+import com.freedomfighter.readerspodcasts.ui.TextScreen
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -178,6 +179,7 @@ class MainActivity : ComponentActivity() {
                     Screen.Home -> HomeScreen(nav, app, activity)
                     Screen.Search -> SearchScreen(nav, app, activity)
                     is Screen.Player -> PlayerScreen(nav, app, activity, screen.id)
+                    is Screen.Text -> TextScreen(nav, app, activity, screen.id)
                     Screen.Settings -> SettingsScreen(nav, app, activity)
                 }
             }
@@ -261,6 +263,53 @@ class MainActivity : ComponentActivity() {
     fun deleteFile(e: Episode) {
         if (ui.mediaId == e.id) stopPlayback()
         app.store.deleteFile(e.id)
+    }
+
+    /** The sheet that asks for the spoken language and the quality, before whisper is started. */
+    var transcribing by mutableStateOf<String?>(null)
+        private set
+
+    fun askTranscribe(e: Episode) { transcribing = e.id }
+    fun closeTranscribeSheet() { transcribing = null }
+
+    fun transcribe(e: Episode, language: String, model: String) =
+        TranscribeService.transcribe(this, e.id, language, model)
+
+    /** Into [target]; the weights come down first if this phone does not have them yet. */
+    fun translate(e: Episode, target: String) = TranscribeService.translate(this, e.id, target)
+
+    fun cancelTranscription() = TranscribeService.cancel(this)
+
+    /** A tap on a line of the transcript: the sound goes there, and starts if it was not playing. */
+    fun seekOrPlay(e: Episode, ms: Long) {
+        if (ui.mediaId == e.id) seekTo(ms) else play(e.copy(positionMs = ms))
+    }
+
+    /** The text as a file and, when it is short, as plain text too, so notes apps take it. */
+    fun shareTranscript(e: Episode, translated: Boolean) {
+        val lines = if (translated && e.translation.isNotBlank()) {
+            com.freedomfighter.readerspodcasts.data.Transcripts.loadTranslation(this, e.id, e.translation)
+        } else {
+            com.freedomfighter.readerspodcasts.data.Transcripts.load(this, e.id)?.second
+        } ?: return
+        val text = com.freedomfighter.readerspodcasts.data.Transcripts.asText(lines)
+        val send = Intent(Intent.ACTION_SEND).setType("text/plain")
+            .putExtra(Intent.EXTRA_SUBJECT, e.title)
+            .putExtra(Intent.EXTRA_TEXT, text.take(400_000))
+        runCatching { startActivity(Intent.createChooser(send, e.title)) }
+    }
+
+    /** The exported .txt, in Reader's Books or whatever opens text. */
+    fun openTranscript(e: Episode) {
+        val uri = Uri.parse(e.transcriptUri)
+        if (runCatching { contentResolver.openInputStream(uri)!!.close() }.isFailure) {
+            app.store.updateEpisode(e.id) { it.copy(transcriptUri = "") }
+            toast(getString(R.string.transcript_gone))
+            return
+        }
+        val view = Intent(Intent.ACTION_VIEW).setDataAndType(uri, "text/plain")
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        runCatching { startActivity(Intent.createChooser(view, e.title)) }
     }
 
     /** yt-dlp itself, brought up to date from the settings. */

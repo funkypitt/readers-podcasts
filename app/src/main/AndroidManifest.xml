@@ -71,6 +71,10 @@
             </intent-filter>
         </receiver>
         <service
+            android:name=".TranscribeService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+        <service
             android:name=".net.DownloadService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />

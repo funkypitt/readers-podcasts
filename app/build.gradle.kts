@@ -12,8 +12,8 @@ android {
         applicationId = "com.freedomfighter.readerspodcasts"
         minSdk = 29
         targetSdk = 34
-        versionCode = 7
-        versionName = "0.2.2"
+        versionCode = 8
+        versionName = "0.4.0"
     }
 
     flavorDimensions += "audience"
@@ -43,12 +43,15 @@ android {
     }
 
     buildTypes { release { isMinifyEnabled = false } }
+    // Named here as well as in :speech: this is where the native libraries get stripped on packaging.
+    ndkVersion = "27.1.12297006"
     buildFeatures { compose = true; buildConfig = true }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
 }
 
 dependencies {
+    implementation(project(":speech"))
     implementation(platform("androidx.compose:compose-bom:2024.12.01"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")

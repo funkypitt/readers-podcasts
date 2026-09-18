@@ -140,5 +140,8 @@ class Prefs(context: Context) {
             else -> VIEW_CHANNELS
         }
         val SPEEDS = listOf(0.8f, 1f, 1.25f, 1.5f, 1.75f, 2f)
+
+        /** The language one reads in: what a translation is asked for, and what whisper is told. */
+        fun deviceLanguage(): String = java.util.Locale.getDefault().language.takeIf { it.isNotBlank() } ?: "en"
     }
 }

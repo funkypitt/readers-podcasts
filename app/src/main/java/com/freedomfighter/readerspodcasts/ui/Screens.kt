@@ -63,6 +63,10 @@ import com.freedomfighter.readerspodcasts.data.clock
 import com.freedomfighter.readerspodcasts.data.spoken
 import com.freedomfighter.readerspodcasts.net.DownloadService
 import com.freedomfighter.readerspodcasts.net.Refresher
+import com.freedomfighter.readerspodcasts.TranscribeService
+import com.freedomfighter.readers.speech.translate.TranslateModel
+import com.freedomfighter.readers.speech.whisper.Models
+import com.freedomfighter.readers.speech.whisper.Prompts
 
 sealed class Screen {
     data object Home : Screen()
@@ -74,6 +78,9 @@ sealed class Screen {
      * tapping a YouTube episode that had yet to come down opened someone else's podcast.
      */
     data class Player(val id: String? = null) : Screen()
+
+    /** What was said, read while it is said. */
+    data class Text(val id: String) : Screen()
     data object Settings : Screen()
 }
 
@@ -591,6 +598,8 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
                 TextRow(stringResource(if (episode.starred) R.string.unstar else R.string.star), size = typo.title) {
                     activity.star(episode, !episode.starred)
                 }
+                Rule(Modifier.padding(vertical = 8.dp))
+                TextRows(episode, app, activity, nav)
                 // The whole of it, wrapped: an error from yt-dlp says what is wrong in a sentence,
                 // and a row that cut it to one line said nothing anyone could act on.
                 if (live.errorId == episode.id && live.error.isNotBlank() && live.id != episode.id) {
@@ -608,8 +617,143 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
             Box(Modifier.windowInsetsPadding(WindowInsets.navigationBars))
         }
         if (menu) EpisodeMenu(episode, app, activity, nav, onDismiss = { menu = false }, inPlayer = true)
+        activity.transcribing?.let { id ->
+            val asked = all.firstOrNull { it.id == id }
+            if (asked == null) activity.closeTranscribeSheet()
+            else TranscribeSheet(asked, activity, onDismiss = { activity.closeTranscribeSheet() })
+        }
     }
 }
+
+/**
+ * What can be done with the words of an episode: write them down, read them along with the
+ * sound, put them into the language one reads in. All of it happens on the telephone, which is
+ * why each row says how far it has got rather than pretending to be instant.
+ */
+@Composable
+fun TextRows(episode: Episode, app: App, activity: MainActivity, nav: Nav) {
+    val context = LocalContext.current
+    val typo = LocalTypo.current
+    val live = TranscribeService.Live
+    val mine = live.id == episode.id
+    val reading = Prefs.deviceLanguage()
+    when {
+        mine -> TextRow(
+            TranscribeService.phaseLabel(context, live.phase, live.percent),
+            secondary = stringResource(R.string.stop_transcription), size = typo.title,
+        ) { activity.cancelTranscription() }
+
+        episode.id in live.waiting -> TextRow(
+            stringResource(R.string.phase_waiting),
+            secondary = stringResource(R.string.stop_transcription), size = typo.title,
+        ) { activity.cancelTranscription() }
+
+        episode.transcript -> {
+            TextRow(
+                stringResource(R.string.read_text),
+                secondary = stringResource(R.string.read_text_hint), size = typo.title,
+            ) { nav.push(Screen.Text(episode.id)) }
+            TranslateRow(episode, activity, reading)
+        }
+
+        !episode.downloaded -> TextRow(
+            stringResource(R.string.transcribe),
+            secondary = stringResource(R.string.transcribe_needs_file), size = typo.title,
+        ) { activity.download(episode) }
+
+        else -> TextRow(
+            stringResource(R.string.transcribe),
+            secondary = stringResource(R.string.transcribe_hint), size = typo.title,
+        ) { activity.askTranscribe(episode) }
+    }
+    if (live.errorId == episode.id && live.error.isNotBlank() && !mine) {
+        Small(live.error, Modifier.padding(horizontal = rowPadH, vertical = 8.dp), maxLines = 8)
+    }
+}
+
+/**
+ * Translating is only offered when it would change anything — a talk already in the language one
+ * reads needs none — and the phone that cannot hold the model is told so rather than left to
+ * discover it when the process dies.
+ */
+@Composable
+private fun TranslateRow(episode: Episode, activity: MainActivity, reading: String) {
+    val context = LocalContext.current
+    val typo = LocalTypo.current
+    if (episode.transcriptLanguage.isNotBlank() && episode.transcriptLanguage == reading) return
+    if (episode.translation == reading) return
+    val roomy = remember { TranslateModel.phoneCanHoldIt(context) }
+    val here = remember { TranslateModel.isDownloaded(context) }
+    val secondary = when {
+        !roomy -> stringResource(R.string.translate_needs_memory, TranslateModel.phoneMemoryGb(context))
+        here -> stringResource(R.string.translate_hint)
+        else -> "${TranslateModel.MB} MB · " + stringResource(R.string.model_not_yet)
+    }
+    TextRow(
+        stringResource(R.string.translate_into, languageName(reading)),
+        secondary = secondary, size = typo.title,
+        onClick = if (!roomy) null else ({ activity.translate(episode, reading) }),
+    )
+}
+
+/**
+ * Asked before every transcription: the language spoken, the phone's by default, and the
+ * quality. High is Whisper large-v3-turbo — better punctuation, much slower on a telephone.
+ */
+@Composable
+fun TranscribeSheet(episode: Episode, activity: MainActivity, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val colors = LocalColors.current
+    val typo = LocalTypo.current
+    var language by remember { mutableStateOf(Prefs.deviceLanguage()) }
+    var quality by remember { mutableStateOf(Models.DEFAULT) }
+    var picking by remember { mutableStateOf(false) }
+    val downloading by Models.downloading.collectAsState()
+    BackHandler(onBack = onDismiss)
+    Box(Modifier.fillMaxSize().background(colors.bg.copy(alpha = 0.6f)).noRippleClickable(onClick = onDismiss)) {
+        Column(
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(colors.bg).noRippleClickable { }
+                .windowInsetsPadding(WindowInsets.navigationBars)
+        ) {
+            Rule(color = colors.fg)
+            Small(episode.title, Modifier.padding(horizontal = rowPadH).padding(top = 14.dp, bottom = 2.dp), maxLines = 1)
+            TextRow(spokenLanguage(language), secondary = stringResource(R.string.language), size = typo.title) { picking = true }
+            Rule(Modifier.padding(vertical = 4.dp))
+            Models.ALL.forEach { m ->
+                val state = when {
+                    Models.isDownloaded(context, m) -> ""
+                    downloading >= 0 -> " · " + stringResource(R.string.phase_model, downloading)
+                    else -> " · " + stringResource(R.string.model_not_yet)
+                }
+                TextRow(
+                    stringResource(if (m == Models.HIGH) R.string.quality_high else R.string.quality_normal),
+                    inverted = quality == m.key, secondary = "${m.mb} MB$state", size = typo.title,
+                ) { quality = m.key }
+            }
+            Rule(color = colors.fg)
+            Row(Modifier.fillMaxWidth()) {
+                Box(Modifier.weight(1f)) { TextRow(stringResource(R.string.action_cancel), onClick = onDismiss) }
+                Box(Modifier.weight(1f)) {
+                    TextRow(stringResource(R.string.transcribe), inverted = true) {
+                        activity.transcribe(episode, language, quality); onDismiss()
+                    }
+                }
+            }
+        }
+    }
+    if (picking) TextMenu(stringResource(R.string.language), Prompts.choices(Prefs.deviceLanguage()).map { code ->
+        MenuItem(spokenLanguage(code), secondary = if (code == language) "✓" else null) { language = code }
+    }, onDismiss = { picking = false })
+}
+
+/** The language whisper is told to expect; "" means it works it out for itself. */
+@Composable
+fun spokenLanguage(code: String): String =
+    if (code.isBlank()) stringResource(R.string.language_auto) else languageName(code)
+
+/** A language as it is said in itself: "français", "English". */
+fun languageName(code: String): String =
+    java.util.Locale(code).getDisplayLanguage(java.util.Locale(code)).replaceFirstChar { it.lowercase() }
 
 @Composable
 private fun Control(label: String, modifier: Modifier, inverted: Boolean = false, onClick: () -> Unit) {

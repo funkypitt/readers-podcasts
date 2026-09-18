@@ -301,6 +301,32 @@ class FeedParserTest {
         assertEquals("", clipboardUrl("https://a b.example/feed"))
     }
 
+    @Test fun `a transcript is cut into passages that keep their place in the sound`() {
+        // The translation is aligned on blocks, not on sentences: a block keeps the start of its
+        // first line and the end of its last, which is an alignment the reading can trust.
+        val segments = (0 until 40).map {
+            com.freedomfighter.readers.speech.whisper.Segment(
+                it * 3_000L, it * 3_000L + 2_800L, "Une phrase de longueur ordinaire, numéro $it.",
+            )
+        }
+        val blocks = com.freedomfighter.readers.speech.translate.Translator.group(segments)
+        assertTrue(blocks.size in 2..8)
+        assertEquals(0L, blocks.first().startMs)
+        assertEquals(segments.last().endMs, blocks.last().endMs)
+        // Every block follows the one before, and none is empty.
+        blocks.zipWithNext().forEach { (a, b) -> assertTrue(a.endMs <= b.startMs) }
+        assertTrue(blocks.all { it.text.isNotBlank() })
+        // Nothing is lost on the way.
+        assertEquals(40, blocks.sumOf { b -> Regex("numéro \\d+").findAll(b.text).count() })
+    }
+
+    @Test fun `the primer the model repeats back is taken off`() {
+        val t = com.freedomfighter.readers.speech.translate.Translator
+        assertEquals("Voici la suite.", t.strip("TRADUCTION EN FRANÇAIS : Voici la suite."))
+        assertEquals("Here it is.", t.strip("\"Here it is.\""))
+        assertEquals("Rien à retirer.", t.strip("  Rien à retirer.  "))
+    }
+
     @Test fun `a length is broken up the way one says it`() {
         assertEquals(Spoken(0, 47, 0), lengthOf(47 * 60_000L))
         assertEquals(Spoken(1, 2, 0), lengthOf(62 * 60_000L))

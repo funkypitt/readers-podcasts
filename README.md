@@ -4,7 +4,7 @@ Un lecteur de podcasts qui ne montre que du texte, dans la ligne des autres apps
 Les abonnements, les téléchargements, la lecture avec reprise — et rien d'autre à l'écran que
 des lignes qu'on peut toucher.
 
-État : **0.2.0**. Voir `CHANTIER.md` pour le plan complet et la suite (YouTube en 0.2,
+État : **0.4.0**. Voir `CHANTIER.md` pour le plan complet et la suite (YouTube en 0.2,
 transcription en 0.3, traduction en 0.4).
 
 ## Ce que fait la 0.1
@@ -22,6 +22,12 @@ transcription en 0.3, traduction en 0.4).
 - **recherche** dans le menu ⋯ : sur les chaînes et les épisodes déjà là, donc hors connexion ;
 - import/export **OPML** des abonnements et **JSON** des réglages, avec la position de chaque
   épisode — les deux fichiers que l'app partage avec le jumeau desktop ;
+- **mettre par écrit** ce qui est dit, sur le téléphone, avec whisper : le texte garde les
+  horodatages, se lit pendant qu'on écoute (la ligne en cours est en inversé, un toucher y envoie
+  le son) et s'exporte en `.txt` dans Documents/Transcriptions ;
+- **traduire** ce texte dans la langue qu'on lit, sur le téléphone aussi, avec Gemma 3 4B — par
+  blocs d'une quarantaine de secondes, parce que l'appariement phrase à phrase ne tient que trois
+  fois sur quatre ; une ligne bascule entre le texte et la traduction ;
 - six langues (en, fr, de, es, pt, ru), thème clair/sombre, trois polices, trois tailles.
 
 ## Les deux variantes
@@ -60,7 +66,10 @@ Kotlin, Jetpack Compose, Media3 — la même charpente que Reader's Audio Player
 | `data/Opml.kt`, `data/Backup.kt` | les deux fichiers d'échange |
 | `net/Refresher.kt` | ajouter un flux, actualiser |
 | `net/DownloadService.kt` | les téléchargements, en avant-plan, reprenables |
-| `net/Youtube.kt` | reconnaître une adresse YouTube (l'extraction arrive en 0.2) |
+| `net/Youtube.kt` | reconnaître une adresse YouTube ; l'extraction est dans `src/prive` |
+| `TranscribeService.kt`, `transcribe/` | whisper et la traduction, en avant-plan sous wake lock |
+| `data/Transcript.kt` | les lignes et leurs temps, un fichier par épisode et par langue |
+| `ui/TextScreen.kt` | la lecture du texte au fil du son |
 
 Les identifiants sont calculés (`sha1(url)` pour une chaîne, `sha1(feedId|guid)` pour un
 épisode), donc le bureau trouve le même identifiant pour le même épisode : c'est ce qui permet
