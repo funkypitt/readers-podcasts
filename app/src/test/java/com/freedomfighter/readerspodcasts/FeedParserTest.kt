@@ -8,6 +8,8 @@ import com.freedomfighter.readerspodcasts.data.Opml
 import com.freedomfighter.readerspodcasts.data.State
 import com.freedomfighter.readerspodcasts.data.episodeId
 import com.freedomfighter.readerspodcasts.data.Spoken
+import com.freedomfighter.readerspodcasts.data.Episode
+import com.freedomfighter.readerspodcasts.data.channelsByLatest
 import com.freedomfighter.readerspodcasts.data.lengthOf
 import com.freedomfighter.readerspodcasts.data.Prefs
 import com.freedomfighter.readerspodcasts.ui.clipboardUrl
@@ -235,12 +237,12 @@ class FeedParserTest {
     @Test fun `settings and positions survive the round trip`() {
         val feeds = listOf(Feed(id = "f", url = "https://a.example/feed", title = "Un", autoDownload = true, keepCount = 20))
         val episodes = listOf(
-            com.freedomfighter.readerspodcasts.data.Episode(
+            Episode(
                 id = "e1", feedId = "f", title = "Un épisode", published = 1L,
                 mediaUrl = "https://a.example/1.mp3", positionMs = 90_000, state = State.STARTED, lastPlayed = 42L,
             ),
             // Untouched episodes are left out: the file says only what cannot be worked out again.
-            com.freedomfighter.readerspodcasts.data.Episode(
+            Episode(
                 id = "e2", feedId = "f", title = "Pas commencé", published = 2L, mediaUrl = "https://a.example/2.mp3",
             ),
         )
@@ -254,6 +256,25 @@ class FeedParserTest {
         assertEquals(20, back.feeds.single().keepCount)
         assertTrue(back.feeds.single().autoDownload)
         assertNotNull(back.feeds.single().id)
+    }
+
+    @Test fun `channels sort by their latest episode, including those that have none`() {
+        // The crash this covers: a channel with no episode gave 0 as an Int among the Longs, and
+        // sorting threw ClassCastException at launch. Six of one user's feeds are like that —
+        // a page that is not a feed, a show taken down, a podcast that has published nothing.
+        val a = Feed(id = "a", url = "https://a.example/f", title = "Ancienne")
+        val b = Feed(id = "b", url = "https://b.example/f", title = "Récente")
+        val c = Feed(id = "c", url = "https://c.example/f", title = "Vide")
+        val d = Feed(id = "d", url = "https://d.example/f", title = "Aussi vide")
+        val episodes = listOf(
+            Episode(id = "1", feedId = "a", title = "vieux", published = 1_000L, mediaUrl = "x"),
+            Episode(id = "2", feedId = "b", title = "neuf", published = 9_000L, mediaUrl = "x"),
+            Episode(id = "3", feedId = "a", title = "moins vieux", published = 2_000L, mediaUrl = "x"),
+        )
+        val order = channelsByLatest(listOf(a, b, c, d), episodes).map { it.title }
+        assertEquals(listOf("Récente", "Ancienne", "Aussi vide", "Vide"), order)
+        // And with nothing at all, which is what a fresh install looks like.
+        assertEquals(2, channelsByLatest(listOf(c, d), emptyList()).size)
     }
 
     @Test fun `a view stored by an older version still names a list that exists`() {

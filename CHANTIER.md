@@ -195,3 +195,27 @@ qu'il relit du disque, et le tri après fusion aussi. Un test reprend la forme e
 0.1.1 ne connaissait plus ce nom et affichait une liste vide sous le titre « chaînes ». Les
 anciens noms sont maintenant convertis, et une vue que rien ne reconnaît — un nom inconnu, une
 chaîne supprimée depuis — retombe sur les chaînes plutôt que sur une page blanche.
+
+
+## 12. La 0.1.3 (2026-09-18) — le vrai plantage
+
+La 0.1.2 corrigeait un défaut réel (les identifiants d'épisode en double) mais **pas celui qui
+fermait l'app**. Le téléphone branché en adb a donné la trace en dix secondes :
+
+```
+java.lang.ClassCastException: java.lang.Integer cannot be cast to java.lang.Long
+    at com.freedomfighter.readerspodcasts.data.Store.channels(Store.kt:54)
+```
+
+**Cause.** Dans le tri des chaînes, `latest[it.id] ?: 0` : le `0` est un `Int` littéral, alors que
+les dates sont des `Long`. Une chaîne **sans aucun épisode** donnait donc un `Int` au comparateur,
+une chaîne avec épisodes un `Long`, et `Long.compareTo` lançait une `ClassCastException`. Sur les
+140 abonnements de l'utilisateur, six chaînes sont dans ce cas (deux pages qui ne sont pas des
+flux, une entrée « virtuelle » de Podcast Addict, deux chaînes YouTube, un flux mort) plus un flux
+réellement vide. Mes états d'essai avaient tous des épisodes partout : c'est précisément ce qui
+m'a fait passer à côté.
+
+**Leçon.** Un état d'essai où toutes les données sont pleines ne teste pas grand-chose. Le tri est
+sorti du magasin dans `channelsByLatest`, typé `Long` de bout en bout, et un test le vérifie avec
+des chaînes vides dans le lot. Avant/après prouvé sur émulateur : la 0.1.2 plante sur cet état,
+la 0.1.3 non.

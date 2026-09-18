@@ -49,12 +49,7 @@ class Store(private val context: Context) {
      * forty channels in alphabetical order says nothing; in this order the first screen is the
      * news.
      */
-    fun channels(): List<Feed> {
-        val latest = _episodes.value.groupBy { it.feedId }.mapValues { (_, list) -> list.maxOf { it.published } }
-        return _feeds.value.sortedWith(
-            compareByDescending<Feed> { latest[it.id] ?: 0 }.thenBy { it.title.lowercase() }
-        )
-    }
+    fun channels(): List<Feed> = channelsByLatest(_feeds.value, _episodes.value)
 
     fun unplayedCount(feedId: String): Int = _episodes.value.count { it.feedId == feedId && it.state != State.PLAYED }
 

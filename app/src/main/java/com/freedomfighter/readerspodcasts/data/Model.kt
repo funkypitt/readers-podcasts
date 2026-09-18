@@ -87,6 +87,20 @@ fun lengthOf(ms: Long): Spoken {
     return Spoken((min / 60).toInt(), (min % 60).toInt(), 0)
 }
 
+/**
+ * The channels, the one that published last at the top; those with nothing yet fall to the
+ * bottom in the order of their names. Kept apart from the store, and typed in Long throughout:
+ * `?: 0` here mixed an Int among the Longs, and the comparator threw the moment one channel had
+ * no episode at all — which on a hundred and forty subscriptions is a certainty, not a corner.
+ */
+fun channelsByLatest(feeds: List<Feed>, episodes: List<Episode>): List<Feed> {
+    val latest: Map<String, Long> = episodes.groupBy { it.feedId }
+        .mapValues { (_, list) -> list.maxOf { it.published } }
+    return feeds.sortedWith(
+        compareByDescending<Feed> { latest[it.id] ?: 0L }.thenBy { it.title.lowercase() }
+    )
+}
+
 /** `12:03` / `1:02:45`, for the player where the exact position matters. */
 fun clock(ms: Long): String {
     val s = ms.coerceAtLeast(0) / 1000
