@@ -702,6 +702,9 @@ private fun TranslateRow(episode: Episode, activity: MainActivity, reading: Stri
  * Asked before every transcription: the language spoken, the phone's by default, and the
  * quality. High is Whisper large-v3-turbo — better punctuation, much slower on a telephone.
  */
+/** What is advised here: whole talks, so the model that keeps the wait to something bearable. */
+private val RECOMMENDED = Models.NORMAL
+
 @Composable
 fun TranscribeSheet(episode: Episode, activity: MainActivity, onDismiss: () -> Unit) {
     val context = LocalContext.current
@@ -727,9 +730,16 @@ fun TranscribeSheet(episode: Episode, activity: MainActivity, onDismiss: () -> U
                     downloading >= 0 -> " · " + stringResource(R.string.phase_model, downloading)
                     else -> " · " + stringResource(R.string.model_not_yet)
                 }
+                // A causerie is an hour long: the careful model is four times slower, which on a
+                // telephone is the difference between half an hour and an afternoon. Measured.
+                val note = when {
+                    m == RECOMMENDED -> " · " + stringResource(R.string.recommended)
+                    m == Models.HIGH -> " · " + stringResource(R.string.quality_high_hint)
+                    else -> ""
+                }
                 TextRow(
                     stringResource(if (m == Models.HIGH) R.string.quality_high else R.string.quality_normal),
-                    inverted = quality == m.key, secondary = "${m.mb} MB$state", size = typo.title,
+                    inverted = quality == m.key, secondary = "${m.mb} MB$note$state", size = typo.title,
                 ) { quality = m.key }
             }
             Rule(color = colors.fg)

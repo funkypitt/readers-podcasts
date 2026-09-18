@@ -106,6 +106,7 @@
     <string name="phase_model">récupération du modèle %d %%</string>
     <string name="phase_transcribe">mise par écrit %d %%</string>
     <string name="phase_translate">traduction %d %%</string>
+    <string name="still">encore %s</string>
     <string name="phase_save">enregistrement…</string>
     <string name="phase_waiting">en attente</string>
     <string name="stop_transcription">arrêter</string>
@@ -125,7 +126,9 @@
     <string name="translate_into">traduire en %s</string>
     <string name="translate_hint">sur le téléphone, à partir du texte ci-dessus</string>
     <string name="translate_needs_memory">demande un téléphone de 8 Go ; celui-ci en a %d</string>
-    <string name="model_not_yet">à récupérer une fois</string>
+    <string name="model_not_yet">à récupérer</string>
+    <string name="recommended">recommandé</string>
+    <string name="quality_high_hint">4 fois plus lente</string>
     <string name="quality_normal">ordinaire</string>
     <string name="quality_high">soignée</string>
     <string name="language">langue parlée</string>

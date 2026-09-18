@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.IBinder
 import android.os.PowerManager
+import android.os.SystemClock
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -25,6 +26,7 @@ import com.freedomfighter.readers.speech.whisper.Segment
 import com.freedomfighter.readers.speech.whisper.WhisperLib
 import com.freedomfighter.readerspodcasts.data.Line
 import com.freedomfighter.readerspodcasts.data.Transcripts
+import com.freedomfighter.readerspodcasts.data.spoken
 import com.freedomfighter.readerspodcasts.transcribe.Transcriber
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -179,6 +181,9 @@ class TranscribeService : Service() {
                     job.translateTo,
                     { Live.percent = it },
                     { cancelled.get() },
+                    // Pinned only when the room is plainly there right now: another application
+                    // may have taken it since the model was allowed at all.
+                    keepInRam = TranslateModel.canPinWeights(this@TranscribeService),
                 )
             }
         } ?: return
@@ -256,6 +261,25 @@ class TranscribeService : Service() {
         val waiting = mutableStateListOf<String>()
 
         fun busy(which: String) = which == id || which in waiting
+
+        // Plain fields, not Compose state: the label is read while composing, and state written
+        // there would start a recomposition chasing its own tail.
+        private var timed = ""
+        private var since = 0L
+
+        /**
+         * What is left to wait at the pace held so far, or −1 while that cannot honestly be said.
+         *
+         * Half an hour of writing down and an hour of translating are long enough that a bare
+         * percentage tells the reader nothing about whether to put the telephone down; and it is
+         * the only measure of the work's speed one can take without a cable.
+         */
+        fun remaining(phase: String, percent: Int): Long {
+            if (phase != timed) { timed = phase; since = SystemClock.elapsedRealtime() }
+            if (since == 0L || percent < 5 || percent >= 100) return -1
+            val gone = SystemClock.elapsedRealtime() - since
+            return if (gone < 30_000) -1 else gone * (100 - percent) / percent
+        }
     }
 
     companion object {
@@ -272,12 +296,16 @@ class TranscribeService : Service() {
         private const val CHANNEL_ID = "transcription"
         private const val NOTIF_ID = 9
 
-        fun phaseLabel(ctx: Context, phase: String, percent: Int): String = when (phase) {
-            PHASE_MODEL -> ctx.getString(R.string.phase_model, percent)
-            PHASE_TRANSCRIBE -> ctx.getString(R.string.phase_transcribe, percent)
-            PHASE_TRANSLATE -> ctx.getString(R.string.phase_translate, percent)
-            PHASE_SAVE -> ctx.getString(R.string.phase_save)
-            else -> ctx.getString(R.string.phase_waiting)
+        fun phaseLabel(ctx: Context, phase: String, percent: Int): String {
+            val label = when (phase) {
+                PHASE_MODEL -> ctx.getString(R.string.phase_model, percent)
+                PHASE_TRANSCRIBE -> ctx.getString(R.string.phase_transcribe, percent)
+                PHASE_TRANSLATE -> ctx.getString(R.string.phase_translate, percent)
+                PHASE_SAVE -> ctx.getString(R.string.phase_save)
+                else -> ctx.getString(R.string.phase_waiting)
+            }
+            val rest = Live.remaining(phase, percent)
+            return if (rest < 0) label else label + " · " + ctx.getString(R.string.still, spoken(ctx, rest))
         }
 
         fun transcribe(ctx: Context, id: String, language: String, model: String) =

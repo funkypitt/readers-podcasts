@@ -108,6 +108,7 @@
     <string name="phase_model">загрузка модели %d %%</string>
     <string name="phase_transcribe">запись текста %d %%</string>
     <string name="phase_translate">перевод %d %%</string>
+    <string name="still">ещё %s</string>
     <string name="phase_save">сохранение…</string>
     <string name="phase_waiting">в очереди</string>
     <string name="stop_transcription">остановить</string>
@@ -127,7 +128,9 @@
     <string name="translate_into">перевести на %s</string>
     <string name="translate_hint">на телефоне, из текста выше</string>
     <string name="translate_needs_memory">нужен телефон на 8 ГБ; у этого %d</string>
-    <string name="model_not_yet">загрузить один раз</string>
+    <string name="model_not_yet">нужно скачать</string>
+    <string name="recommended">рекомендуется</string>
+    <string name="quality_high_hint">вчетверо медленнее</string>
     <string name="quality_normal">обычная</string>
     <string name="quality_high">тщательная</string>
     <string name="language">язык речи</string>

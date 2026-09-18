@@ -336,3 +336,85 @@ Le téléphone tourne déjà à 6 fils sur ses gros cœurs (1 × 3,78 GHz + 5 ×
 suspect : le plafond de 640 mots-jetons par bloc et le **second essai** que déclenche le garde-fou
 de proportion — un bloc qui déborde coûte double. À instrumenter (durée et jetons par bloc, taux
 de relance) avant de toucher quoi que ce soit d'autre.
+
+## 17. La vitesse de traduction, mesurée sans câble (0.4.2, 2026-09-18)
+
+**Le plafond de jetons et le second essai sont hors de cause.** Mesuré sur le PC avec les invites
+exactes de `Translator` (gemma3:4b par ollama, blocs de 700 signes tirés de *Walden*, domaine
+public) : **0 bloc sur le plafond de 640 jetons, 0 second essai, 240 jetons produits par bloc en
+moyenne**. Un bloc coûte donc 240 jetons, pas 1280, et les ~4,7 min par bloc du téléphone
+correspondent à **0,85 jeton par seconde** — dix fois moins que ce qu'un Tensor G5 fait sur un 4B
+quantifié. Deuxième hypothèse morte après celle de `+dotprod+i8mm` ; les deux ont été notées ici
+avant d'être crues.
+
+**Ce qui reste.** La boucle de génération de `llama_jni.c` est correcte (cache KV, un jeton à la
+fois, pas de ré-évaluation de l'invite). Le seul écart restant est le mode de chargement :
+`LLAMA_LOAD_MODE_MMAP` laisse les 2,5 Go de poids adossés au fichier, donc **récupérables** par le
+système — et un modèle dont les pages sont reprises est relu depuis le stockage à chaque jeton.
+2,5 Go relus en ~1,2 s, c'est exactement la vitesse d'un UFS en lecture éparse. La traduction
+épingle donc désormais les poids (`LLAMA_LOAD_MODE_MMAP_MLOCK`), et seulement quand la place est
+franchement là : `TranslateModel.canPinWeights()` exige 3,2 Go libres, sinon on retombe sur
+l'ancien comportement. Le résumé (`Summariser`), qui est une réponse et non trois cents, garde le
+mode adossé au fichier.
+
+**L'instrument, puisqu'il n'y a pas de câble.** La ligne d'état et la notification disent
+maintenant *« traduction 34 % · encore 48 min »* : la cadence se lit sur l'écran. C'est d'abord
+pour le lecteur — une demi-heure de mise par écrit et une heure de traduction sans autre repère
+qu'un pourcentage, on ne sait pas s'il faut poser le téléphone — et accessoirement c'est la seule
+mesure de vitesse qu'on puisse prendre sans `adb`.
+
+**À vérifier quand le téléphone sera libre** : lancer une traduction et comparer le « encore … »
+au repère d'avant, **1,23 %/min** (soit ~80 min pour une causerie de 40 min). Si l'épinglage est
+la bonne explication, le chiffre doit tomber nettement. Sinon, le levier suivant est une
+quantification plus légère de Gemma 3 4B.
+
+0.4.2 signée dans `~/kDrive/apk/` (privée). **Pas publiée** sur F-Droid ni sur le site : le gain
+est une hypothèse tant qu'elle n'a pas été mesurée sur l'appareil.
+
+## 18. Quel modèle whisper, et la détection de voix (2026-09-19)
+
+Question posée : le plus gros modèle est-il nécessaire, et dans toutes les apps ? Un banc existait
+(17 septembre) mais sa référence était un consensus de transcriptions whisper. Refait avec une
+référence qui n'en est pas une : une lecture LibriVox des *Lettres de mon moulin*, notée mot à mot
+contre le texte de Daudet sur Gutenberg. Mêmes sources que le module (`bench.c` est le jumeau de
+`jni.c`), et surtout **la même invite de style que les apps** — c'est elle qui donne sa ponctuation
+au gros modèle : sans elle il rend des murs de minuscules, ce qui m'avait d'abord fait accuser la
+détection de voix à tort.
+
+| trois minutes de lecture | temps (× temps réel) | mots faux |
+|---|---|---|
+| ordinaire (small) | 0,145 | 11,0 % |
+| ordinaire + détection | 0,153 | 10,5 % |
+| soignée (large-v3-turbo) | 0,581 | 5,1 % |
+| soignée + détection | 0,583 | 5,0 % |
+
+| les mêmes, avec des silences (77 % de voix) | | |
+|---|---|---|
+| ordinaire | 0,139 | 12,1 % |
+| **ordinaire + détection** | **0,123** | **10,0 %** |
+| soignée | 0,561 | 4,3 % |
+| soignée + détection | 0,509 | 5,1 % |
+
+**Le choix du modèle pèse dix fois plus que la détection** : le soigné fait deux fois moins de
+fautes et prend quatre fois plus de temps. Sur le téléphone, où la version ordinaire tient 0,675 ×
+le temps réel, cela mettrait une causerie de 40 minutes à près de deux heures. D'où l'étiquette
+**recommandé**, différente selon l'app : *ordinaire* dans les Podcasts et le Lecteur audio, où l'on
+écrit des heures d'enregistrement ; *soignée* dans l'Enregistreur, où ce sont des notes de
+quelques minutes et où la moitié des fautes en moins vaut quelques minutes de plus. Et la mention
+« 4 fois plus lente » sur la ligne de la soignée : les Podcasts ne disaient rien du prix.
+
+**La détection de voix est activée** (Silero, 885 Ko dans les assets, padding 250 ms) : elle gagne
+un dixième du temps et deux points de fautes sur de la parole avec des pauses, rien sur de la
+parole continue, et à 30 ms de padding elle mange les premiers mots (12,8 %).
+
+**Ce que le banc de bureau ne pouvait pas dire.** Un test instrumenté écrit pour l'occasion
+(`speech/src/androidTest`) a fait tomber l'application sur l'émulateur : ggml plantait sur
+`assert(ldb >= k)` dans le noyau rapide de llamafile. Nos `CMakeLists.txt` définissent
+`GGML_USE_LLAMAFILE`, ce que le CMake de whisper.cpp ne fait pas — d'où « parfait sur le poste,
+mortel sur Android », et en release l'assertion disparaît et le noyau lirait au mauvais pas.
+Le noyau refuse désormais une requête qu'il ne sait pas servir, ce que ses deux appelants gèrent
+déjà. Trois tests passent sur émulateur x86_64, avec et sans détection.
+
+**Et le rendu, vérifié à l'écran** : la ligne « qualité de transcription · 574 MB · recommandé · … »
+était coupée. Les trois apps parlent maintenant la même langue courte — *ordinaire* / *soignée*,
+et « 574 MB · recommandé · à récupérer » tient.
