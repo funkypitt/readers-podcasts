@@ -31,10 +31,11 @@ object Backup {
         // Only what the other side cannot work out for itself: a fresh episode in its original
         // state would say nothing, and would make the file grow for no reason.
         root.put("episodes", JSONArray().apply {
-            episodes.filter { it.state != State.NEW || it.positionMs > 0 }.forEach { e ->
+            episodes.filter { it.state != State.NEW || it.positionMs > 0 || it.starred }.forEach { e ->
                 put(JSONObject().apply {
                     put("id", e.id); put("feed", e.feedId); put("title", e.title)
                     put("positionMs", e.positionMs); put("state", e.state.name); put("lastPlayed", e.lastPlayed)
+                    put("starred", e.starred)
                 })
             }
         })
@@ -42,7 +43,7 @@ object Backup {
     }
 
     data class Restored(val settings: Map<String, Any?>, val feeds: List<Feed>, val states: List<EpisodeState>)
-    data class EpisodeState(val id: String, val positionMs: Long, val state: State, val lastPlayed: Long)
+    data class EpisodeState(val id: String, val positionMs: Long, val state: State, val lastPlayed: Long, val starred: Boolean = false)
 
     fun parse(text: String): Restored {
         val root = JSONObject(text)
@@ -67,7 +68,7 @@ object Backup {
                 EpisodeState(
                     id, o.optLong("positionMs"),
                     runCatching { State.valueOf(o.optString("state", "NEW")) }.getOrDefault(State.NEW),
-                    o.optLong("lastPlayed"),
+                    o.optLong("lastPlayed"), o.optBoolean("starred"),
                 )
             }
         } ?: emptyList()

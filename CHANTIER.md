@@ -147,3 +147,23 @@ Mener les deux de front a un intérêt précis : figer tôt `abonnements.opml` e
 écran d'accueil, l'import OPML et l'import des réglages n'ont été éprouvés que par les tests
 (le sélecteur de fichiers Android n'a pas été parcouru à la main), et les paquets desktop
 (.deb, PKGBUILD, GitHub Actions) restent prévus pour la 0.5.
+
+
+## 10. La 0.1.1 (2026-09-18, après le premier essai)
+
+Ce que le premier import de 140 flux a montré, et ce qui a été demandé dans la foulée :
+
+- **« à écouter » supprimée.** En défaut, elle ouvrait sur un écran vide juste après un import :
+  rien n'est encore téléchargé, donc la liste était vide alors que l'app venait d'avaler
+  cent quarante chaînes. Les présentations sont maintenant **chaînes** (défaut), **épisodes** et
+  **favoris**, et un réglage dit laquelle s'ouvre.
+- **Favoris** : une étoile, gardée à la main ; c'est la seule liste que l'app ne remplit ni ne
+  vide toute seule. Elle voyage dans `reglages.json`, même sur un épisode jamais commencé.
+- **Chaînes par ordre du dernier épisode paru** — l'ordre alphabétique ne disait rien.
+- **Tirer pour actualiser**, avec une ligne de texte plutôt qu'une roue qui tourne (Material
+  n'entre pas dans une app sans icônes), et **↻** et **+** à gauche du ⋯.
+- Le **+** propose ce que contient le presse-papier quand c'est une adresse, ouvert sélectionné.
+- **« Ajouter à Reader's Podcasts »** dans la feuille de partage : un activity-alias, pour que la
+  ligne dise ce qui va se passer et non le nom de l'app.
+- **Recherche** dans le ⋯, sur les chaînes et les épisodes déjà là — rien n'est demandé à
+  l'annuaire de qui que ce soit, ce qui la rend utilisable hors connexion.

@@ -8,15 +8,11 @@
     <string name="back5">−5 с</string>
     <string name="fwd10">+10 с</string>
     <string name="speed">скорость</string>
-    <string name="view_queue">послушать</string>
-    <string name="view_new">новое</string>
-    <string name="feeds">каналы</string>
     <string name="add_feed">+ лента</string>
     <string name="add_feed_hint">адрес ленты или страницы, где она есть</string>
     <string name="subscribe">подписаться</string>
     <string name="unsubscribe">отписаться</string>
     <string name="refresh">обновить</string>
-    <string name="refreshing">обновление…</string>
     <string name="adding_feed">чтение ленты…</string>
     <string name="subscribed">подписка на %s</string>
     <string name="feed_failed">эту ленту не удалось прочитать. %s</string>
@@ -24,9 +20,7 @@
     <string name="youtube_no_channel">по этому адресу канала нет</string>
     <string name="offline">нет связи</string>
     <string name="empty_no_feeds">подписок пока нет. + внизу принимает адрес ленты; ссылку можно и просто отправить в это приложение.</string>
-    <string name="empty_queue">на телефоне ничего нет. коснитесь заголовка вверху, чтобы открыть каналы, ⋯ — чтобы обновить.</string>
     <string name="empty_feed">здесь пока пусто. ⋯ обновляет.</string>
-    <string name="unheard">%d не прослушано</string>
     <string name="auto_download">автоматическая загрузка</string>
     <string name="auto_download_on">вкл</string>
     <string name="auto_download_off">выкл</string>
@@ -89,4 +83,18 @@
     <string name="duration_h">%1$d ч %2$02d</string>
     <string name="setting_line">%1$s: %2$s</string>
     <string name="reading_feeds">чтение лент: %1$d / %2$d</string>
+    <string name="view_channels">каналы</string>
+    <string name="view_episodes">выпуски</string>
+    <string name="view_favourites">избранное</string>
+    <string name="opens_on">открывается на</string>
+    <string name="star">в избранное</string>
+    <string name="unstar">убрать из избранного</string>
+    <string name="empty_favourites">избранного пока нет. долгое нажатие на выпуск оставляет его здесь.</string>
+    <string name="search">поиск</string>
+    <string name="search_hint">канал, выпуск</string>
+    <string name="search_nothing">ничего с таким названием</string>
+    <string name="pull_to_refresh">потяните, чтобы обновить</string>
+    <string name="release_to_refresh">отпустите, чтобы обновить</string>
+    <string name="refreshing_n">обновление: %1$d / %2$d</string>
+    <string name="share_target">Добавить в Reader\'s Podcasts</string>
 </resources>

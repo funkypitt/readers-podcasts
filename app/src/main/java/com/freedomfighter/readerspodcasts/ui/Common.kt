@@ -132,9 +132,19 @@ fun TextRow(
     }
 }
 
-/** Title line at the top of a screen. Tapping it goes back. */
+/**
+ * Title line at the top of a screen. Tapping it goes back, or opens whatever [onTitle] says.
+ * [actions] are the signs to its right, in order, before [trailing]: refresh and add, then ⋯.
+ */
 @Composable
-fun ScreenTitle(title: String, onBack: (() -> Unit)?, trailing: String? = null, onTrailing: (() -> Unit)? = null, onTitle: (() -> Unit)? = null) {
+fun ScreenTitle(
+    title: String,
+    onBack: (() -> Unit)?,
+    trailing: String? = null,
+    onTrailing: (() -> Unit)? = null,
+    onTitle: (() -> Unit)? = null,
+    actions: List<Pair<String, () -> Unit>> = emptyList(),
+) {
     val colors = LocalColors.current
     Row(
         Modifier
@@ -156,10 +166,20 @@ fun ScreenTitle(title: String, onBack: (() -> Unit)?, trailing: String? = null, 
             }
             T(title, size = LocalTypo.current.title, color = colors.dim, maxLines = 1, align = TextAlign.Start)
         }
+        actions.forEach { (label, action) ->
+            T(
+                label,
+                Modifier.noRippleClickable(onClick = action).padding(horizontal = 10.dp),
+                size = LocalTypo.current.title,
+                color = colors.dim,
+                align = TextAlign.End,
+            )
+        }
         if (trailing != null) {
             T(
                 trailing,
-                Modifier.then(if (onTrailing != null) Modifier.noRippleClickable(onClick = onTrailing) else Modifier),
+                Modifier.then(if (onTrailing != null) Modifier.noRippleClickable(onClick = onTrailing) else Modifier)
+                    .padding(start = if (actions.isEmpty()) 0.dp else 6.dp),
                 size = LocalTypo.current.title,
                 align = TextAlign.End
             )
@@ -236,11 +256,22 @@ fun TextPrompt(
     confirm: String = stringResource(R.string.action_ok),
     password: Boolean = false,
     keyboard: androidx.compose.ui.text.input.KeyboardType = androidx.compose.ui.text.input.KeyboardType.Text,
+    /** A suggestion opens selected, so the first key replaces it rather than landing after it. */
+    selectAll: Boolean = false,
     onDone: (String) -> Unit,
     onCancel: () -> Unit
 ) {
     val colors = LocalColors.current
-    var value by remember { mutableStateOf(initial) }
+    var field by remember {
+        mutableStateOf(
+            androidx.compose.ui.text.input.TextFieldValue(
+                initial,
+                selection = if (selectAll) androidx.compose.ui.text.TextRange(0, initial.length)
+                else androidx.compose.ui.text.TextRange(initial.length),
+            )
+        )
+    }
+    val value = field.text
     val focus = remember { FocusRequester() }
     BackHandler(onBack = onCancel)
     LaunchedEffect(Unit) { focus.requestFocus() }
@@ -264,8 +295,8 @@ fun TextPrompt(
             Rule(color = colors.fg)
             Small(title, Modifier.padding(horizontal = rowPadH).padding(top = 14.dp))
             ReaderTextField(
-                value = value,
-                onValueChange = { value = it },
+                value = field,
+                onValueChange = { field = it },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = rowPadH, vertical = 10.dp).focusRequester(focus),
                 imeAction = ImeAction.Done,
                 onImeAction = { if (value.isNotBlank()) onDone(value.trim()) },
@@ -282,6 +313,38 @@ fun TextPrompt(
             Rule(color = colors.fg)
         }
     }
+}
+
+@Composable
+fun ReaderTextField(
+    value: androidx.compose.ui.text.input.TextFieldValue,
+    onValueChange: (androidx.compose.ui.text.input.TextFieldValue) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String = "",
+    imeAction: ImeAction = ImeAction.Search,
+    onImeAction: () -> Unit = {},
+    password: Boolean = false,
+    keyboard: androidx.compose.ui.text.input.KeyboardType = androidx.compose.ui.text.input.KeyboardType.Text
+) {
+    val colors = LocalColors.current
+    val typo = LocalTypo.current
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier,
+        singleLine = true,
+        textStyle = TextStyle(color = colors.fg, fontFamily = typo.family, fontWeight = typo.weight, fontSize = typo.tile),
+        cursorBrush = SolidColor(colors.fg),
+        keyboardOptions = KeyboardOptions(imeAction = imeAction, keyboardType = if (password) androidx.compose.ui.text.input.KeyboardType.Password else keyboard),
+        visualTransformation = if (password) androidx.compose.ui.text.input.PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
+        keyboardActions = KeyboardActions(onAny = { onImeAction() }),
+        decorationBox = { inner ->
+            Box {
+                if (value.text.isEmpty()) T(placeholder, color = colors.dim, align = TextAlign.Start)
+                inner()
+            }
+        }
+    )
 }
 
 @Composable

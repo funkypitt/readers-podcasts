@@ -1,9 +1,10 @@
 {
   "app": "readers-podcasts",
   "version": 1,
-  "exported": 1789733405009,
+  "exported": 1789736339434,
   "settings": {
     "theme": "LIGHT",
+    "default_view": "channels",
     "font": "SERIF",
     "auto_refresh": false,
     "delete_when_played": true,
@@ -32,7 +33,17 @@
       "title": "Le temps des orages",
       "positionMs": 754000,
       "state": "STARTED",
-      "lastPlayed": 1758200000000
+      "lastPlayed": 1758200000000,
+      "starred": false
+    },
+    {
+      "id": "3f78319c6fcb7dba6a39cc3d3ed6cd484abfadab",
+      "feed": "c0fb4e169be02c728409c21bbb291dd6f6670ad9",
+      "title": "Un favori",
+      "positionMs": 0,
+      "state": "NEW",
+      "lastPlayed": 0,
+      "starred": true
     }
   ]
 }

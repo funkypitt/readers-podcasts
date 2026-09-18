@@ -55,8 +55,11 @@ class InteropTest {
         val started = restored.states.single { it.state == State.STARTED }
         assertEquals(episodeId(fid, "episode-42"), started.id)
         assertEquals(754_000L, started.positionMs)
-        // An untouched episode is not in the file at all.
-        assertEquals(1, restored.states.size)
+        // A favourite travels even untouched, or one kept on the desktop would vanish here.
+        val starred = restored.states.single { it.starred }
+        assertEquals(episodeId(fid, "episode-44"), starred.id)
+        // An episode neither begun nor starred is not in the file at all.
+        assertEquals(2, restored.states.size)
     }
 
     @Test fun `what the phone writes is left where the desktop reads it`() {
@@ -71,6 +74,8 @@ class InteropTest {
                     positionMs = 321_000, state = State.STARTED, lastPlayed = 1_758_100_000_000),
             Episode(id = episodeId(fid, "p-2"), feedId = fid, title = "Un épisode neuf",
                     published = 1_758_000_000_000, mediaUrl = "https://example.org/2.mp3"),
+            Episode(id = episodeId(fid, "p-3"), feedId = fid, title = "Un favori",
+                    published = 1_758_000_000_000, mediaUrl = "https://example.org/3.mp3", starred = true),
         )
         val dir = File("build/interop").apply { mkdirs() }
         File(dir, "phone-abonnements.opml").writeText(Opml.export(feeds))
@@ -80,6 +85,8 @@ class InteropTest {
         // Read back here too, so a broken write fails in this test and not only in the script.
         val again = Opml.parse(File(dir, "phone-abonnements.opml").inputStream(), parser())
         assertEquals("Une chaîne « à part »", again.single().title)
-        assertEquals(1, Backup.parse(File(dir, "phone-reglages.json").readText()).states.size)
+        val back = Backup.parse(File(dir, "phone-reglages.json").readText())
+        assertEquals(2, back.states.size)
+        assertEquals(episodeId(fid, "p-3"), back.states.single { it.starred }.id)
     }
 }

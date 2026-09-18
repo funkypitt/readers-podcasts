@@ -29,12 +29,6 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- A feed address shared from a browser or another reader. -->
-            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="text/plain" />
-            </intent-filter>
             <!-- The two schemes podcast directories link with. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -45,6 +39,21 @@
                 <data android:scheme="pcast" />
             </intent-filter>
         </activity>
+        <!--
+            The share sheet shows this alias, not the app: what one wants to read there is what
+            will happen — "add to Reader's Podcasts" — and not just a name among twenty others.
+        -->
+        <activity-alias
+            android:name=".AddFeed"
+            android:targetActivity=".MainActivity"
+            android:exported="true"
+            android:label="@string/share_target">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity-alias>
         <service
             android:name=".PlaybackService"
             android:exported="true"

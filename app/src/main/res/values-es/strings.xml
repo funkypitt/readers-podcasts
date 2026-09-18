@@ -8,15 +8,11 @@
     <string name="back5">−5 s</string>
     <string name="fwd10">+10 s</string>
     <string name="speed">velocidad</string>
-    <string name="view_queue">por escuchar</string>
-    <string name="view_new">novedades</string>
-    <string name="feeds">canales</string>
     <string name="add_feed">+ una fuente</string>
     <string name="add_feed_hint">la dirección de una fuente, o de una página que lleve una</string>
     <string name="subscribe">suscribirse</string>
     <string name="unsubscribe">darse de baja</string>
     <string name="refresh">actualizar</string>
-    <string name="refreshing">actualizando…</string>
     <string name="adding_feed">leyendo la fuente…</string>
     <string name="subscribed">suscrito a %s</string>
     <string name="feed_failed">no se pudo leer esa fuente. %s</string>
@@ -24,9 +20,7 @@
     <string name="youtube_no_channel">ningún canal en esa dirección</string>
     <string name="offline">sin conexión</string>
     <string name="empty_no_feeds">ninguna suscripción. + abajo toma la dirección de una fuente; compartir un enlace con esta app también sirve.</string>
-    <string name="empty_queue">nada en el teléfono. toca el título de arriba para los canales, ⋯ para actualizar.</string>
     <string name="empty_feed">nada aquí todavía. ⋯ actualiza.</string>
-    <string name="unheard">%d por escuchar</string>
     <string name="auto_download">descarga automática</string>
     <string name="auto_download_on">activa</string>
     <string name="auto_download_off">inactiva</string>
@@ -87,4 +81,18 @@
     <string name="duration_h">%1$d h %2$02d</string>
     <string name="setting_line">%1$s: %2$s</string>
     <string name="reading_feeds">leyendo las fuentes: %1$d / %2$d</string>
+    <string name="view_channels">canales</string>
+    <string name="view_episodes">episodios</string>
+    <string name="view_favourites">favoritos</string>
+    <string name="opens_on">se abre en</string>
+    <string name="star">guardar en favoritos</string>
+    <string name="unstar">quitar de favoritos</string>
+    <string name="empty_favourites">ningún favorito. una pulsación larga en un episodio lo guarda aquí.</string>
+    <string name="search">búsqueda</string>
+    <string name="search_hint">un canal, un episodio</string>
+    <string name="search_nothing">nada con ese nombre aquí</string>
+    <string name="pull_to_refresh">tire para actualizar</string>
+    <string name="release_to_refresh">suelte para actualizar</string>
+    <string name="refreshing_n">actualizando: %1$d / %2$d</string>
+    <string name="share_target">Añadir a Reader\'s Podcasts</string>
 </resources>

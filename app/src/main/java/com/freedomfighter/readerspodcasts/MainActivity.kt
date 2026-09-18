@@ -35,11 +35,11 @@ import com.freedomfighter.readerspodcasts.data.Opml
 import com.freedomfighter.readerspodcasts.data.State
 import com.freedomfighter.readerspodcasts.net.DownloadService
 import com.freedomfighter.readerspodcasts.net.Refresher
-import com.freedomfighter.readerspodcasts.ui.FeedsScreen
 import com.freedomfighter.readerspodcasts.ui.HomeScreen
 import com.freedomfighter.readerspodcasts.ui.LocalColors
 import com.freedomfighter.readerspodcasts.ui.Nav
 import com.freedomfighter.readerspodcasts.ui.PlayerScreen
+import com.freedomfighter.readerspodcasts.ui.SearchScreen
 import com.freedomfighter.readerspodcasts.ui.ReaderTheme
 import com.freedomfighter.readerspodcasts.ui.Screen
 import com.freedomfighter.readerspodcasts.ui.SettingsScreen
@@ -133,8 +133,9 @@ class MainActivity : ComponentActivity() {
             app.store.updateEpisode(s.id) {
                 // The newer of the two sides wins, so importing an older file never undoes
                 // listening done since.
-                if (it.lastPlayed > s.lastPlayed) it
-                else it.copy(positionMs = s.positionMs, state = s.state, lastPlayed = s.lastPlayed)
+                // The star is not a matter of when: a file that carries one puts it on.
+                if (it.lastPlayed > s.lastPlayed) it.copy(starred = it.starred || s.starred)
+                else it.copy(positionMs = s.positionMs, state = s.state, lastPlayed = s.lastPlayed, starred = s.starred)
             }
         }
     }
@@ -173,7 +174,7 @@ class MainActivity : ComponentActivity() {
                 }
                 when (nav.current) {
                     Screen.Home -> HomeScreen(nav, app, activity)
-                    Screen.Feeds -> FeedsScreen(nav, app, activity)
+                    Screen.Search -> SearchScreen(nav, app, activity)
                     Screen.Player -> PlayerScreen(nav, app, activity)
                     Screen.Settings -> SettingsScreen(nav, app, activity)
                 }
@@ -230,7 +231,7 @@ class MainActivity : ComponentActivity() {
     }
 
     fun unsubscribe(feedId: String) {
-        if (app.prefs.settings.value.view == feedId) app.prefs.setView(com.freedomfighter.readerspodcasts.data.Prefs.VIEW_QUEUE)
+        if (app.prefs.settings.value.view == feedId) app.prefs.setView(com.freedomfighter.readerspodcasts.data.Prefs.VIEW_CHANNELS)
         app.store.episodesOf(feedId).forEach { if (ui.mediaId == it.id) stopPlayback() }
         app.store.removeFeed(feedId)
     }
@@ -239,6 +240,7 @@ class MainActivity : ComponentActivity() {
 
     fun refreshOne(feedId: String) = lifecycleScope.launch {
         val feed = app.store.feed(feedId) ?: return@launch
+        Refresher.Live.total = 1
         Refresher.Live.running = 1
         Refresher.refresh(this@MainActivity, app.store, feed)
         Refresher.Live.running = 0
@@ -258,6 +260,9 @@ class MainActivity : ComponentActivity() {
         if (ui.mediaId == e.id) stopPlayback()
         app.store.deleteFile(e.id)
     }
+
+    /** The star, which is the one list the app never fills or empties by itself. */
+    fun star(e: Episode, starred: Boolean) = app.store.updateEpisode(e.id) { it.copy(starred = starred) }
 
     fun markPlayed(e: Episode, played: Boolean) {
         if (played && ui.mediaId == e.id) stopPlayback()

@@ -4,7 +4,7 @@ Un lecteur de podcasts qui ne montre que du texte, dans la ligne des autres apps
 Les abonnements, les téléchargements, la lecture avec reprise — et rien d'autre à l'écran que
 des lignes qu'on peut toucher.
 
-État : **0.1.0**, le socle. Voir `CHANTIER.md` pour le plan complet et la suite (YouTube en 0.2,
+État : **0.1.1**. Voir `CHANTIER.md` pour le plan complet et la suite (YouTube en 0.2,
 transcription en 0.3, traduction en 0.4).
 
 ## Ce que fait la 0.1
@@ -13,8 +13,13 @@ transcription en 0.3, traduction en 0.4).
 - actualiser (à l'ouverture, au plus une fois par heure, ou à la demande) ;
 - télécharger un épisode, l'écouter, le reprendre où on l'a laissé ; un épisode écouté jusqu'au
   bout est marqué et son fichier effacé, si c'est le réglage ;
-- trois listes : **à écouter** (ce qui est sur le téléphone ou commencé), **nouveautés** (tout ce
-  qui n'a pas été écouté) et une chaîne à la fois ; le titre porte un ▾ et mène aux chaînes ;
+- trois présentations : **chaînes** (par ordre du dernier épisode paru), **épisodes** (tout, du
+  plus récent au plus ancien) et **favoris** (ce qu'on a gardé d'une étoile) — plus une chaîne à
+  la fois ; le titre porte un ▾ qui ouvre le choix, et un réglage dit sur laquelle l'app s'ouvre ;
+- tirer la liste vers le bas l'actualise ; ↻ et **+** sont à gauche du ⋯, et le **+** propose
+  l'adresse qui se trouve dans le presse-papier ;
+- « Ajouter à Reader's Podcasts » apparaît dans la feuille de partage de n'importe quelle app ;
+- **recherche** dans le menu ⋯ : sur les chaînes et les épisodes déjà là, donc hors connexion ;
 - import/export **OPML** des abonnements et **JSON** des réglages, avec la position de chaque
   épisode — les deux fichiers que l'app partage avec le jumeau desktop ;
 - six langues (en, fr, de, es, pt, ru), thème clair/sombre, trois polices, trois tailles.

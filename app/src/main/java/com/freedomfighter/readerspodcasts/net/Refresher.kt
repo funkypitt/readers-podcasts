@@ -21,7 +21,9 @@ object Refresher {
 
     /** What the screens show while feeds are being fetched. */
     object Live {
+        /** How many are left to fetch, and how many there were: the screen counts them off. */
         var running by mutableIntStateOf(0)
+        var total by mutableIntStateOf(0)
         var error by mutableStateOf("")
     }
 
@@ -84,6 +86,7 @@ object Refresher {
         if (feeds.isEmpty()) return
         if (!Net.online(context)) { Live.error = context.getString(R.string.offline); return }
         Live.error = ""
+        Live.total = feeds.size
         Live.running = feeds.size
         try {
             feeds.forEach { f ->

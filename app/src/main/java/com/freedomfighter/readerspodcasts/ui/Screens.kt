@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -23,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -30,14 +32,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import com.freedomfighter.readerspodcasts.App
 import com.freedomfighter.readerspodcasts.MainActivity
@@ -55,7 +66,7 @@ import com.freedomfighter.readerspodcasts.net.Refresher
 
 sealed class Screen {
     data object Home : Screen()
-    data object Feeds : Screen()
+    data object Search : Screen()
     data object Player : Screen()
     data object Settings : Screen()
 }
@@ -68,7 +79,19 @@ class Nav {
     fun home() { while (stack.size > 1) stack.removeAt(stack.size - 1) }
 }
 
+const val STAR = "★"
+
 fun speedLabel(f: Float): String = (if (f == f.toInt().toFloat()) f.toInt().toString() else f.toString()) + "×"
+
+/** The name of one of the three standing views. */
+@Composable
+fun viewLabel(view: String): String = stringResource(
+    when (view) {
+        Prefs.VIEW_EPISODES -> R.string.view_episodes
+        Prefs.VIEW_FAVOURITES -> R.string.view_favourites
+        else -> R.string.view_channels
+    }
+)
 
 /** A hairline, [fraction] of it in the foreground colour. */
 @Composable
@@ -114,8 +137,8 @@ fun EpisodeRow(
 }
 
 /**
- * The line under a title, in one breath: when it came out, how long it is, and the one thing
- * worth knowing about it right now — that it is coming down, that it is here, that it was begun.
+ * The line under a title, in one breath: the star if it has one, the channel when the list mixes
+ * them, when it came out, and the one thing worth knowing about it right now.
  */
 @Composable
 fun episodeStatus(episode: Episode, app: App, activity: MainActivity, withFeed: Boolean = false): String {
@@ -125,6 +148,7 @@ fun episodeStatus(episode: Episode, app: App, activity: MainActivity, withFeed: 
     val position = if (playing) activity.ui.positionMs else episode.positionMs
     val duration = if (playing && activity.ui.durationMs > 0) activity.ui.durationMs else episode.durationMs
 
+    val star = if (episode.starred) STAR else ""
     val channel = if (withFeed) app.store.feed(episode.feedId)?.title.orEmpty() else ""
     val when_ = relativeDate(context, episode.published)
     val length = if (duration > 0) spoken(context, duration) else ""
@@ -141,7 +165,7 @@ fun episodeStatus(episode: Episode, app: App, activity: MainActivity, withFeed: 
     // One line, and it has to fit: the length is what one reads when there is nothing else to
     // say about the episode. As soon as there is — it is coming down, it is here, it was begun —
     // that is the useful thing, and a line that tried to hold both ended in an ellipsis.
-    return listOf(channel, when_, state.ifBlank { length }).filter { it.isNotBlank() }.joinToString(" · ")
+    return listOf(star, channel, when_, state.ifBlank { length }).filter { it.isNotBlank() }.joinToString(" · ")
 }
 
 /** Everything one can do with an episode: from a long press, or ⋯ in the player. */
@@ -156,10 +180,13 @@ fun EpisodeMenu(episode: Episode, app: App, activity: MainActivity, nav: Nav, on
             episode.downloaded -> add(MenuItem(stringResource(R.string.remove_from_phone), secondary = stringResource(R.string.kept_in_list)) { activity.deleteFile(episode) })
             else -> add(MenuItem(stringResource(R.string.download)) { activity.download(episode) })
         }
+        add(MenuItem(stringResource(if (episode.starred) R.string.unstar else R.string.star)) { activity.star(episode, !episode.starred) })
         if (episode.state == State.PLAYED) add(MenuItem(stringResource(R.string.mark_unplayed)) { activity.markPlayed(episode, false) })
         else add(MenuItem(stringResource(R.string.mark_played)) { activity.markPlayed(episode, true) })
         add(MenuItem(stringResource(R.string.share_episode)) { activity.share(episode) })
-        app.store.feed(episode.feedId)?.let { feed ->
+        // Not when one is already reading that channel: the row would lead where one stands.
+        val current = app.prefs.settings.value.view
+        app.store.feed(episode.feedId)?.takeIf { it.id != current }?.let { feed ->
             add(MenuItem(stringResource(R.string.go_to_feed), secondary = feed.title) {
                 app.prefs.setView(feed.id); nav.home()
             })
@@ -168,9 +195,100 @@ fun EpisodeMenu(episode: Episode, app: App, activity: MainActivity, nav: Nav, on
     }, onDismiss = onDismiss)
 }
 
+/** What a channel offers on a long press. */
+@Composable
+fun FeedMenu(feed: Feed, app: App, activity: MainActivity, onDismiss: () -> Unit) {
+    TextMenu(feed.title, listOf(
+        MenuItem(stringResource(R.string.refresh)) { activity.refreshOne(feed.id) },
+        MenuItem(
+            if (feed.autoDownload) stringResource(R.string.auto_download_on) else stringResource(R.string.auto_download_off),
+            secondary = stringResource(R.string.auto_download),
+        ) { app.store.updateFeed(feed.id) { it.copy(autoDownload = !it.autoDownload) } },
+        MenuItem(stringResource(R.string.unsubscribe), secondary = feed.url) { activity.unsubscribe(feed.id) },
+    ), onDismiss = onDismiss)
+}
+
+/** The row of a channel: when it last published, and how many are unheard. */
+@Composable
+fun FeedRow(feed: Feed, app: App, latest: Long, unheard: Int, onClick: () -> Unit, onLongPress: () -> Unit) {
+    val second = listOf(
+        if (feed.lastError.isNotBlank()) feed.lastError else relativeDate(LocalContext.current, latest),
+        if (unheard > 0) "$unheard" else "",
+    ).filter { it.isNotBlank() }.joinToString(" · ")
+    Box(Modifier.fillMaxWidth().pressable(onClick = onClick, onLongPress = onLongPress)) {
+        TextRow(feed.title, secondary = second.ifBlank { null })
+    }
+}
+
+/** An address worth offering, or "" — the clipboard usually holds something else entirely. */
+fun clipboardUrl(text: String?): String {
+    val s = text?.trim().orEmpty()
+    val looksRight = s.length in 8..2000 && ' ' !in s &&
+        listOf("http://", "https://", "feed://", "podcast://", "pcast://").any { s.startsWith(it, true) }
+    return if (looksRight) s else ""
+}
+
+/**
+ * Pull the list down to refresh. Compose has no such thing outside Material, and Material would
+ * bring a spinning wheel into an app that has no icons: here what follows the finger is a line
+ * of text, and the list itself stays where it was until the finger is lifted.
+ */
+@Composable
+fun PullToRefresh(
+    onRefresh: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable (Modifier) -> Unit,
+) {
+    val density = LocalDensity.current
+    val threshold = with(density) { 64.dp.toPx() }
+    var pull by remember { mutableFloatStateOf(0f) }
+    val connection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                // Scrolling back up takes the pull away first, so the list does not jump.
+                if (source == NestedScrollSource.Drag && available.y < 0f && pull > 0f) {
+                    val used = minOf(pull, -available.y)
+                    pull -= used
+                    return Offset(0f, -used)
+                }
+                return Offset.Zero
+            }
+
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                if (source == NestedScrollSource.Drag && available.y > 0f) {
+                    pull = (pull + available.y * 0.6f).coerceAtMost(threshold * 2f)
+                    return Offset(0f, available.y)
+                }
+                return Offset.Zero
+            }
+
+            override suspend fun onPreFling(available: Velocity): Velocity {
+                if (pull >= threshold) onRefresh()
+                pull = 0f
+                return Velocity.Zero
+            }
+        }
+    }
+    Column(modifier) {
+        if (pull > 0f) {
+            Box(
+                Modifier.fillMaxWidth().height(with(density) { pull.toDp() }),
+                contentAlignment = Alignment.Center,
+            ) {
+                Small(
+                    stringResource(if (pull >= threshold) R.string.release_to_refresh else R.string.pull_to_refresh),
+                    maxLines = 1, align = TextAlign.Center,
+                )
+            }
+        }
+        content(Modifier.nestedScroll(connection))
+    }
+}
+
 // ---------------------------------------------------------------------------------------------
-// Home: one list at a time — what is ready to hear, what is new, or one channel. The title says
-// which, and tapping it goes to the channels, as in Reader's Tasks.
+// Home: one list at a time — the channels, the episodes, the favourites, or a single channel.
+// The title says which and opens the choice; ↻ and + sit beside ⋯; pulling the list down
+// refreshes, with a line of text where other apps spin a wheel.
 // ---------------------------------------------------------------------------------------------
 
 @Composable
@@ -179,59 +297,89 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
     val settings by app.prefs.settings.collectAsState()
     val feeds by app.store.feeds.collectAsState()
     val all by app.store.episodes.collectAsState()
+    val clipboard = LocalClipboardManager.current
     var menu by remember { mutableStateOf(false) }
+    var views by remember { mutableStateOf(false) }
     var rowMenu by remember { mutableStateOf<String?>(null) }
-    var adding by remember { mutableStateOf(false) }
+    var feedMenu by remember { mutableStateOf<String?>(null) }
+    var adding by remember { mutableStateOf<String?>(null) }
 
     val view = settings.view
     val feed = feeds.firstOrNull { it.id == view }
-    // `all` is read above so that Compose knows this list depends on it: the store's queries
-    // read the same state, and a download finishing has to redraw the row that was waiting.
+    // `all` and `feeds` are read above so that Compose knows these lists depend on them: the
+    // store's queries read the same state, and a download finishing has to redraw its row.
     val episodes = remember(view, all, feeds) {
         when {
-            view == Prefs.VIEW_NEW -> app.store.recent()
             feed != null -> app.store.episodesOf(feed.id)
-            else -> app.store.queue()
+            view == Prefs.VIEW_FAVOURITES -> app.store.favourites()
+            view == Prefs.VIEW_EPISODES -> app.store.recent()
+            else -> emptyList()
         }
     }
-    val title = when {
-        view == Prefs.VIEW_NEW -> stringResource(R.string.view_new)
-        feed != null -> feed.title
-        else -> stringResource(R.string.view_queue)
-    }
+    val channels = remember(all, feeds) { app.store.channels() }
+    val showingChannels = feed == null && view == Prefs.VIEW_CHANNELS
+
+    // Back from inside a channel returns to the channels, not out of the app.
+    BackHandler(enabled = feed != null) { app.prefs.setView(Prefs.VIEW_CHANNELS) }
 
     Page {
         Column(Modifier.fillMaxSize()) {
             ScreenTitle(
-                title = "$title  ▾",
+                title = (feed?.title ?: viewLabel(view)) + "  ▾",
                 onBack = null,
                 trailing = "⋯",
                 onTrailing = { menu = true },
-                onTitle = { nav.push(Screen.Feeds) },
+                onTitle = { views = true },
+                actions = listOf(
+                    "↻" to { activity.refreshAll() },
+                    "+" to { adding = clipboardUrl(clipboard.getText()?.text) },
+                ),
             )
-            LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(top = 4.dp, bottom = 12.dp)) {
-                if (Refresher.Live.running > 0) {
-                    item { Small(stringResource(R.string.refreshing), Modifier.padding(horizontal = rowPadH, vertical = 8.dp)) }
-                }
-                if (activity.busy.isNotBlank()) {
-                    item { Small(activity.busy, Modifier.padding(horizontal = rowPadH, vertical = 8.dp)) }
-                }
-                if (episodes.isEmpty()) {
-                    item {
-                        val hint = when {
-                            feeds.isEmpty() -> stringResource(R.string.empty_no_feeds)
-                            view == Prefs.VIEW_QUEUE -> stringResource(R.string.empty_queue)
-                            else -> stringResource(R.string.empty_feed)
+            PullToRefresh(onRefresh = { activity.refreshAll() }, modifier = Modifier.weight(1f)) { pulled ->
+                LazyColumn(pulled.fillMaxSize(), contentPadding = PaddingValues(top = 4.dp, bottom = 12.dp)) {
+                    if (Refresher.Live.running > 0) {
+                        item {
+                            Small(
+                                stringResource(
+                                    R.string.refreshing_n,
+                                    Refresher.Live.total - Refresher.Live.running + 1, Refresher.Live.total,
+                                ),
+                                Modifier.padding(horizontal = rowPadH, vertical = 8.dp),
+                            )
                         }
-                        Small(hint, Modifier.padding(horizontal = rowPadH, vertical = 16.dp), maxLines = 6)
                     }
-                }
-                items(episodes, key = { it.id }) { e ->
-                    EpisodeRow(
-                        e, app, activity, withFeed = feed == null,
-                        onClick = { if (activity.ui.mediaId != e.id) activity.play(e); nav.push(Screen.Player) },
-                        onLongPress = { rowMenu = e.id },
-                    )
+                    if (activity.busy.isNotBlank()) {
+                        item { Small(activity.busy, Modifier.padding(horizontal = rowPadH, vertical = 8.dp)) }
+                    }
+                    if (showingChannels) {
+                        if (channels.isEmpty()) item { Hint(stringResource(R.string.empty_no_feeds)) }
+                        items(channels, key = { it.id }) { f ->
+                            val latest = remember(all, f.id) { app.store.episodesOf(f.id).firstOrNull()?.published ?: 0L }
+                            val unheard = remember(all, f.id) { app.store.unplayedCount(f.id) }
+                            FeedRow(f, app, latest, unheard,
+                                onClick = { app.prefs.setView(f.id) },
+                                onLongPress = { feedMenu = f.id })
+                        }
+                    } else {
+                        if (episodes.isEmpty()) {
+                            item {
+                                Hint(
+                                    when {
+                                        feeds.isEmpty() -> stringResource(R.string.empty_no_feeds)
+                                        view == Prefs.VIEW_FAVOURITES -> stringResource(R.string.empty_favourites)
+                                        else -> stringResource(R.string.empty_feed)
+                                    }
+                                )
+                            }
+                        }
+                        items(episodes, key = { it.id }) { e ->
+                            EpisodeRow(
+                                e, app, activity, withFeed = feed == null,
+                                onClick = { if (activity.ui.mediaId != e.id) activity.play(e); nav.push(Screen.Player) },
+                                onLongPress = { rowMenu = e.id },
+                            )
+                        }
+                    }
                 }
             }
             Rule()
@@ -243,14 +391,20 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
                     onLongPress = { rowMenu = current.id },
                 )
             }
-            if (feeds.isEmpty()) TextRow(stringResource(R.string.add_feed)) { adding = true }
             Box(Modifier.windowInsetsPadding(WindowInsets.navigationBars))
         }
 
+        // The tick sits on the label, not under it: on its own line it read as a second setting.
+        if (views) TextMenu(null, Prefs.VIEWS.map { v ->
+            MenuItem(viewLabel(v) + if (v == view) "  ✓" else "") { app.prefs.setView(v) }
+        }, onDismiss = { views = false })
+
         if (menu) TextMenu(null, buildList {
+            add(MenuItem(stringResource(R.string.search)) { nav.push(Screen.Search) })
             add(MenuItem(stringResource(R.string.refresh)) { activity.refreshAll() })
-            add(MenuItem(stringResource(R.string.add_feed)) { adding = true })
-            add(MenuItem(stringResource(R.string.feeds)) { nav.push(Screen.Feeds) })
+            add(MenuItem(stringResource(R.string.add_feed)) { adding = clipboardUrl(clipboard.getText()?.text) })
+            add(MenuItem(stringResource(R.string.import_opml)) { activity.importOpml() })
+            add(MenuItem(stringResource(R.string.export_opml), secondary = "abonnements.opml") { activity.exportOpml() })
         }, onDismiss = { menu = false }, footer = listOf(
             MenuItem(if (colors.isDark) stringResource(R.string.theme_light) else stringResource(R.string.theme_dark)) { app.prefs.toggleTheme(colors.isDark) },
             MenuItem(stringResource(R.string.settings)) { nav.push(Screen.Settings) },
@@ -261,100 +415,92 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
             if (e == null) rowMenu = null else EpisodeMenu(e, app, activity, nav, onDismiss = { rowMenu = null })
         }
 
-        if (adding) AddFeedPrompt(activity, onDismiss = { adding = false })
+        feedMenu?.let { id ->
+            val f = feeds.firstOrNull { it.id == id }
+            if (f == null) feedMenu = null else FeedMenu(f, app, activity, onDismiss = { feedMenu = null })
+        }
+
+        adding?.let { initial ->
+            // The clipboard holds an address often enough that pasting it by hand is a chore;
+            // when it does, it is offered selected, so the first key replaces it and nothing
+            // has to be cleared by holding backspace.
+            TextPrompt(
+                title = stringResource(R.string.add_feed_hint),
+                initial = initial,
+                confirm = stringResource(R.string.subscribe),
+                keyboard = androidx.compose.ui.text.input.KeyboardType.Uri,
+                selectAll = true,
+                onDone = { activity.subscribe(it); adding = null },
+                onCancel = { adding = null },
+            )
+        }
     }
 }
 
-/** The address of a feed, pasted. The keyboard's Done subscribes, as everywhere in Reader's. */
 @Composable
-fun AddFeedPrompt(activity: MainActivity, onDismiss: () -> Unit) {
-    TextPrompt(
-        title = stringResource(R.string.add_feed_hint),
-        confirm = stringResource(R.string.subscribe),
-        keyboard = androidx.compose.ui.text.input.KeyboardType.Uri,
-        onDone = { activity.subscribe(it); onDismiss() },
-        onCancel = onDismiss,
-    )
-}
+private fun Hint(text: String) = Small(text, Modifier.padding(horizontal = rowPadH, vertical = 16.dp), maxLines = 6)
 
 // ---------------------------------------------------------------------------------------------
-// The channels: the two standing lists, then the subscriptions. Choosing one takes you back to
-// the home screen showing it — the list is a way through, not a place to stay.
+// Search: over what is already here — the channels one follows and their episodes. Nothing is
+// asked of anyone else's directory, which is also why it works with the connection off.
 // ---------------------------------------------------------------------------------------------
 
 @Composable
-fun FeedsScreen(nav: Nav, app: App, activity: MainActivity) {
-    val typo = LocalTypo.current
-    val tick = rememberTick()
-    val settings by app.prefs.settings.collectAsState()
+fun SearchScreen(nav: Nav, app: App, activity: MainActivity) {
     val feeds by app.store.feeds.collectAsState()
     val all by app.store.episodes.collectAsState()
-    var menuFor by remember { mutableStateOf<Feed?>(null) }
-    var pageMenu by remember { mutableStateOf(false) }
-    var adding by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
+    var rowMenu by remember { mutableStateOf<String?>(null) }
+    val focus = remember { FocusRequester() }
     BackHandler { nav.pop() }
+    LaunchedEffect(Unit) { focus.requestFocus() }
 
-    fun choose(view: String) { app.prefs.setView(view); nav.pop() }
+    val needle = query.trim().lowercase()
+    val channels = remember(needle, feeds) {
+        if (needle.length < 2) emptyList() else feeds.filter { it.title.lowercase().contains(needle) }.sortedBy { it.title.lowercase() }
+    }
+    val episodes = remember(needle, all) {
+        if (needle.length < 2) emptyList()
+        else all.filter { it.title.lowercase().contains(needle) }.sortedByDescending { it.published }.take(300)
+    }
 
     Page {
-        Column(Modifier.fillMaxSize()) {
-            ScreenTitle(stringResource(R.string.feeds), onBack = { nav.pop() }, trailing = "⋯", onTrailing = { pageMenu = true })
+        Column(Modifier.fillMaxSize().imePadding()) {
+            ScreenTitle(stringResource(R.string.search), onBack = { nav.pop() })
+            ReaderTextField(
+                value = query,
+                onValueChange = { query = it },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = rowPadH, vertical = 12.dp).focusRequester(focus),
+                placeholder = stringResource(R.string.search_hint),
+                imeAction = ImeAction.Search,
+            )
+            Rule()
             LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(top = 4.dp, bottom = 12.dp)) {
-                if (activity.busy.isNotBlank()) {
-                    item { Small(activity.busy, Modifier.padding(horizontal = rowPadH, vertical = 8.dp)) }
+                if (needle.length >= 2 && channels.isEmpty() && episodes.isEmpty()) {
+                    item { Hint(stringResource(R.string.search_nothing)) }
                 }
-                item {
-                    val queue = remember(all) { app.store.queue().size }
-                    TextRow(
-                        stringResource(R.string.view_queue),
-                        inverted = settings.view == Prefs.VIEW_QUEUE,
-                        secondary = if (queue > 0) "$queue" else null,
-                    ) { choose(Prefs.VIEW_QUEUE) }
+                items(channels, key = { "f" + it.id }) { f ->
+                    val unheard = remember(all, f.id) { app.store.unplayedCount(f.id) }
+                    val latest = remember(all, f.id) { app.store.episodesOf(f.id).firstOrNull()?.published ?: 0L }
+                    FeedRow(f, app, latest, unheard,
+                        onClick = { app.prefs.setView(f.id); nav.home() },
+                        onLongPress = { app.prefs.setView(f.id); nav.home() })
                 }
-                item {
-                    val fresh = remember(all) { app.store.recent().size }
-                    TextRow(
-                        stringResource(R.string.view_new),
-                        inverted = settings.view == Prefs.VIEW_NEW,
-                        secondary = if (fresh > 0) "$fresh" else null,
-                    ) { choose(Prefs.VIEW_NEW) }
-                }
-                if (feeds.isNotEmpty()) item { Rule(Modifier.padding(vertical = 8.dp)) }
-                items(feeds.sortedBy { it.title.lowercase() }, key = { it.id }) { f ->
-                    val unplayed = remember(all, f.id) { app.store.unplayedCount(f.id) }
-                    val secondary = when {
-                        f.lastError.isNotBlank() -> f.lastError
-                        unplayed > 0 -> "$unplayed"
-                        else -> null
-                    }
-                    Box(Modifier.fillMaxWidth().pressable(onClick = { choose(f.id) }, onLongPress = { tick(); menuFor = f })) {
-                        TextRow(f.title, inverted = settings.view == f.id, secondary = secondary)
-                    }
+                if (channels.isNotEmpty() && episodes.isNotEmpty()) item { Rule(Modifier.padding(vertical = 6.dp)) }
+                items(episodes, key = { "e" + it.id }) { e ->
+                    EpisodeRow(
+                        e, app, activity, withFeed = true,
+                        onClick = { if (activity.ui.mediaId != e.id) activity.play(e); nav.home(); nav.push(Screen.Player) },
+                        onLongPress = { rowMenu = e.id },
+                    )
                 }
             }
-            Rule()
-            TextRow(stringResource(R.string.add_feed), size = typo.title) { adding = true }
             Box(Modifier.windowInsetsPadding(WindowInsets.navigationBars))
         }
-
-        if (pageMenu) TextMenu(null, listOf(
-            MenuItem(stringResource(R.string.refresh)) { activity.refreshAll() },
-            MenuItem(stringResource(R.string.import_opml)) { activity.importOpml() },
-            MenuItem(stringResource(R.string.export_opml), secondary = "abonnements.opml") { activity.exportOpml() },
-        ), onDismiss = { pageMenu = false })
-
-        menuFor?.let { f ->
-            TextMenu(f.title, listOf(
-                MenuItem(stringResource(R.string.refresh)) { activity.refreshOne(f.id) },
-                MenuItem(
-                    if (f.autoDownload) stringResource(R.string.auto_download_on) else stringResource(R.string.auto_download_off),
-                    secondary = stringResource(R.string.auto_download),
-                ) { app.store.updateFeed(f.id) { it.copy(autoDownload = !it.autoDownload) } },
-                MenuItem(stringResource(R.string.unsubscribe), secondary = f.url) { activity.unsubscribe(f.id) },
-            ), onDismiss = { menuFor = null })
+        rowMenu?.let { id ->
+            val e = all.firstOrNull { it.id == id }
+            if (e == null) rowMenu = null else EpisodeMenu(e, app, activity, nav, onDismiss = { rowMenu = null })
         }
-
-        if (adding) AddFeedPrompt(activity, onDismiss = { adding = false })
     }
 }
 
@@ -383,15 +529,17 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity) {
 
     Page {
         Column(Modifier.fillMaxSize()) {
-            ScreenTitle(episode.title, onBack = { nav.pop() }, trailing = "⋯", onTrailing = { menu = true })
+            ScreenTitle(
+                (if (episode.starred) "$STAR  " else "") + episode.title,
+                onBack = { nav.pop() },
+                trailing = "⋯",
+                onTrailing = { menu = true },
+            )
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                 VSpace(24.dp)
                 T(clock(pos), Modifier.padding(horizontal = rowPadH), size = typo.big, align = TextAlign.Start, maxLines = 1)
                 Small(
-                    listOfNotNull(
-                        if (dur > 0) clock(dur) else null,
-                        feed?.title,
-                    ).joinToString(" · "),
+                    listOfNotNull(if (dur > 0) clock(dur) else null, feed?.title).joinToString(" · "),
                     Modifier.padding(horizontal = rowPadH), maxLines = 1,
                 )
                 var width by remember { mutableIntStateOf(1) }
@@ -424,6 +572,9 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity) {
                     episode.downloaded -> TextRow(stringResource(R.string.remove_from_phone), secondary = stringResource(R.string.on_the_phone), size = typo.title) { activity.deleteFile(episode) }
                     else -> TextRow(stringResource(R.string.download), secondary = stringResource(R.string.streaming_hint), size = typo.title) { activity.download(episode) }
                 }
+                TextRow(stringResource(if (episode.starred) R.string.unstar else R.string.star), size = typo.title) {
+                    activity.star(episode, !episode.starred)
+                }
                 if (live.errorId == episode.id && live.error.isNotBlank() && live.id != episode.id) {
                     Small(live.error, Modifier.padding(horizontal = rowPadH, vertical = 6.dp), maxLines = 3)
                 }
@@ -455,7 +606,7 @@ private fun Control(label: String, modifier: Modifier, inverted: Boolean = false
 }
 
 // ---------------------------------------------------------------------------------------------
-// Settings: what the app does by itself, the two files it exchanges, and the look.
+// Settings: what the app opens on, what it does by itself, the two files it exchanges, the look.
 // ---------------------------------------------------------------------------------------------
 
 @Composable
@@ -468,8 +619,12 @@ fun SettingsScreen(nav: Nav, app: App, activity: MainActivity) {
         Column(Modifier.fillMaxSize()) {
             ScreenTitle(stringResource(R.string.settings), onBack = { nav.pop() })
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(top = 8.dp)) {
-                // One line per setting, as in Reader's Tasks: three rows all reading "on" above
-                // their label is a column one has to decipher rather than read.
+                // One line per setting, as in Reader's Tasks: rows all reading "on" above their
+                // label are a column one deciphers rather than reads.
+                Setting(R.string.opens_on, viewLabel(s.defaultView)) {
+                    val i = Prefs.VIEWS.indexOf(s.defaultView).let { if (it < 0) 0 else it }
+                    app.prefs.setDefaultView(Prefs.VIEWS[(i + 1) % Prefs.VIEWS.size])
+                }
                 Setting(R.string.wifi_only, onOff(s.wifiOnly)) { app.prefs.setWifiOnly(!s.wifiOnly) }
                 Setting(R.string.auto_refresh, onOff(s.autoRefresh)) { app.prefs.setAutoRefresh(!s.autoRefresh) }
                 Setting(R.string.delete_when_played, onOff(s.deleteWhenPlayed)) { app.prefs.setDeleteWhenPlayed(!s.deleteWhenPlayed) }

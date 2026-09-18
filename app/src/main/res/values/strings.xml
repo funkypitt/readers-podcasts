@@ -8,15 +8,11 @@
     <string name="back5">−5 s</string>
     <string name="fwd10">+10 s</string>
     <string name="speed">speed</string>
-    <string name="view_queue">to hear</string>
-    <string name="view_new">new</string>
-    <string name="feeds">channels</string>
     <string name="add_feed">+ a feed</string>
     <string name="add_feed_hint">the address of a feed, or of a page that carries one</string>
     <string name="subscribe">subscribe</string>
     <string name="unsubscribe">unsubscribe</string>
     <string name="refresh">refresh</string>
-    <string name="refreshing">refreshing…</string>
     <string name="adding_feed">reading the feed…</string>
     <string name="subscribed">subscribed to %s</string>
     <string name="feed_failed">that feed could not be read. %s</string>
@@ -24,9 +20,7 @@
     <string name="youtube_no_channel">no channel at that address</string>
     <string name="offline">no connection</string>
     <string name="empty_no_feeds">no subscriptions yet. + below takes the address of a feed; sharing a link to this app works too.</string>
-    <string name="empty_queue">nothing on the phone. tap the title above for the channels, ⋯ to refresh.</string>
     <string name="empty_feed">nothing here yet. ⋯ refreshes.</string>
-    <string name="unheard">%d unheard</string>
     <string name="auto_download">automatic download</string>
     <string name="auto_download_on">on</string>
     <string name="auto_download_off">off</string>
@@ -87,4 +81,18 @@
     <string name="duration_h">%1$d h %2$02d</string>
     <string name="setting_line">%1$s: %2$s</string>
     <string name="reading_feeds">reading the feeds: %1$d / %2$d</string>
+    <string name="view_channels">channels</string>
+    <string name="view_episodes">episodes</string>
+    <string name="view_favourites">favourites</string>
+    <string name="opens_on">opens on</string>
+    <string name="star">keep as a favourite</string>
+    <string name="unstar">no longer a favourite</string>
+    <string name="empty_favourites">no favourite yet. a long press on an episode keeps it here.</string>
+    <string name="search">search</string>
+    <string name="search_hint">a channel, an episode</string>
+    <string name="search_nothing">nothing of that name here</string>
+    <string name="pull_to_refresh">pull to refresh</string>
+    <string name="release_to_refresh">let go to refresh</string>
+    <string name="refreshing_n">refreshing: %1$d / %2$d</string>
+    <string name="share_target">Add to Reader\'s Podcasts</string>
 </resources>

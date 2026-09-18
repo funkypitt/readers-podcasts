@@ -38,18 +38,23 @@ class Store(private val context: Context) {
     fun episode(id: String): Episode? = _episodes.value.firstOrNull { it.id == id }
     fun episodesOf(feedId: String): List<Episode> = _episodes.value.filter { it.feedId == feedId }.sortedByDescending { it.published }
 
-    /**
-     * « À écouter » — what is ready to play: on the phone, or already begun. Started episodes
-     * come first, because one comes back to the app to carry on, not to start something new.
-     */
-    fun queue(): List<Episode> = _episodes.value
-        .filter { it.state != State.PLAYED && (it.downloaded || it.state == State.STARTED) }
-        .sortedWith(compareByDescending<Episode> { if (it.state == State.STARTED) it.lastPlayed else 0 }.thenByDescending { it.published })
+    /** « Épisodes » — everything there is, the latest first, across all the channels. */
+    fun recent(): List<Episode> = _episodes.value.sortedByDescending { it.published }
 
-    /** « Nouveautés » — everything unheard, newest first, whether or not it is downloaded. */
-    fun recent(): List<Episode> = _episodes.value
-        .filter { it.state != State.PLAYED }
-        .sortedByDescending { it.published }
+    /** « Favoris » — the episodes given a star, the latest first. */
+    fun favourites(): List<Episode> = _episodes.value.filter { it.starred }.sortedByDescending { it.published }
+
+    /**
+     * « Chaînes » — the subscriptions, the one that published last at the top. A hundred and
+     * forty channels in alphabetical order says nothing; in this order the first screen is the
+     * news.
+     */
+    fun channels(): List<Feed> {
+        val latest = _episodes.value.groupBy { it.feedId }.mapValues { (_, list) -> list.maxOf { it.published } }
+        return _feeds.value.sortedWith(
+            compareByDescending<Feed> { latest[it.id] ?: 0 }.thenBy { it.title.lowercase() }
+        )
+    }
 
     fun unplayedCount(feedId: String): Int = _episodes.value.count { it.feedId == feedId && it.state != State.PLAYED }
 
@@ -113,16 +118,17 @@ class Store(private val context: Context) {
             val old = mine[new.id] ?: return@map new
             new.copy(
                 localPath = old.localPath, positionMs = old.positionMs, state = old.state,
-                lastPlayed = old.lastPlayed, durationMs = if (new.durationMs > 0) new.durationMs else old.durationMs,
+                lastPlayed = old.lastPlayed, starred = old.starred,
+                durationMs = if (new.durationMs > 0) new.durationMs else old.durationMs,
             )
         }
         // Episodes the feed no longer lists are dropped, unless they are on the phone or begun:
         // a feed that only publishes its last ten items must not delete what one is listening to.
         val fresIds = merged.map { it.id }.toSet()
-        val orphans = mine.values.filter { it.id !in fresIds && (it.downloaded || it.state == State.STARTED) }
+        val orphans = mine.values.filter { it.id !in fresIds && (it.downloaded || it.state == State.STARTED || it.starred) }
         val all = (merged + orphans).sortedByDescending { it.published }
         // Trimming keeps the newest, and never throws away a file or a begun episode.
-        val trimmed = all.filterIndexed { i, e -> i < keep || e.downloaded || e.state == State.STARTED }
+        val trimmed = all.filterIndexed { i, e -> i < keep || e.downloaded || e.state == State.STARTED || e.starred }
         _episodes.value = _episodes.value.filterNot { it.feedId == feedId } + trimmed
         saveEpisodes(feedId)
         changed()
@@ -171,6 +177,7 @@ class Store(private val context: Context) {
                 positionMs = o.optLong("positionMs"),
                 state = runCatching { State.valueOf(o.optString("state", "NEW")) }.getOrDefault(State.NEW),
                 lastPlayed = o.optLong("lastPlayed"), description = o.optString("description"),
+                starred = o.optBoolean("starred"),
             )
         }
     }.getOrDefault(emptyList())
@@ -184,7 +191,7 @@ class Store(private val context: Context) {
                 put("id", e.id); put("title", e.title); put("published", e.published); put("mediaUrl", e.mediaUrl)
                 put("mime", e.mime); put("bytes", e.bytes); put("durationMs", e.durationMs); put("localPath", e.localPath)
                 put("positionMs", e.positionMs); put("state", e.state.name); put("lastPlayed", e.lastPlayed)
-                put("description", e.description)
+                put("description", e.description); put("starred", e.starred)
             })
         }
         runCatching { File(dir, "$feedId.json").writeText(arr.toString()) }

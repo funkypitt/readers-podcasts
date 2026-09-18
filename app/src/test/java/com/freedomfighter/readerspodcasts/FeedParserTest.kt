@@ -9,6 +9,7 @@ import com.freedomfighter.readerspodcasts.data.State
 import com.freedomfighter.readerspodcasts.data.episodeId
 import com.freedomfighter.readerspodcasts.data.Spoken
 import com.freedomfighter.readerspodcasts.data.lengthOf
+import com.freedomfighter.readerspodcasts.ui.clipboardUrl
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -227,6 +228,16 @@ class FeedParserTest {
         assertEquals(20, back.feeds.single().keepCount)
         assertTrue(back.feeds.single().autoDownload)
         assertNotNull(back.feeds.single().id)
+    }
+
+    @Test fun `the clipboard is offered only when it holds an address`() {
+        assertEquals("https://example.org/feed.xml", clipboardUrl(" https://example.org/feed.xml "))
+        assertEquals("feed://example.org/x", clipboardUrl("feed://example.org/x"))
+        // What is in a clipboard is usually a sentence, a word, or nothing at all.
+        assertEquals("", clipboardUrl("La Grande Table du 17 septembre"))
+        assertEquals("", clipboardUrl(null))
+        assertEquals("", clipboardUrl("example.org/feed.xml"))
+        assertEquals("", clipboardUrl("https://a b.example/feed"))
     }
 
     @Test fun `a length is broken up the way one says it`() {

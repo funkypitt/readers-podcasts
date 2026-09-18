@@ -49,6 +49,8 @@ data class Episode(
     val state: State = State.NEW,
     val lastPlayed: Long = 0,
     val description: String = "",
+    /** Kept by hand, with a star: the one list the app never fills or empties by itself. */
+    val starred: Boolean = false,
 ) {
     val downloaded: Boolean get() = localPath.isNotBlank()
     /** What plays: the file if it is here, the network otherwise. */

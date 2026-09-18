@@ -23,8 +23,10 @@ data class Settings(
     val autoRefresh: Boolean = true,
     /** Delete the file once the episode has been heard through. */
     val deleteWhenPlayed: Boolean = true,
-    /** Which list the home screen shows: [VIEW_QUEUE], [VIEW_NEW], or a feed's id. */
-    val view: String = Prefs.VIEW_QUEUE,
+    /** Which list the home screen shows: one of the three views, or a feed's id. */
+    val view: String = Prefs.VIEW_CHANNELS,
+    /** The one it opens on. */
+    val defaultView: String = Prefs.VIEW_CHANNELS,
 )
 
 class Prefs(context: Context) {
@@ -44,8 +46,19 @@ class Prefs(context: Context) {
         wifiOnly = sp.getBoolean("wifi_only", true),
         autoRefresh = sp.getBoolean("auto_refresh", true),
         deleteWhenPlayed = sp.getBoolean("delete_when_played", true),
-        view = sp.getString("view", VIEW_QUEUE) ?: VIEW_QUEUE,
+        defaultView = known(sp.getString("default_view", VIEW_CHANNELS)),
+        view = sp.getString("view", null) ?: known(sp.getString("default_view", VIEW_CHANNELS)),
     )
+
+    /**
+     * A view read from the settings, made sense of. The 0.1 names are mapped rather than
+     * dropped: a phone updated from it must not open on a list that no longer exists.
+     */
+    private fun known(name: String?): String = when (name) {
+        VIEW_CHANNELS, VIEW_EPISODES, VIEW_FAVOURITES -> name
+        "new" -> VIEW_EPISODES
+        else -> VIEW_CHANNELS
+    }
 
     private inline fun <reified E : Enum<E>> enumOr(name: String?, default: E): E =
         name?.let { runCatching { enumValueOf<E>(it) }.getOrNull() } ?: default
@@ -60,6 +73,7 @@ class Prefs(context: Context) {
     fun setAutoRefresh(v: Boolean) = sp.edit().putBoolean("auto_refresh", v).apply()
     fun setDeleteWhenPlayed(v: Boolean) = sp.edit().putBoolean("delete_when_played", v).apply()
     fun setView(v: String) = sp.edit().putString("view", v).apply()
+    fun setDefaultView(v: String) = sp.edit().putString("default_view", v).putString("view", v).apply()
 
     fun toggleTheme(systemIsDark: Boolean) {
         val dark = when (_settings.value.theme) { ThemeMode.DARK -> true; ThemeMode.LIGHT -> false; ThemeMode.SYSTEM -> systemIsDark }
@@ -72,7 +86,7 @@ class Prefs(context: Context) {
             "theme" to s.theme.name, "font" to s.font.name, "text_size" to s.textSize.name,
             "align" to s.align.name, "haptics" to s.haptics, "speed" to s.speed,
             "wifi_only" to s.wifiOnly, "auto_refresh" to s.autoRefresh,
-            "delete_when_played" to s.deleteWhenPlayed,
+            "delete_when_played" to s.deleteWhenPlayed, "default_view" to s.defaultView,
         )
     }
 
@@ -88,12 +102,15 @@ class Prefs(context: Context) {
         (m["wifi_only"] as? Boolean)?.let { e.putBoolean("wifi_only", it) }
         (m["auto_refresh"] as? Boolean)?.let { e.putBoolean("auto_refresh", it) }
         (m["delete_when_played"] as? Boolean)?.let { e.putBoolean("delete_when_played", it) }
+        (m["default_view"] as? String)?.let { e.putString("default_view", it) }
         e.apply()
     }
 
     companion object {
-        const val VIEW_QUEUE = "queue"
-        const val VIEW_NEW = "new"
+        const val VIEW_CHANNELS = "channels"
+        const val VIEW_EPISODES = "episodes"
+        const val VIEW_FAVOURITES = "favourites"
+        val VIEWS = listOf(VIEW_CHANNELS, VIEW_EPISODES, VIEW_FAVOURITES)
         val SPEEDS = listOf(0.8f, 1f, 1.25f, 1.5f, 1.75f, 2f)
     }
 }
