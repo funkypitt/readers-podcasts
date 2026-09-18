@@ -174,10 +174,10 @@ class MainActivity : ComponentActivity() {
                         delay(250)
                     }
                 }
-                when (nav.current) {
+                when (val screen = nav.current) {
                     Screen.Home -> HomeScreen(nav, app, activity)
                     Screen.Search -> SearchScreen(nav, app, activity)
-                    Screen.Player -> PlayerScreen(nav, app, activity)
+                    is Screen.Player -> PlayerScreen(nav, app, activity, screen.id)
                     Screen.Settings -> SettingsScreen(nav, app, activity)
                 }
             }
@@ -209,7 +209,7 @@ class MainActivity : ComponentActivity() {
         when (intent.action) {
             Intent.ACTION_SEND -> intent.getStringExtra(Intent.EXTRA_TEXT)?.let { subscribe(it) }
             Intent.ACTION_VIEW -> intent.dataString?.let { subscribe(it) }
-            ACTION_OPEN_PLAYER -> { nav.home(); if (app.store.last() != null) nav.push(Screen.Player) }
+            ACTION_OPEN_PLAYER -> { nav.home(); app.store.last()?.let { nav.push(Screen.Player(it.id)) } }
             else -> return
         }
         intent.action = null
@@ -294,9 +294,23 @@ class MainActivity : ComponentActivity() {
 
     // ---- playback, through the session ----
 
+    /**
+     * Opening an episode: its own page, and whatever that episode needs. One that cannot play
+     * yet — a YouTube entry, which is a page and not a file — starts coming down instead, and
+     * the player shows where that has got to rather than somebody else's podcast.
+     */
+    fun open(e: Episode, nav: com.freedomfighter.readerspodcasts.ui.Nav) {
+        nav.push(Screen.Player(e.id))
+        if (!e.downloaded && app.store.feed(e.feedId)?.kind == Kind.YOUTUBE) {
+            if (!DownloadService.Live.busy(e.id)) download(e)
+            return
+        }
+        if (ui.mediaId != e.id) play(e)
+    }
+
     fun play(e: Episode) {
         // A YouTube entry is a page, not a file: nothing can play until yt-dlp has been through
-        // it. Tapping such an episode starts that instead of failing on a page of HTML.
+        // it. Asking for it to play starts that instead of failing on a page of HTML.
         if (!e.downloaded && app.store.feed(e.feedId)?.kind == Kind.YOUTUBE) {
             download(e)
             toast(getString(R.string.youtube_downloads_first))

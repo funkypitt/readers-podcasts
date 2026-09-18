@@ -34,6 +34,8 @@ object Extractor {
         ready = true
     }
 
+    private const val TAG = "ReadersPodcasts"
+
     /**
      * The audio of one page, into [directory]. The file is named after the episode's id, with
      * whatever extension the chosen track turns out to have; the finished file is returned, or
@@ -45,6 +47,8 @@ object Extractor {
         directory: File,
         onProgress: (Int) -> Unit,
         cancelled: () -> Boolean,
+        /** Called when the download has to stop and fetch a newer yt-dlp first. */
+        onUpdating: () -> Unit = {},
     ): File? {
         prepare(context)
         leftovers(directory, episode.id).forEach { it.delete() }
@@ -58,19 +62,38 @@ object Extractor {
             addOption("--newline")
             addOption("--retries", "3")
         }
-        val response: YoutubeDLResponse? = runCatching {
-            YoutubeDL.getInstance().execute(request, episode.id) { progress, _, _ ->
-                onProgress(progress.toInt().coerceIn(0, 100))
-            }
-        }.getOrElse { e ->
-            // Stopping a download destroys the process, and that comes back here as a failure:
-            // it is not one, and nothing should be said about it.
+        val response: YoutubeDLResponse? = runCatching { run(request, episode.id, onProgress) }.getOrElse { first ->
             if (cancelled()) return null
-            throw e
+            // YouTube answers an old yt-dlp with 403, and says so in a warning nobody reads.
+            // Rather than leave that for the next weekly update, it is fetched here and the
+            // download tried once more — which is the whole difference between an app that
+            // works this morning and one that does not.
+            if (!stale(first)) throw IllegalStateException(tail(first.message) ?: first.javaClass.simpleName, first)
+            android.util.Log.w(TAG, "yt-dlp refusé (403) : mise à jour puis nouvel essai")
+            onUpdating()
+            runCatching { update(context) }
+            if (cancelled()) return null
+            runCatching { run(request, episode.id, onProgress) }.getOrElse { second ->
+                if (cancelled()) return null
+                throw IllegalStateException(tail(second.message) ?: second.javaClass.simpleName, second)
+            }
         }
         if (cancelled()) { leftovers(directory, episode.id).forEach { it.delete() }; return null }
         val file = leftovers(directory, episode.id).firstOrNull { !it.name.endsWith(".part") }
         return file ?: throw IllegalStateException(why(response))
+    }
+
+    private fun run(request: YoutubeDLRequest, id: String, onProgress: (Int) -> Unit): YoutubeDLResponse =
+        YoutubeDL.getInstance().execute(request, id) { progress, _, _ ->
+            onProgress(progress.toInt().coerceIn(0, 100))
+        }
+
+    /** Whether what came back is YouTube turning away a yt-dlp it considers too old. */
+    private fun stale(e: Throwable): Boolean {
+        val text = e.message.orEmpty()
+        return text.contains("403") || text.contains("Forbidden", true) ||
+            text.contains("version is out of date", true) || text.contains("nsig extraction failed", true) ||
+            text.contains("Sign in to confirm", true)
     }
 
     fun cancel(id: String) {
@@ -81,9 +104,14 @@ object Extractor {
      * yt-dlp itself, brought up to date. YouTube changes and yt-dlp follows within days, so the
      * app must not have to be rebuilt each time for a download to work again.
      */
-    fun update(context: Context): String =
-        YoutubeDL.getInstance().updateYoutubeDL(context.applicationContext, YoutubeDL.UpdateChannel.NIGHTLY)?.name
-            ?: "NOTHING"
+    fun update(context: Context): String {
+        // Without this, updating threw "not initialized" — and the caller, seeing an exception
+        // it had chosen to ignore, wrote down that yt-dlp had been brought up to date. It never
+        // was, and every download came back 403 Forbidden.
+        prepare(context)
+        return YoutubeDL.getInstance()
+            .updateYoutubeDL(context.applicationContext, YoutubeDL.UpdateChannel.NIGHTLY)?.name ?: "NOTHING"
+    }
 
     /** What version is in place, for the settings row to show rather than claim nothing. */
     fun version(context: Context): String =
@@ -99,8 +127,17 @@ object Extractor {
      * nothing else.
      */
     private fun why(response: YoutubeDLResponse?): String {
-        val err = response?.err?.trim()?.lines()?.lastOrNull { it.isNotBlank() }
-        val out = response?.out?.trim()?.lines()?.lastOrNull { it.isNotBlank() }
-        return (err ?: out ?: "yt-dlp: rien à lire").take(160)
+        val err = tail(response?.err)
+        val out = tail(response?.out)
+        return (err ?: out ?: "yt-dlp: rien à lire")
     }
+
+    /**
+     * The last few lines, not just the last one: yt-dlp says what happened over two or three
+     * lines and warns about its own age on a fourth, so a single line often named the least
+     * useful of them.
+     */
+    private fun tail(text: String?): String? = text?.trim()?.lines()
+        ?.filter { it.isNotBlank() && !it.startsWith("[download]") }
+        ?.takeLast(3)?.joinToString("\n")?.takeIf { it.isNotBlank() }?.take(400)
 }

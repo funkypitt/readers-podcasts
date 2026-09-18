@@ -24,6 +24,7 @@ object Extractor {
         directory: File,
         onProgress: (Int) -> Unit,
         cancelled: () -> Boolean,
+        onUpdating: () -> Unit = {},
     ): File? = null
 
     fun cancel(id: String) = Unit

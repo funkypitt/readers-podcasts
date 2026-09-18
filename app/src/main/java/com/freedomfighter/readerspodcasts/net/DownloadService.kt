@@ -114,7 +114,8 @@ class DownloadService : Service() {
                 } catch (e: Exception) {
                     if (!cancelled.get()) {
                         Live.errorId = job.id
-                        Live.error = (e.message ?: e.javaClass.simpleName).take(120)
+                        // Long enough to hold what yt-dlp says: the player shows it whole.
+                        Live.error = (e.message ?: e.javaClass.simpleName).trim().take(400)
                     }
                 } finally {
                     Live.id = ""; Live.percent = 0; Live.phase = ""
@@ -138,7 +139,10 @@ class DownloadService : Service() {
             Live.phase = getString(R.string.preparing_ytdlp)
             freshenYtdlp()
             return try {
-                Extractor.fetch(this, episode, app.store.audioDir(), { Live.percent = it }, { cancelled.get() })
+                Extractor.fetch(
+                    this, episode, app.store.audioDir(), { Live.percent = it }, { cancelled.get() },
+                    onUpdating = { Live.phase = getString(R.string.updating_ytdlp) },
+                )
             } finally {
                 Live.phase = ""
             }
@@ -156,8 +160,11 @@ class DownloadService : Service() {
         val last = app.prefs.settings.value.ytdlpUpdated
         if (System.currentTimeMillis() - last < 7 * 24 * 60 * 60 * 1000L) return
         Live.phase = getString(R.string.updating_ytdlp)
-        runCatching { Extractor.update(this) }
-        app.prefs.setYtdlpUpdated(System.currentTimeMillis())
+        // Only a real success is written down: an update that threw and was noted as done is
+        // an app that never updates again and answers 403 for ever.
+        if (runCatching { Extractor.update(this) }.isSuccess) {
+            app.prefs.setYtdlpUpdated(System.currentTimeMillis())
+        }
         Live.phase = getString(R.string.preparing_ytdlp)
     }
 

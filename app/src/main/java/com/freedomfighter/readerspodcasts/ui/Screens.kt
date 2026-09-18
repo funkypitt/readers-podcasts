@@ -67,7 +67,13 @@ import com.freedomfighter.readerspodcasts.net.Refresher
 sealed class Screen {
     data object Home : Screen()
     data object Search : Screen()
-    data object Player : Screen()
+
+    /**
+     * The player, for [id] — the episode one tapped, which is not always the one the audio
+     * session holds. Showing what was playing instead of what was asked for was baffling:
+     * tapping a YouTube episode that had yet to come down opened someone else's podcast.
+     */
+    data class Player(val id: String? = null) : Screen()
     data object Settings : Screen()
 }
 
@@ -175,7 +181,7 @@ fun EpisodeMenu(episode: Episode, app: App, activity: MainActivity, nav: Nav, on
     val live = DownloadService.Live
     val busy = live.busy(episode.id)
     TextMenu(episode.title, buildList {
-        if (!inPlayer) add(MenuItem(stringResource(R.string.play)) { activity.play(episode); nav.push(Screen.Player) })
+        if (!inPlayer) add(MenuItem(stringResource(R.string.play)) { activity.open(episode, nav) })
         when {
             busy -> add(MenuItem(stringResource(R.string.stop_download)) { activity.cancelDownload(episode) })
             episode.downloaded -> add(MenuItem(stringResource(R.string.remove_from_phone), secondary = stringResource(R.string.kept_in_list)) { activity.deleteFile(episode) })
@@ -378,7 +384,7 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
                         items(episodes, key = { it.id }) { e ->
                             EpisodeRow(
                                 e, app, activity, withFeed = feed == null,
-                                onClick = { if (activity.ui.mediaId != e.id) activity.play(e); nav.push(Screen.Player) },
+                                onClick = { activity.open(e, nav) },
                                 onLongPress = { rowMenu = e.id },
                             )
                         }
@@ -390,7 +396,7 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
             if (current != null) {
                 EpisodeRow(
                     current, app, activity, inverted = true, withFeed = feed == null,
-                    onClick = { nav.push(Screen.Player) },
+                    onClick = { nav.push(Screen.Player(current.id)) },
                     onLongPress = { rowMenu = current.id },
                 )
             }
@@ -493,7 +499,7 @@ fun SearchScreen(nav: Nav, app: App, activity: MainActivity) {
                 items(episodes, key = { "e" + it.id }) { e ->
                     EpisodeRow(
                         e, app, activity, withFeed = true,
-                        onClick = { if (activity.ui.mediaId != e.id) activity.play(e); nav.home(); nav.push(Screen.Player) },
+                        onClick = { nav.home(); activity.open(e, nav) },
                         onLongPress = { rowMenu = e.id },
                     )
                 }
@@ -513,13 +519,17 @@ fun SearchScreen(nav: Nav, app: App, activity: MainActivity) {
 // ---------------------------------------------------------------------------------------------
 
 @Composable
-fun PlayerScreen(nav: Nav, app: App, activity: MainActivity) {
+fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
     val typo = LocalTypo.current
     val tick = rememberTick()
     val all by app.store.episodes.collectAsState()
     val settings by app.prefs.settings.collectAsState()
     val ui = activity.ui
-    val episode = all.firstOrNull { it.id == ui.mediaId } ?: all.filter { it.lastPlayed > 0 }.maxByOrNull { it.lastPlayed }
+    // What was asked for first; only then what happens to be playing, and only then the last
+    // thing played — which is all this screen had to go on before.
+    val episode = all.firstOrNull { it.id == wanted }
+        ?: all.firstOrNull { it.id == ui.mediaId }
+        ?: all.filter { it.lastPlayed > 0 }.maxByOrNull { it.lastPlayed }
     var menu by remember { mutableStateOf(false) }
     BackHandler { nav.pop() }
     if (episode == null) { LaunchedEffect(Unit) { nav.pop() }; return }
@@ -581,8 +591,10 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity) {
                 TextRow(stringResource(if (episode.starred) R.string.unstar else R.string.star), size = typo.title) {
                     activity.star(episode, !episode.starred)
                 }
+                // The whole of it, wrapped: an error from yt-dlp says what is wrong in a sentence,
+                // and a row that cut it to one line said nothing anyone could act on.
                 if (live.errorId == episode.id && live.error.isNotBlank() && live.id != episode.id) {
-                    Small(live.error, Modifier.padding(horizontal = rowPadH, vertical = 6.dp), maxLines = 3)
+                    Small(live.error, Modifier.padding(horizontal = rowPadH, vertical = 8.dp), maxLines = 8)
                 }
                 if (episode.description.isNotBlank()) {
                     Rule(Modifier.padding(vertical = 8.dp))

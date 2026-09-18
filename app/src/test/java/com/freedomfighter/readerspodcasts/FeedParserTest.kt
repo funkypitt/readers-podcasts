@@ -138,6 +138,7 @@ class FeedParserTest {
             <link rel="alternate" href="https://www.youtube.com/watch?v=abcdefghijk" />
             <published>2026-09-17T08:00:00+00:00</published>
             <media:group>
+              <media:content url="https://www.youtube.com/v/abcdefghijk?version=3" type="application/x-shockwave-flash" width="640" height="390" />
               <media:description>Ce qui est dit.</media:description>
             </media:group>
           </entry>
@@ -150,6 +151,7 @@ class FeedParserTest {
         assertEquals(1, parsed.episodes.size)
         val e = parsed.episodes.first()
         assertEquals("Une causerie", e.title)
+        // The watch page, not the Flash embed the feed also carries: yt-dlp is given the page.
         assertEquals("https://www.youtube.com/watch?v=abcdefghijk", e.mediaUrl)
         assertEquals(episodeId("feed2", "yt:video:abcdefghijk"), e.id)
     }

@@ -246,3 +246,30 @@ contient ni yt-dlp ni Python.
 
 Vérifié sur émulateur avec deux des chaînes de l'utilisateur : abonnement par `@handle` et par
 `/channel/`, extraction (10 Mo de m4a pour dix minutes), lecture (00:06 / 10:32).
+
+
+## 14. La 0.2.2 (2026-09-18) — pourquoi rien ne se téléchargeait
+
+Trois défauts, dont deux de ma main, trouvés en traçant chaque étape sur émulateur.
+
+1. **L'adresse donnée à yt-dlp était la mauvaise.** Une entrée Atom de YouTube porte à la fois
+   `<link rel="alternate">` (la page) et `<media:content>` (l'intégration Flash de 2010,
+   `youtube.com/v/ID?version=3`), et mon analyseur préférait la seconde. yt-dlp n'en tirait
+   rien.
+2. **La mise à jour automatique de yt-dlp ne tournait jamais.** Elle appelait `updateYoutubeDL`
+   avant l'initialisation de la bibliothèque, l'exception était avalée par un `runCatching`, et
+   la date de mise à jour était écrite quand même — donc plus rien pendant une semaine, chaque
+   fois. Le yt-dlp livré (novembre 2025) restait en place et YouTube répondait **403 Forbidden**.
+3. **L'échec ne se voyait pas.** Le service mourait en silence ; rien à l'écran, rien dans le
+   journal. Le lecteur montre désormais en entier ce que yt-dlp a dit, et un échec est toujours
+   écrit dans le journal.
+
+Ajouté avec le correctif : sur un 403 ou une version jugée périmée, l'app **met yt-dlp à jour et
+réessaie une fois**, au lieu d'attendre la mise à jour hebdomadaire.
+
+**Et le défaut d'ergonomie signalé en même temps :** toucher un épisode YouTube pas encore
+téléchargé ouvrait le lecteur sur *l'épisode en cours de lecture* — un autre podcast. Le lecteur
+prend maintenant l'épisode qu'on a touché (`Screen.Player(id)`) et montre l'état de yt-dlp.
+
+Vérifié depuis une installation vierge : abonnement à une chaîne, mise à jour automatique de
+yt-dlp (2025.11 → 2026.09.16), téléchargement de 15,4 Mo, lecture à 15:54.

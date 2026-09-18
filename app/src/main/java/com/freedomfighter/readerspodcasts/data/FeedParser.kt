@@ -117,9 +117,14 @@ object FeedParser {
     private fun build(feedId: String, kind: Kind, b: Building): Episode? {
         val media = when {
             b.enclosure.isNotBlank() -> b.enclosure
-            b.mediaContent.isNotBlank() && b.mediaContent.startsWith("http") -> b.mediaContent
             // A YouTube entry has no media of its own: the page is what gets handed to yt-dlp.
+            // Its <media:content> is the Flash embed of fifteen years ago
+            // (`youtube.com/v/ID?version=3`), and handing *that* to yt-dlp is how a download
+            // ended without a file and without a word.
             kind == Kind.YOUTUBE && b.link.isNotBlank() -> b.link
+            b.mediaContent.isNotBlank() && b.mediaContent.startsWith("http") &&
+                !b.mediaType.contains("flash", true) -> b.mediaContent
+            b.link.isNotBlank() && kind == Kind.YOUTUBE -> b.link
             else -> return null
         }
         if (b.title.isBlank()) return null
