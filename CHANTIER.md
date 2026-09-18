@@ -308,3 +308,31 @@ l'amorce) est couverte par des tests.
 enregistrement personnel trouvé dans kDrive, alors qu'il avait été signalé comme confidentiel.
 Extrait, copies sur l'appareil, transcription et capture d'écran supprimés ; la règle est
 enregistrée en mémoire — un fichier du poste n'est pas un jeu de test.
+
+
+## 16. La 0.4.1 (2026-09-18) — deux corrections après le premier essai sur téléphone
+
+**Le texte restait inaccessible pendant la traduction.** La rangée d'état remplaçait la rangée
+« le texte » au lieu de s'y ajouter : le texte était écrit, sur le téléphone, et l'app le cachait
+justement quand on l'attendait. Il reste maintenant là quoi qu'il arrive.
+
+**La vitesse : mon hypothèse était fausse.** J'avais identifié l'absence de `+dotprod+i8mm` dans
+le `CMakeLists.txt` du module partagé comme le levier. Une troisième variante arm64 a été ajoutée
+et choisie d'après `/proc/cpuinfo` (`share/Cpu.kt`), mais la mesure sur le même épisode donne
+**1,23 %/min avant, 1,27 %/min après — aucun gain**. Ces instructions portent le traitement de
+l'invite, pas la génération mot à mot, qui est le gros du travail. La variante reste (5,6 Mo, et
+elle devrait servir à whisper), mais le levier est ailleurs.
+
+**Chiffres mesurés sur un Pixel 10 Pro XL**, causerie de 40 minutes :
+
+| étape | durée |
+|---|---|
+| téléchargement YouTube (19 Mo de m4a) | < 20 s |
+| mise par écrit (whisper « ordinaire ») | 27 min |
+| récupération du modèle de traduction (2,5 Go) | 2 min |
+| traduction | ~4,7 min par bloc, soit ~75 min |
+
+Le téléphone tourne déjà à 6 fils sur ses gros cœurs (1 × 3,78 GHz + 5 × 3,05 GHz). Prochain
+suspect : le plafond de 640 mots-jetons par bloc et le **second essai** que déclenche le garde-fou
+de proportion — un bloc qui déborde coûte double. À instrumenter (durée et jetons par bloc, taux
+de relance) avant de toucher quoi que ce soit d'autre.

@@ -637,6 +637,14 @@ fun TextRows(episode: Episode, app: App, activity: MainActivity, nav: Nav) {
     val live = TranscribeService.Live
     val mine = live.id == episode.id
     val reading = Prefs.deviceLanguage()
+    // A text already written stays readable whatever else is going on: hiding it while its
+    // translation was being worked out took away the very thing one had waited for.
+    if (episode.transcript) {
+        TextRow(
+            stringResource(R.string.read_text),
+            secondary = stringResource(R.string.read_text_hint), size = typo.title,
+        ) { nav.push(Screen.Text(episode.id)) }
+    }
     when {
         mine -> TextRow(
             TranscribeService.phaseLabel(context, live.phase, live.percent),
@@ -648,13 +656,7 @@ fun TextRows(episode: Episode, app: App, activity: MainActivity, nav: Nav) {
             secondary = stringResource(R.string.stop_transcription), size = typo.title,
         ) { activity.cancelTranscription() }
 
-        episode.transcript -> {
-            TextRow(
-                stringResource(R.string.read_text),
-                secondary = stringResource(R.string.read_text_hint), size = typo.title,
-            ) { nav.push(Screen.Text(episode.id)) }
-            TranslateRow(episode, activity, reading)
-        }
+        episode.transcript -> TranslateRow(episode, activity, reading)
 
         !episode.downloaded -> TextRow(
             stringResource(R.string.transcribe),
