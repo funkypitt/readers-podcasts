@@ -27,6 +27,8 @@ data class Settings(
     val view: String = Prefs.VIEW_CHANNELS,
     /** The one it opens on. */
     val defaultView: String = Prefs.VIEW_CHANNELS,
+    /** When yt-dlp was last brought up to date, in the build that has one. */
+    val ytdlpUpdated: Long = 0,
 )
 
 class Prefs(context: Context) {
@@ -50,6 +52,7 @@ class Prefs(context: Context) {
         // The stored view goes through the same mapping: a phone updated from 0.1 held "queue"
         // there, and a name nothing answers to left the screen empty under a title that lied.
         view = stored(sp.getString("view", null)) ?: known(sp.getString("default_view", VIEW_CHANNELS)),
+        ytdlpUpdated = sp.getLong("ytdlp_updated", 0),
     )
 
     /**
@@ -83,6 +86,7 @@ class Prefs(context: Context) {
     fun setAutoRefresh(v: Boolean) = sp.edit().putBoolean("auto_refresh", v).apply()
     fun setDeleteWhenPlayed(v: Boolean) = sp.edit().putBoolean("delete_when_played", v).apply()
     fun setView(v: String) = sp.edit().putString("view", v).apply()
+    fun setYtdlpUpdated(at: Long) = sp.edit().putLong("ytdlp_updated", at).apply()
     fun setDefaultView(v: String) = sp.edit().putString("default_view", v).putString("view", v).apply()
 
     fun toggleTheme(systemIsDark: Boolean) {

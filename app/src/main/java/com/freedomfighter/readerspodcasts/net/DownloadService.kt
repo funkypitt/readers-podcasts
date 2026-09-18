@@ -20,6 +20,7 @@ import com.freedomfighter.readerspodcasts.App
 import com.freedomfighter.readerspodcasts.MainActivity
 import com.freedomfighter.readerspodcasts.R
 import com.freedomfighter.readerspodcasts.data.Episode
+import com.freedomfighter.readerspodcasts.data.Kind
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -60,6 +61,7 @@ class DownloadService : Service() {
         when (intent?.action) {
             ACTION_CANCEL -> {
                 cancelled.set(true); queue.clear(); Live.waiting.clear()
+                if (Live.id.isNotBlank()) Extractor.cancel(Live.id)
                 if (!running) finish()
                 return START_NOT_STICKY
             }
@@ -69,8 +71,9 @@ class DownloadService : Service() {
                     queue.removeAll { it.id == id }
                     Live.waiting.remove(id)
                     // The one being fetched right now can only be stopped by stopping the loop,
-                    // which then carries on with whatever else was queued.
-                    if (Live.id == id) cancelled.set(true)
+                    // which then carries on with whatever else was queued. yt-dlp runs in a
+                    // process of its own and has to be told separately.
+                    if (Live.id == id) { cancelled.set(true); Extractor.cancel(id) }
                 }
                 if (!running) finish()
                 return START_NOT_STICKY
@@ -114,18 +117,52 @@ class DownloadService : Service() {
                         Live.error = (e.message ?: e.javaClass.simpleName).take(120)
                     }
                 } finally {
-                    Live.id = ""; Live.percent = 0
+                    Live.id = ""; Live.percent = 0; Live.phase = ""
                 }
             }
         } finally {
             ticker.cancel()
-            Live.id = ""; Live.percent = 0; Live.waiting.clear()
+            Live.id = ""; Live.percent = 0; Live.phase = ""; Live.waiting.clear()
             running = false
         }
     }
 
-    /** Returns the finished file, or null if it was stopped on the way. */
+    /**
+     * The audio of one episode. A YouTube entry points at a page rather than at a file, so it
+     * goes to yt-dlp; everything else is an ordinary, resumable HTTP download.
+     */
     private fun fetch(episode: Episode): File? {
+        val kind = app.store.feed(episode.feedId)?.kind
+        if (kind == Kind.YOUTUBE) {
+            if (!Extractor.AVAILABLE) throw IllegalStateException(getString(R.string.youtube_not_here))
+            Live.phase = getString(R.string.preparing_ytdlp)
+            freshenYtdlp()
+            return try {
+                Extractor.fetch(this, episode, app.store.audioDir(), { Live.percent = it }, { cancelled.get() })
+            } finally {
+                Live.phase = ""
+            }
+        }
+        return fetchOverHttp(episode)
+    }
+
+    /**
+     * yt-dlp, kept current without being asked. YouTube changes and yt-dlp follows within days;
+     * an app that waited to be told would simply stop working one morning, with an error about
+     * a version nobody had thought about. Once a week, and a failure here is not one: the
+     * download is attempted all the same.
+     */
+    private fun freshenYtdlp() {
+        val last = app.prefs.settings.value.ytdlpUpdated
+        if (System.currentTimeMillis() - last < 7 * 24 * 60 * 60 * 1000L) return
+        Live.phase = getString(R.string.updating_ytdlp)
+        runCatching { Extractor.update(this) }
+        app.prefs.setYtdlpUpdated(System.currentTimeMillis())
+        Live.phase = getString(R.string.preparing_ytdlp)
+    }
+
+    /** Returns the finished file, or null if it was stopped on the way. */
+    private fun fetchOverHttp(episode: Episode): File? {
         val target = File(app.store.audioDir(), fileName(episode))
         val part = File(target.parentFile, target.name + ".part")
         var have = if (part.exists()) part.length() else 0L
@@ -199,7 +236,12 @@ class DownloadService : Service() {
         val waiting = Live.waiting.size
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(title)
-            .setContentText(if (waiting > 0) getString(R.string.downloading_with_queue, Live.percent, waiting) else getString(R.string.downloading, Live.percent))
+            .setContentText(
+                Live.phase.ifBlank {
+                    if (waiting > 0) getString(R.string.downloading_with_queue, Live.percent, waiting)
+                    else getString(R.string.downloading, Live.percent)
+                }
+            )
             .setSmallIcon(R.drawable.ic_note)
             .setContentIntent(open)
             .setOnlyAlertOnce(true).setOngoing(true).setShowWhen(false)
@@ -212,6 +254,8 @@ class DownloadService : Service() {
     object Live {
         var id by mutableStateOf("")
         var percent by mutableIntStateOf(0)
+        /** What is going on before the percentages start, or "": unpacking yt-dlp, mostly. */
+        var phase by mutableStateOf("")
         var error by mutableStateOf("")
         var errorId by mutableStateOf("")
         val waiting = mutableStateListOf<String>()

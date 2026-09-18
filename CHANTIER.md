@@ -111,7 +111,7 @@ Mener les deux de front a un intérêt précis : figer tôt `abonnements.opml` e
 | Version | Contenu | Ordre de grandeur |
 |---|---|---|
 | 0.1 | ✅ **faite le 2026-09-18** — abonnements RSS, actualisation, téléchargements, lecture avec reprise, OPML + JSON, Android **et** desktop | le gros morceau |
-| 0.2 | YouTube dans la variante privée (flux de chaîne + extraction audio), nettoyage auto | moyen |
+| 0.2 | ✅ **faite le 2026-09-18** — YouTube dans la variante privée (flux de chaîne + extraction audio) | moyen |
 | 0.3 | Transcription (submodule `speech`), export `.txt`, points principaux | petit — presque tout est écrit |
 | 0.4 | Traduction gemma3:4b, affichage synchronisé texte/traduction, tap-pour-sauter | moyen |
 | 0.5 | Widget, six langues, F-Droid + site, paquets desktop | petit |
@@ -219,3 +219,30 @@ m'a fait passer à côté.
 sorti du magasin dans `channelsByLatest`, typé `Long` de bout en bout, et un test le vérifie avec
 des chaînes vides dans le lot. Avant/après prouvé sur émulateur : la 0.1.2 plante sur cet état,
 la 0.1.3 non.
+
+
+## 13. La 0.2 (2026-09-18) — YouTube dans la variante privée
+
+`io.github.junkfood02.youtubedl-android:library:0.18.1`, en `priveImplementation` seulement.
+L'extraction vit dans `src/prive/…/Extractor.kt`, avec un substitut de même forme dans
+`src/publique` : le code d'appel ne sait pas dans quelle variante il tourne, et l'APK public ne
+contient ni yt-dlp ni Python.
+
+- `-f bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio`, pas de conversion, donc **pas de
+  ffmpeg** : ce que YouTube sert déjà se lit tel quel.
+- Un épisode YouTube **se télécharge avant de s'écouter** : son adresse est une page, pas un
+  fichier. Le toucher lance le téléchargement au lieu d'échouer sur du HTML.
+- **yt-dlp est tenu à jour tout seul**, une fois par semaine au premier téléchargement YouTube,
+  et une ligne des réglages le fait à la demande en affichant la version en place. Sans cela
+  l'app cesse de fonctionner un matin sur une erreur de version : le yt-dlp livré avec la
+  bibliothèque (2025.11) était déjà trop vieux, et le premier essai a échoué exactement ainsi.
+- **Résoudre un `@handle`** demande de lire la page de la chaîne : elle fait 2,4 Mo et ne dit
+  son identifiant qu'au 740ᵉ kilo-octet. La page est donc lue par morceaux, examinée au fil de
+  l'eau, et la connexion coupée dès que l'identifiant paraît — lire une tête fixe de 256 Ko ne
+  trouvait rien et refermer un flux à moitié lu laissait la connexion se vider pour rien.
+- La privée porte **le même identifiant de paquet** que la publique et un `versionCode` de
+  1000 + le public : elle s'installe par-dessus l'app F-Droid en gardant les abonnements et les
+  positions, et F-Droid ne la remplace pas par une version « plus récente ».
+
+Vérifié sur émulateur avec deux des chaînes de l'utilisateur : abonnement par `@handle` et par
+`/channel/`, extraction (10 Mo de m4a pour dix minutes), lecture (00:06 / 10:32).

@@ -153,6 +153,7 @@ fun episodeStatus(episode: Episode, app: App, activity: MainActivity, withFeed: 
     val when_ = relativeDate(context, episode.published)
     val length = if (duration > 0) spoken(context, duration) else ""
     val state = when {
+        live.id == episode.id && live.phase.isNotBlank() -> live.phase
         live.id == episode.id -> stringResource(R.string.downloading, live.percent)
         episode.id in live.waiting -> stringResource(R.string.download_waiting)
         live.errorId == episode.id && live.error.isNotBlank() -> live.error
@@ -569,7 +570,10 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity) {
                 }
                 Rule(Modifier.padding(vertical = 8.dp))
                 when {
-                    live.id == episode.id -> TextRow(stringResource(R.string.downloading, live.percent), secondary = stringResource(R.string.stop_download), size = typo.title) { activity.cancelDownload(episode) }
+                    live.id == episode.id -> TextRow(
+                        live.phase.ifBlank { stringResource(R.string.downloading, live.percent) },
+                        secondary = stringResource(R.string.stop_download), size = typo.title,
+                    ) { activity.cancelDownload(episode) }
                     episode.id in live.waiting -> TextRow(stringResource(R.string.download_waiting), secondary = stringResource(R.string.stop_download), size = typo.title) { activity.cancelDownload(episode) }
                     episode.downloaded -> TextRow(stringResource(R.string.remove_from_phone), secondary = stringResource(R.string.on_the_phone), size = typo.title) { activity.deleteFile(episode) }
                     else -> TextRow(stringResource(R.string.download), secondary = stringResource(R.string.streaming_hint), size = typo.title) { activity.download(episode) }
@@ -645,6 +649,19 @@ fun SettingsScreen(nav: Nav, app: App, activity: MainActivity) {
                     app.prefs.setFont(when (s.font) { FontChoice.SANS -> FontChoice.SERIF; FontChoice.SERIF -> FontChoice.MONO; FontChoice.MONO -> FontChoice.SANS })
                 }
                 Setting(R.string.haptics, onOff(s.haptics)) { app.prefs.setHaptics(!s.haptics) }
+                if (com.freedomfighter.readerspodcasts.net.Extractor.AVAILABLE) {
+                    Rule(Modifier.padding(vertical = 8.dp))
+                    // The app keeps yt-dlp current by itself, once a week; this row is for the
+                    // morning when YouTube changes and one does not want to wait for the week.
+                    // It shows the version in place, so "already up to date" can be checked.
+                    val context = LocalContext.current
+                    val version = remember(activity.busy) { com.freedomfighter.readerspodcasts.net.Extractor.version(context) }
+                    TextRow(
+                        stringResource(R.string.update_ytdlp),
+                        secondary = activity.busy.ifBlank { version.ifBlank { stringResource(R.string.update_ytdlp_hint) } },
+                        size = typo.title,
+                    ) { activity.updateYtdlp() }
+                }
                 Rule(Modifier.padding(vertical = 8.dp))
                 TextRow(
                     stringResource(R.string.app_name) + "  " + com.freedomfighter.readerspodcasts.BuildConfig.VERSION_NAME,

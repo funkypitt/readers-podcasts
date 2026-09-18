@@ -31,9 +31,11 @@ import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionToken
 import com.freedomfighter.readerspodcasts.data.Backup
 import com.freedomfighter.readerspodcasts.data.Episode
+import com.freedomfighter.readerspodcasts.data.Kind
 import com.freedomfighter.readerspodcasts.data.Opml
 import com.freedomfighter.readerspodcasts.data.State
 import com.freedomfighter.readerspodcasts.net.DownloadService
+import com.freedomfighter.readerspodcasts.net.Extractor
 import com.freedomfighter.readerspodcasts.net.Refresher
 import com.freedomfighter.readerspodcasts.ui.HomeScreen
 import com.freedomfighter.readerspodcasts.ui.LocalColors
@@ -261,6 +263,15 @@ class MainActivity : ComponentActivity() {
         app.store.deleteFile(e.id)
     }
 
+    /** yt-dlp itself, brought up to date from the settings. */
+    fun updateYtdlp() = lifecycleScope.launch {
+        busy = getString(R.string.updating_ytdlp)
+        val result = withContext(Dispatchers.IO) { runCatching { Extractor.update(this@MainActivity) } }
+        busy = ""
+        result.onSuccess { toast(getString(if (it == "DONE") R.string.ytdlp_updated else R.string.ytdlp_current)) }
+            .onFailure { toast((it.message ?: it.javaClass.simpleName).take(120)) }
+    }
+
     /** The star, which is the one list the app never fills or empties by itself. */
     fun star(e: Episode, starred: Boolean) = app.store.updateEpisode(e.id) { it.copy(starred = starred) }
 
@@ -284,6 +295,13 @@ class MainActivity : ComponentActivity() {
     // ---- playback, through the session ----
 
     fun play(e: Episode) {
+        // A YouTube entry is a page, not a file: nothing can play until yt-dlp has been through
+        // it. Tapping such an episode starts that instead of failing on a page of HTML.
+        if (!e.downloaded && app.store.feed(e.feedId)?.kind == Kind.YOUTUBE) {
+            download(e)
+            toast(getString(R.string.youtube_downloads_first))
+            return
+        }
         val c = controller ?: run { pendingPlay = e; return }
         if (c.currentMediaItem?.mediaId == e.id && c.playbackState != Player.STATE_IDLE) {
             if (c.playbackState == Player.STATE_ENDED) c.seekTo(0)

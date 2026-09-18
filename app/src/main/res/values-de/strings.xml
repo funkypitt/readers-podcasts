@@ -95,4 +95,11 @@
     <string name="release_to_refresh">loslassen zum Aktualisieren</string>
     <string name="refreshing_n">wird aktualisiert: %1$d / %2$d</string>
     <string name="share_target">Zu Reader\'s Podcasts hinzufügen</string>
+    <string name="preparing_ytdlp">yt-dlp wird vorbereitet…</string>
+    <string name="update_ytdlp">yt-dlp aktualisieren</string>
+    <string name="update_ytdlp_hint">YouTube ändert sich; yt-dlp folgt in wenigen Tagen</string>
+    <string name="updating_ytdlp">yt-dlp wird aktualisiert…</string>
+    <string name="ytdlp_updated">yt-dlp aktualisiert</string>
+    <string name="ytdlp_current">yt-dlp ist schon aktuell</string>
+    <string name="youtube_downloads_first">diese Folge wird erst geladen, dann gespielt</string>
 </resources>

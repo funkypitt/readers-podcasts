@@ -4,7 +4,7 @@ Un lecteur de podcasts qui ne montre que du texte, dans la ligne des autres apps
 Les abonnements, les téléchargements, la lecture avec reprise — et rien d'autre à l'écran que
 des lignes qu'on peut toucher.
 
-État : **0.1.1**. Voir `CHANTIER.md` pour le plan complet et la suite (YouTube en 0.2,
+État : **0.2.0**. Voir `CHANTIER.md` pour le plan complet et la suite (YouTube en 0.2,
 transcription en 0.3, traduction en 0.4).
 
 ## Ce que fait la 0.1
@@ -26,10 +26,23 @@ transcription en 0.3, traduction en 0.4).
 
 ## Les deux variantes
 
-`prive` et `publique`, sur le patron de Clavier Plume. La variante privée est celle qui
-recevra l'abonnement aux chaînes YouTube (0.2, avec yt-dlp embarqué) ; la publique n'en
-contiendra pas une ligne. En 0.1 `BuildConfig.YOUTUBE` est `false` des deux côtés, et une
-adresse YouTube est refusée en toutes lettres plutôt que récupérée vide.
+`prive` et `publique`, sur le patron de Clavier Plume.
+
+La **privée** s'abonne aux chaînes YouTube. Un abonnement à une chaîne n'a rien de particulier —
+YouTube publie `feeds/videos.xml?channel_id=…`, un flux Atom ordinaire ; ce qui diffère est le
+média, une page de visionnage et non un fichier, et c'est yt-dlp qui en tire la piste audio.
+L'app garde yt-dlp à jour toute seule, une fois par semaine, parce que YouTube change et que
+yt-dlp suit en quelques jours. Elle porte le même identifiant de paquet que la publique et un
+`versionCode` bien plus haut : elle s'installe donc par-dessus, garde les abonnements et les
+positions, et F-Droid ne la remplace pas.
+
+La **publique** n'en contient pas une ligne : ni yt-dlp, ni le Python qu'il fait tourner. Le
+code d'extraction vit dans `src/prive`, avec un substitut de même forme dans `src/publique`,
+si bien que rien ailleurs dans l'app n'a à savoir dans quelle variante il tourne. Une adresse
+YouTube y est refusée en toutes lettres plutôt que récupérée vide.
+
+**Licence.** youtubedl-android est en GPLv3 alors que le reste est en MIT : c'est pourquoi la
+variante privée n'est pas distribuée. La publique reste MIT et propre.
 
     ./gradlew assemblePriveDebug        # l'APK de travail
     ./gradlew assemblePubliqueRelease   # celui qui se publie

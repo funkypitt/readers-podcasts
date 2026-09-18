@@ -97,4 +97,11 @@
     <string name="release_to_refresh">отпустите, чтобы обновить</string>
     <string name="refreshing_n">обновление: %1$d / %2$d</string>
     <string name="share_target">Добавить в Reader\'s Podcasts</string>
+    <string name="preparing_ytdlp">подготовка yt-dlp…</string>
+    <string name="update_ytdlp">обновить yt-dlp</string>
+    <string name="update_ytdlp_hint">YouTube меняется, yt-dlp догоняет за пару дней</string>
+    <string name="updating_ytdlp">обновление yt-dlp…</string>
+    <string name="ytdlp_updated">yt-dlp обновлён</string>
+    <string name="ytdlp_current">yt-dlp уже обновлён</string>
+    <string name="youtube_downloads_first">этот сначала загружается, потом играет</string>
 </resources>

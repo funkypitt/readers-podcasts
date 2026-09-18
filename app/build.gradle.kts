@@ -12,8 +12,8 @@ android {
         applicationId = "com.freedomfighter.readerspodcasts"
         minSdk = 29
         targetSdk = 34
-        versionCode = 4
-        versionName = "0.1.3"
+        versionCode = 5
+        versionName = "0.2.0"
     }
 
     flavorDimensions += "audience"
@@ -24,8 +24,17 @@ android {
         create("prive") {
             dimension = "audience"
             isDefault = true
-            applicationIdSuffix = ".prive"
-            buildConfigField("boolean", "YOUTUBE", "false")
+            buildConfigField("boolean", "YOUTUBE", "true")
+            // Same package as the published app, signed with the same key: the private build
+            // installs over it and keeps the subscriptions and the listening positions. The
+            // version code is lifted well above the public one so that F-Droid, which only ever
+            // offers something newer, never quietly puts the public build back in its place.
+            versionCode = 1000 + (android.defaultConfig.versionCode ?: 1)
+            versionNameSuffix = "-prive"
+            // yt-dlp carries its own Python, one copy per architecture. Two are kept — the
+            // phone's and the emulator's — rather than the four the library ships with; the
+            // public build has no native code at all.
+            ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
         }
         create("publique") {
             dimension = "audience"
@@ -51,6 +60,9 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:1.5.1")
     implementation("androidx.media3:media3-session:1.5.1")
     debugImplementation("androidx.compose.ui:ui-tooling")
+    // yt-dlp and its Python, in the private build only: the public APK carries none of it.
+    // GPLv3, which is why that build is never distributed — see README.
+    "priveImplementation"("io.github.junkfood02.youtubedl-android:library:0.18.1")
     testImplementation("junit:junit:4.13.2")
     // A pull parser on the JVM, so the feed reader can be tested without a device.
     testImplementation("net.sf.kxml:kxml2:2.3.0")
