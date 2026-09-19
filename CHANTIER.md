@@ -418,3 +418,19 @@ déjà. Trois tests passent sur émulateur x86_64, avec et sans détection.
 **Et le rendu, vérifié à l'écran** : la ligne « qualité de transcription · 574 MB · recommandé · … »
 était coupée. Les trois apps parlent maintenant la même langue courte — *ordinaire* / *soignée*,
 et « 574 MB · recommandé · à récupérer » tient.
+
+## 19. La langue parlée ne se devine plus (2026-09-19)
+
+Deux causeries mises par écrit dans la mauvaise langue parce que la feuille proposait celle du
+téléphone et qu'on l'a laissée. Une heure d'attente pour s'en apercevoir à la fin : il n'y a plus
+de valeur par défaut. La feuille s'ouvre sur la liste des langues, la ligne dit « à choisir » tant
+que rien n'est dit, et l'action reste éteinte — la même convention que le bouton « s'abonner » du
+« + », qui ne s'allume que lorsqu'on a tapé quelque chose.
+
+L'action s'appelle désormais « commencer » : « mettre par écrit » ne tenait pas dans une demi-rangée
+et s'affichait « mettre par… ». Vérifié à l'écran, avec un flux RSS local d'une minute (la même
+lecture LibriVox que le banc) servi sur 10.0.2.2 : sans langue rien ne part, avec « français »
+l'action s'allume.
+
+Les deux autres apps gardent la langue du téléphone par défaut ; c'est aux Podcasts que le
+problème se pose, une causerie n'étant pas forcément dans la langue de celui qui l'écoute.

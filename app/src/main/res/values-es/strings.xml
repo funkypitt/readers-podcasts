@@ -2,6 +2,7 @@
 <resources>
     <string name="app_name">Reader\'s Podcasts</string>
     <string name="action_ok">ok</string>
+    <string name="action_start">empezar</string>
     <string name="action_cancel">cancelar</string>
     <string name="play">reproducir</string>
     <string name="stop">parar</string>
@@ -129,6 +130,7 @@
     <string name="model_not_yet">por descargar</string>
     <string name="recommended">recomendado</string>
     <string name="quality_high_hint">4 veces más lenta</string>
+    <string name="language_to_choose">por elegir</string>
     <string name="quality_normal">corriente</string>
     <string name="quality_high">cuidada</string>
     <string name="language">lengua hablada</string>

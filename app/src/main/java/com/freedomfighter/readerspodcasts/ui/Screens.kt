@@ -710,9 +710,12 @@ fun TranscribeSheet(episode: Episode, activity: MainActivity, onDismiss: () -> U
     val context = LocalContext.current
     val colors = LocalColors.current
     val typo = LocalTypo.current
-    var language by remember { mutableStateOf(Prefs.deviceLanguage()) }
+    // No language until one is chosen. The phone's own language as a default was twice taken for
+    // granted over a talk that was in another one, and an hour of writing down is too long a wait
+    // to find that out at the end. So the list opens by itself and nothing runs before an answer.
+    var language by remember { mutableStateOf<String?>(null) }
     var quality by remember { mutableStateOf(Models.DEFAULT) }
-    var picking by remember { mutableStateOf(false) }
+    var picking by remember { mutableStateOf(true) }
     val downloading by Models.downloading.collectAsState()
     BackHandler(onBack = onDismiss)
     Box(Modifier.fillMaxSize().background(colors.bg.copy(alpha = 0.6f)).noRippleClickable(onClick = onDismiss)) {
@@ -722,7 +725,10 @@ fun TranscribeSheet(episode: Episode, activity: MainActivity, onDismiss: () -> U
         ) {
             Rule(color = colors.fg)
             Small(episode.title, Modifier.padding(horizontal = rowPadH).padding(top = 14.dp, bottom = 2.dp), maxLines = 1)
-            TextRow(spokenLanguage(language), secondary = stringResource(R.string.language), size = typo.title) { picking = true }
+            TextRow(
+                language?.let { spokenLanguage(it) } ?: stringResource(R.string.language_to_choose),
+                secondary = stringResource(R.string.language), size = typo.title,
+            ) { picking = true }
             Rule(Modifier.padding(vertical = 4.dp))
             Models.ALL.forEach { m ->
                 val state = when {
@@ -746,9 +752,17 @@ fun TranscribeSheet(episode: Episode, activity: MainActivity, onDismiss: () -> U
             Row(Modifier.fillMaxWidth()) {
                 Box(Modifier.weight(1f)) { TextRow(stringResource(R.string.action_cancel), onClick = onDismiss) }
                 Box(Modifier.weight(1f)) {
-                    TextRow(stringResource(R.string.transcribe), inverted = true) {
-                        activity.transcribe(episode, language, quality); onDismiss()
-                    }
+                    // Inert until the language is settled: the only thing left to say.
+                    val chosen = language
+                    // "Start", not "write it down": half a row is not wide enough for the long
+                    // label, and the sheet says what it is about already.
+                    TextRow(
+                        stringResource(R.string.action_start),
+                        inverted = chosen != null,
+                        onClick = if (chosen == null) null else {
+                            { activity.transcribe(episode, chosen, quality); onDismiss() }
+                        },
+                    )
                 }
             }
         }

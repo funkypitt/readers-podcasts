@@ -2,6 +2,7 @@
 <resources>
     <string name="app_name">Reader\'s Podcasts</string>
     <string name="action_ok">ок</string>
+    <string name="action_start">начать</string>
     <string name="action_cancel">отмена</string>
     <string name="play">воспроизвести</string>
     <string name="stop">стоп</string>
@@ -131,6 +132,7 @@
     <string name="model_not_yet">нужно скачать</string>
     <string name="recommended">рекомендуется</string>
     <string name="quality_high_hint">вчетверо медленнее</string>
+    <string name="language_to_choose">выбрать</string>
     <string name="quality_normal">обычная</string>
     <string name="quality_high">тщательная</string>
     <string name="language">язык речи</string>
