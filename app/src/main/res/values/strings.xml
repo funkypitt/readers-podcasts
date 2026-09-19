@@ -60,6 +60,7 @@
     <string name="nothing_older">nothing older here</string>
     <string name="load_older">load more episodes</string>
     <string name="load_older_hint">the feed only carries the latest fifteen</string>
+    <string name="read_on">read on…</string>
     <string name="chapters">chapters</string>
     <string name="chapters_of">%d chapters</string>
     <string name="copied">copied</string>

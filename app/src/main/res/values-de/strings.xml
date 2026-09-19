@@ -60,6 +60,7 @@
     <string name="nothing_older">nichts Älteres</string>
     <string name="load_older">mehr Beiträge laden</string>
     <string name="load_older_hint">der Feed trägt nur die letzten fünfzehn</string>
+    <string name="read_on">weiterlesen…</string>
     <string name="chapters">Kapitel</string>
     <string name="chapters_of">%d Kapitel</string>
     <string name="copied">kopiert</string>

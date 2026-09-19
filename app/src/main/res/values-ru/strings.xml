@@ -60,6 +60,7 @@
     <string name="nothing_older">старее ничего нет</string>
     <string name="load_older">загрузить ещё выпуски</string>
     <string name="load_older_hint">в ленте только последние пятнадцать</string>
+    <string name="read_on">читать дальше…</string>
     <string name="chapters">главы</string>
     <string name="chapters_of">глав: %d</string>
     <string name="copied">скопировано</string>

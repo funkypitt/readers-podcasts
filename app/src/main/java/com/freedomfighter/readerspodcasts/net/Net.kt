@@ -23,6 +23,9 @@ object Net {
         c.readTimeout = 60_000
         c.setRequestProperty("User-Agent", AGENT)
         c.setRequestProperty("Accept-Encoding", "gzip")
+        // Without it, a reader in Europe asking for a channel page is sent to YouTube's consent
+        // page, which names no channel: a `@handle` then resolves to nothing. Measured from here.
+        if (URL(url).host.endsWith("youtube.com")) c.setRequestProperty("Cookie", "SOCS=CAI")
         if (range > 0) c.setRequestProperty("Range", "bytes=$range-")
         val code = c.responseCode
         if (code in 301..308 && hops < 5) {

@@ -14,6 +14,7 @@ import com.freedomfighter.readerspodcasts.data.State
 import com.freedomfighter.readerspodcasts.data.Store
 import com.freedomfighter.readerspodcasts.data.feedId
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** Fetching subscriptions: adding one, and bringing them all up to date. */
@@ -63,6 +64,7 @@ object Refresher {
     suspend fun refresh(context: Context, store: Store, feed: Feed): Boolean = withContext(Dispatchers.IO) {
         try {
             val parsed = fetch(feed.url, feed.id, feed.kind)
+            val before = store.episodesOf(feed.id).map { it.id }.toSet()
             store.merge(feed.id, parsed.episodes)
             store.updateFeed(feed.id) {
                 it.copy(
@@ -71,7 +73,7 @@ object Refresher {
                     lastFetch = System.currentTimeMillis(), lastError = "",
                 )
             }
-            if (feed.autoDownload) queueNew(context, store, feed.id)
+            if (feed.autoDownload) queueNew(context, store, feed.id, before)
             true
         } catch (e: Exception) {
             store.updateFeed(feed.id) { it.copy(lastError = (e.message ?: e.javaClass.simpleName).take(120)) }
@@ -89,19 +91,33 @@ object Refresher {
         Live.total = feeds.size
         Live.running = feeds.size
         try {
-            feeds.forEach { f ->
-                refresh(context, store, f)
-                Live.running -= 1
+            // Four at a time: a hundred and forty feeds one after the other took two minutes,
+            // nearly all of it spent waiting for servers to answer. The store takes its writes
+            // one at a time whoever asks, so nothing else has to change.
+            val gate = kotlinx.coroutines.sync.Semaphore(4)
+            kotlinx.coroutines.coroutineScope {
+                feeds.forEach { f ->
+                    launch {
+                        gate.acquire()
+                        try { refresh(context, store, f) } finally { gate.release(); Live.running = (Live.running - 1).coerceAtLeast(1) }
+                    }
+                }
             }
         } finally {
             Live.running = 0
         }
     }
 
-    /** After a refresh of a feed set to download by itself: whatever is new and not yet here. */
-    private fun queueNew(context: Context, store: Store, feedId: String) {
+    /**
+     * After a refresh of a feed set to download by itself: what this refresh brought, and only
+     * that. It used to take "whatever is unheard and not here", three at a time — so turning the
+     * option on for an old channel quietly worked its way back through fifty episodes nobody had
+     * asked for, three more at every refresh.
+     */
+    private fun queueNew(context: Context, store: Store, feedId: String, before: Set<String>) {
+        if (before.isEmpty()) return   // a first fetch: everything is "new", and nothing was asked for
         store.episodesOf(feedId)
-            .filter { it.state == State.NEW && !it.downloaded }
+            .filter { it.id !in before && it.state == State.NEW && !it.downloaded }
             .take(3)
             .forEach { DownloadService.start(context, it.id) }
     }

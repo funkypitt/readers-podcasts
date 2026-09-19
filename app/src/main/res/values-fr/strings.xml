@@ -60,6 +60,7 @@
     <string name="nothing_older">rien de plus ancien</string>
     <string name="load_older">charger plus d\'épisodes</string>
     <string name="load_older_hint">le flux ne porte que les quinze derniers</string>
+    <string name="read_on">lire la suite…</string>
     <string name="chapters">chapitres</string>
     <string name="chapters_of">%d chapitres</string>
     <string name="copied">copié</string>

@@ -175,18 +175,29 @@ fun ScreenTitle(
             .padding(horizontal = rowPadH, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // The arrow is a thing to hit in its own right; the title is another — inside a channel
+        // the one goes back to the channels and the other opens the choice of lists, and when
+        // they shared a single touch area only one of the two could ever be reached.
+        if (onBack != null) {
+            Box(
+                Modifier.size(glyphTarget).noRippleClickable(onClick = onBack),
+                contentAlignment = Alignment.CenterStart,
+            ) { T("←", size = LocalTypo.current.title, color = colors.dim, align = TextAlign.Start) }
+        }
         Row(
             Modifier.weight(1f).then(
-                if (onBack != null) Modifier.noRippleClickable(onClick = onBack)
-                else if (onTitle != null) Modifier.noRippleClickable(onClick = onTitle) else Modifier
+                when {
+                    onTitle != null -> Modifier.noRippleClickable(onClick = onTitle)
+                    onBack != null -> Modifier.noRippleClickable(onClick = onBack)
+                    else -> Modifier
+                }
             ),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (onBack != null) {
-                T("←", size = LocalTypo.current.title, color = colors.dim, align = TextAlign.Start)
-                Spacer(Modifier.height(0.dp).padding(horizontal = 8.dp))
-            }
-            T(title, size = LocalTypo.current.title, color = colors.dim, maxLines = 1, align = TextAlign.Start)
+            // The name gives way, never the sign after it: a long channel name used to push the
+            // ▾ off the end of the line, and with it the only hint that the title opens anything.
+            T(title, Modifier.weight(1f, fill = false), size = LocalTypo.current.title, color = colors.dim, maxLines = 1, align = TextAlign.Start)
+            if (onTitle != null) T("  ▾", size = LocalTypo.current.title, color = colors.dim, maxLines = 1, softWrap = false)
         }
         // Each sign gets a square of its own to be hit in, and a gap of untouchable space
         // between them: side by side with nothing in between, ↻ and + shared a border, and a
@@ -230,13 +241,21 @@ fun LinkedText(
     size: TextUnit = LocalTypo.current.tile,
     color: Color = LocalColors.current.fg,
     maxLines: Int = Int.MAX_VALUE,
+    /** Told whether the text ran past [maxLines], so the caller can offer the rest. */
+    onOverflow: (Boolean) -> Unit = {},
     onCopied: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
     val colors = LocalColors.current
     val typo = LocalTypo.current
     val clipboard = LocalClipboardManager.current
-    val spans = remember(text) { LINK.findAll(text).map { it.range to it.value }.toList() }
+    // The full stop that ends the sentence is not part of the address that ends it.
+    val spans = remember(text) {
+        LINK.findAll(text).map { m ->
+            val clean = m.value.trimEnd('.', ',', ';', ':', '!', '?', '…')
+            (m.range.first until m.range.first + clean.length) to clean
+        }.filter { it.second.length > 4 }.toList()
+    }
     val annotated = remember(text, spans) {
         buildAnnotatedString {
             append(text)
@@ -268,7 +287,9 @@ fun LinkedText(
                 onLongPress = { where ->
                     val what = linkAt(where) ?: text
                     clipboard.setText(AnnotatedString(what))
-                    onCopied(what)
+                    // From Android 13 the system shows what was copied itself, over the foot of
+                    // the screen; saying it a second time underneath would only be hidden by it.
+                    if (android.os.Build.VERSION.SDK_INT < 33) onCopied(what)
                 },
             )
         },
@@ -281,9 +302,29 @@ fun LinkedText(
             textAlign = TextAlign.Start,
         ),
         maxLines = maxLines,
-        onTextLayout = { layout = it },
+        onTextLayout = { layout = it; onOverflow(it.hasVisualOverflow) },
         overflow = TextOverflow.Ellipsis,
     )
+}
+
+/**
+ * A message in passing, across the foot of the screen, inverted so that it is seen and above
+ * everything so that no sheet hides it. A tap sends it away before its time.
+ */
+@Composable
+fun Notice(text: String, onDismiss: () -> Unit) {
+    if (text.isBlank()) return
+    val colors = LocalColors.current
+    Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.navigationBars), contentAlignment = Alignment.BottomCenter) {
+        // A stripe of background above it: the row of what is playing is inverted too, and the
+        // two ran into one white block in which neither could be told from the other.
+        Column(Modifier.fillMaxWidth().background(colors.bg).padding(top = 4.dp)) {
+            Box(
+                Modifier.fillMaxWidth().background(colors.fg).noRippleClickable(onClick = onDismiss)
+                    .padding(horizontal = rowPadH, vertical = 14.dp)
+            ) { T(text, size = LocalTypo.current.small * 1.15f, color = colors.bg, align = TextAlign.Start, maxLines = 6) }
+        }
+    }
 }
 
 /** Full-screen page frame with the theme background. */

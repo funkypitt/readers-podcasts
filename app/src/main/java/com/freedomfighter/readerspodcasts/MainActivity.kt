@@ -200,6 +200,7 @@ class MainActivity : ComponentActivity() {
                     is Screen.Text -> TextScreen(nav, app, activity, screen.id)
                     Screen.Settings -> SettingsScreen(nav, app, activity)
                 }
+                com.freedomfighter.readerspodcasts.ui.Notice(notice) { notice = "" }
             }
         }
     }
@@ -457,7 +458,21 @@ class MainActivity : ComponentActivity() {
     fun setSpeed(f: Float) { app.prefs.setSpeed(f); controller?.setPlaybackSpeed(f) }
     fun stopPlayback() { controller?.sendCustomCommand(SessionCommand(PlaybackService.ACTION_STOP, Bundle.EMPTY), Bundle.EMPTY) }
 
-    fun toast(text: String) = Toast.makeText(this, text, Toast.LENGTH_LONG).show()
+    /**
+     * What the app has to say in passing — subscribed, copied, why a feed failed. The system's own
+     * toasts came up as an empty grey pill on this theme, which is worse than silence when the
+     * message is an error; and a line of the app's own text is the app's own look anyway.
+     */
+    var notice by mutableStateOf("")
+        private set
+    private var noticeJob: kotlinx.coroutines.Job? = null
+
+    fun toast(text: String) {
+        notice = text
+        noticeJob?.cancel()
+        // Long enough to read a sentence; an error of several lines gets longer.
+        noticeJob = lifecycleScope.launch { delay(2500L + text.length * 45L); notice = "" }
+    }
 
     @Composable
     private fun Bars() {

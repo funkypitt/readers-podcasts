@@ -89,6 +89,12 @@ sealed class Screen {
 }
 
 class Nav {
+    /** What was being searched for, so that coming back from an episode finds the results again. */
+    var searchQuery by mutableStateOf("")
+    /** Where each list of the home screen was left: a hundred and forty channels are not scrolled twice. */
+    private val lists = HashMap<String, androidx.compose.foundation.lazy.LazyListState>()
+    fun listState(view: String) = lists.getOrPut(view) { androidx.compose.foundation.lazy.LazyListState() }
+
     val stack = mutableStateListOf<Screen>(Screen.Home)
     val current: Screen get() = stack.last()
     fun push(s: Screen) { if (stack.last() != s) stack.add(s) }
@@ -193,7 +199,7 @@ fun EpisodeMenu(episode: Episode, app: App, activity: MainActivity, nav: Nav, on
     val live = DownloadService.Live
     val busy = live.busy(episode.id)
     TextMenu(episode.title, buildList {
-        if (!inPlayer) add(MenuItem(stringResource(R.string.play)) { activity.open(episode, nav) })
+        if (!inPlayer) add(MenuItem(stringResource(R.string.play)) { activity.open(episode, nav); activity.play(episode) })
         when {
             busy -> add(MenuItem(stringResource(R.string.stop_download)) { activity.cancelDownload(episode) })
             episode.downloaded -> add(MenuItem(stringResource(R.string.remove_from_phone), secondary = stringResource(R.string.kept_in_list)) { activity.deleteFile(episode) })
@@ -347,18 +353,22 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
     Page {
         Column(Modifier.fillMaxSize()) {
             ScreenTitle(
-                title = (feed?.title ?: viewLabel(view)) + "  ▾",
-                onBack = null,
+                title = feed?.title ?: viewLabel(view),
+                // Inside a channel there is somewhere to go back to, and an arrow that says so.
+                onBack = if (feed != null) ({ app.prefs.setView(Prefs.VIEW_CHANNELS) }) else null,
                 trailing = "⋯",
                 onTrailing = { menu = true },
                 onTitle = { views = true },
-                actions = listOf(
+                // Inside a channel the bar is for that channel: ↻ fetches it alone, and adding
+                // another feed belongs to the lists — which leaves the name room to be read.
+                actions = if (feed != null) listOf("↻" to { activity.refreshOne(feed.id); Unit })
+                else listOf(
                     "↻" to { activity.refreshAll() },
                     "+" to { adding = clipboardUrl(clipboard.getText()?.text) },
                 ),
             )
-            PullToRefresh(onRefresh = { activity.refreshAll() }, modifier = Modifier.weight(1f)) { pulled ->
-                LazyColumn(pulled.fillMaxSize(), contentPadding = PaddingValues(top = 4.dp, bottom = 12.dp)) {
+            PullToRefresh(onRefresh = { if (feed != null) activity.refreshOne(feed.id) else activity.refreshAll() }, modifier = Modifier.weight(1f)) { pulled ->
+                LazyColumn(pulled.fillMaxSize(), state = nav.listState(feed?.id ?: view), contentPadding = PaddingValues(top = 4.dp, bottom = 12.dp)) {
                     if (Refresher.Live.running > 0) {
                         item {
                             Small(
@@ -435,7 +445,7 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
         }, onDismiss = { views = false })
 
         if (menu) TextMenu(null, buildList {
-            add(MenuItem(stringResource(R.string.search)) { nav.push(Screen.Search) })
+            add(MenuItem(stringResource(R.string.search)) { nav.searchQuery = ""; nav.push(Screen.Search) })
             add(MenuItem(stringResource(R.string.refresh)) { activity.refreshAll() })
             add(MenuItem(stringResource(R.string.add_feed)) { adding = clipboardUrl(clipboard.getText()?.text) })
             add(MenuItem(stringResource(R.string.import_opml)) { activity.importOpml() })
@@ -484,11 +494,12 @@ private fun Hint(text: String) = Small(text, Modifier.padding(horizontal = rowPa
 fun SearchScreen(nav: Nav, app: App, activity: MainActivity) {
     val feeds by app.store.feeds.collectAsState()
     val all by app.store.episodes.collectAsState()
-    var query by remember { mutableStateOf("") }
+    var query by nav::searchQuery
     var rowMenu by remember { mutableStateOf<String?>(null) }
     val focus = remember { FocusRequester() }
     BackHandler { nav.pop() }
-    LaunchedEffect(Unit) { focus.requestFocus() }
+    // The keyboard comes up for a new search, not over results one is coming back to.
+    LaunchedEffect(Unit) { if (query.isBlank()) focus.requestFocus() }
 
     val needle = query.trim().lowercase()
     val channels = remember(needle, feeds) {
@@ -525,7 +536,7 @@ fun SearchScreen(nav: Nav, app: App, activity: MainActivity) {
                 items(episodes, key = { "e" + it.id }) { e ->
                     EpisodeRow(
                         e, app, activity, withFeed = true,
-                        onClick = { nav.home(); activity.open(e, nav) },
+                        onClick = { activity.open(e, nav) },
                         onLongPress = { rowMenu = e.id },
                     )
                 }
@@ -570,30 +581,46 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
 
     Page {
         Column(Modifier.fillMaxSize()) {
+            // The bar names the channel; the episode's own title is given room below, in full.
+            // It used to sit in the bar, cut after thirty letters, and could be read nowhere.
             ScreenTitle(
-                (if (episode.starred) "$STAR  " else "") + episode.title,
+                feed?.title.orEmpty(),
                 onBack = { nav.pop() },
                 trailing = "⋯",
                 onTrailing = { menu = true },
+                actions = listOf((if (episode.starred) STAR else "☆") to { activity.star(episode, !episode.starred) }),
             )
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                VSpace(24.dp)
-                // The reading is one tap from here, level with the clock, where there was empty
-                // space: it used to take finding a row further down, which nobody did.
+                VSpace(14.dp)
+                T(episode.title, Modifier.padding(horizontal = rowPadH), align = TextAlign.Start, maxLines = 5)
+                Small(
+                    listOf(relativeDate(context, episode.published), if (dur > 0) spoken(context, dur) else "")
+                        .filter { it.isNotBlank() }.joinToString(" · "),
+                    Modifier.padding(horizontal = rowPadH).padding(top = 2.dp), maxLines = 1,
+                )
+                VSpace(10.dp)
+                // Level with the clock, the two things one reaches for while listening: the speed,
+                // which turns on a tap, and the text when there is one to read along.
                 Row(Modifier.fillMaxWidth().padding(horizontal = rowPadH), verticalAlignment = Alignment.CenterVertically) {
                     T(clock(pos), Modifier.weight(1f), size = typo.big, align = TextAlign.Start, maxLines = 1)
+                    T(
+                        speedLabel(settings.speed),
+                        Modifier.noRippleClickable(onClick = {
+                            tick()
+                            val i = Prefs.SPEEDS.indexOf(settings.speed).let { if (it < 0) 1 else it }
+                            activity.setSpeed(Prefs.SPEEDS[(i + 1) % Prefs.SPEEDS.size])
+                        }).padding(start = 16.dp, top = 12.dp, bottom = 12.dp),
+                        size = typo.title, align = TextAlign.End, maxLines = 1,
+                    )
                     if (episode.transcript) {
                         T(
                             stringResource(R.string.read_text),
-                            Modifier.noRippleClickable(onClick = { nav.push(Screen.Text(episode.id)) }).padding(start = 12.dp, top = 8.dp, bottom = 8.dp),
+                            Modifier.noRippleClickable(onClick = { nav.push(Screen.Text(episode.id)) })
+                                .padding(start = 24.dp, top = 12.dp, bottom = 12.dp),
                             size = typo.title, align = TextAlign.End, maxLines = 1,
                         )
                     }
                 }
-                Small(
-                    listOfNotNull(if (dur > 0) clock(dur) else null, feed?.title).joinToString(" · "),
-                    Modifier.padding(horizontal = rowPadH), maxLines = 1,
-                )
                 var width by remember { mutableIntStateOf(1) }
                 Box(
                     Modifier.fillMaxWidth().padding(horizontal = rowPadH).height(44.dp)
@@ -608,14 +635,10 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
                         },
                     contentAlignment = Alignment.Center
                 ) { Progress(if (dur > 0) (pos.toFloat() / dur).coerceIn(0f, 1f) else 0f) }
-                Row(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                Row(Modifier.fillMaxWidth()) {
                     Control(stringResource(R.string.back5), Modifier.weight(1f)) { tick(); if (current) activity.seekBy(-5_000) }
                     Control(if (playing) "❚❚" else "▶", Modifier.weight(1f), inverted = playing) { tick(); if (current) activity.toggle() else activity.play(episode) }
                     Control(stringResource(R.string.fwd10), Modifier.weight(1f)) { tick(); if (current) activity.seekBy(10_000) }
-                }
-                TextRow(speedLabel(settings.speed), secondary = stringResource(R.string.speed), size = typo.title) {
-                    val i = Prefs.SPEEDS.indexOf(settings.speed).let { if (it < 0) 1 else it }
-                    activity.setSpeed(Prefs.SPEEDS[(i + 1) % Prefs.SPEEDS.size])
                 }
                 // Chapters, when the description holds a list of them: the row says where one is
                 // and opens the whole table, and a chapter chosen sends the sound to its start.
@@ -628,6 +651,29 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
                         size = typo.title,
                     ) { showChapters = true }
                 }
+                // What the episode is about comes before what can be done with it: one opens an
+                // episode to find out whether to listen, and the notes used to start under the
+                // fold, below five rows of actions. Long notes are folded, not the other way round.
+                if (episode.description.isNotBlank()) {
+                    Rule(Modifier.padding(vertical = 8.dp))
+                    var unfolded by remember(episode.id) { mutableStateOf(false) }
+                    var overflows by remember(episode.id) { mutableStateOf(false) }
+                    LinkedText(
+                        episode.description, Modifier.padding(horizontal = rowPadH, vertical = 6.dp),
+                        size = typo.title,
+                        maxLines = if (unfolded) Int.MAX_VALUE else 8,
+                        onOverflow = { if (!unfolded) overflows = it },
+                        onCopied = { activity.toast(context.getString(R.string.copied)) },
+                    )
+                    if (overflows && !unfolded) {
+                        Small(
+                            stringResource(R.string.read_on),
+                            Modifier.fillMaxWidth().noRippleClickable(onClick = { unfolded = true })
+                                .padding(horizontal = rowPadH, vertical = 10.dp),
+                            maxLines = 1,
+                        )
+                    }
+                }
                 Rule(Modifier.padding(vertical = 8.dp))
                 when {
                     live.id == episode.id -> TextRow(
@@ -638,23 +684,11 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
                     episode.downloaded -> TextRow(stringResource(R.string.remove_from_phone), secondary = stringResource(R.string.on_the_phone), size = typo.title) { activity.deleteFile(episode) }
                     else -> TextRow(stringResource(R.string.download), secondary = stringResource(R.string.streaming_hint), size = typo.title) { activity.download(episode) }
                 }
-                TextRow(stringResource(if (episode.starred) R.string.unstar else R.string.star), size = typo.title) {
-                    activity.star(episode, !episode.starred)
-                }
-                Rule(Modifier.padding(vertical = 8.dp))
                 TextRows(episode, app, activity, nav)
                 // The whole of it, wrapped: an error from yt-dlp says what is wrong in a sentence,
                 // and a row that cut it to one line said nothing anyone could act on.
                 if (live.errorId == episode.id && live.error.isNotBlank() && live.id != episode.id) {
                     Small(live.error, Modifier.padding(horizontal = rowPadH, vertical = 8.dp), maxLines = 8)
-                }
-                if (episode.description.isNotBlank()) {
-                    Rule(Modifier.padding(vertical = 8.dp))
-                    LinkedText(
-                        episode.description, Modifier.padding(horizontal = rowPadH, vertical = 8.dp),
-                        size = typo.title,
-                        onCopied = { activity.toast(context.getString(R.string.copied)) },
-                    )
                 }
                 VSpace(16.dp)
             }

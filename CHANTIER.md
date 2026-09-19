@@ -509,3 +509,34 @@ qu'une date fausse : la ligne montre la durée à la place.
 
 Non vérifié sur appareil (émulateur pris) : le retour de `yt-dlp --flat-playlist` a été éprouvé sur
 le poste contre une chaîne publique, pas sur le téléphone.
+
+## 22. La 1.0 : relecture complète, à l'écran (2026-09-19)
+
+Relecture par un autre modèle (Fable 5.1) du travail accumulé, avec un émulateur enfin libre —
+donc en regardant chaque écran plutôt qu'en compilant. Ce que les captures ont montré :
+
+- **Le ▾ du titre disparaissait** derrière un nom de chaîne long (« Lectures du domai… ») : le seul
+  indice que le titre ouvre un choix. Le nom cède désormais, jamais le signe. Dans une chaîne, la
+  barre gagne un **←** vers les chaînes, ↻ n'actualise qu'elle, et le + — qui n'y avait rien à
+  faire — laisse sa place au nom.
+- **Les toasts du système s'affichaient vides** (une pastille grise sans texte) : tous les messages,
+  erreurs comprises, étaient donc muets. Remplacés par un bandeau de l'app, inversé, détaché de la
+  rangée « en cours » par un filet, et qu'un appui renvoie. Sur Android 13+ la copie d'un lien ne
+  dit plus « copié » : le système le montre déjà, par-dessus.
+- **Le lecteur commençait par cinq rangées d'actions** et la description arrivait sous la ligne de
+  flottaison, alors que l'usage est « ouvrir, lire, décider ». Refondu : titre en entier (il était
+  coupé à trente lettres dans la barre et lisible nulle part), date et durée, horloge avec la
+  vitesse et « texte » à sa droite, commandes, chapitres, **puis les notes** (repliées à huit
+  lignes, « lire la suite… »), puis télécharger et mettre par écrit. L'étoile passe dans la barre.
+- « écouter » dans le menu d'un épisode n'écoutait plus depuis que l'appui n'ouvre que l'écran.
+- La recherche perdait sa requête au retour d'un épisode, et toutes les listes repartaient du haut
+  (seul l'écran du dessus est composé) : l'une et les autres sont gardées dans `Nav`.
+- Le point final d'une phrase faisait partie du lien qui la terminait.
+
+Et dans le code : **l'actualisation passait les flux un par un** (deux minutes pour cent quarante) —
+quatre à la fois désormais ; **le téléchargement automatique prenait « tout ce qui n'est pas
+écouté », trois par actualisation** — donc l'activer sur une vieille chaîne rapatriait sans bruit
+cinquante épisodes ; il ne prend plus que ce que l'actualisation vient d'apporter. Et une adresse
+`@nom` se résolvait vers la page de consentement de YouTube depuis l'Europe (cookie `SOCS`).
+
+« Charger plus d'épisodes » et l'écran de lecture ont été éprouvés sur l'émulateur, yt-dlp compris.
