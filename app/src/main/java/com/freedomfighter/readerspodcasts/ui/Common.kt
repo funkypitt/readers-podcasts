@@ -31,6 +31,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -136,6 +139,10 @@ fun TextRow(
  * Title line at the top of a screen. Tapping it goes back, or opens whatever [onTitle] says.
  * [actions] are the signs to its right, in order, before [trailing]: refresh and add, then ⋯.
  */
+/** A sign in the title bar is hit with a thumb, not a stylus: a square, and room around it. */
+private val glyphTarget = 44.dp
+private val glyphGap = 12.dp
+
 @Composable
 fun ScreenTitle(
     title: String,
@@ -150,7 +157,10 @@ fun ScreenTitle(
         Modifier
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.statusBars)
-            .padding(horizontal = rowPadH, vertical = 14.dp),
+            // A bar of one height everywhere, tall enough to hold a square a thumb can hit. The
+            // padding used to set the height; now it only keeps the title off the squares.
+            .heightIn(min = 56.dp)
+            .padding(horizontal = rowPadH, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
@@ -166,23 +176,24 @@ fun ScreenTitle(
             }
             T(title, size = LocalTypo.current.title, color = colors.dim, maxLines = 1, align = TextAlign.Start)
         }
-        actions.forEach { (label, action) ->
-            T(
-                label,
-                Modifier.noRippleClickable(onClick = action).padding(horizontal = 10.dp),
-                size = LocalTypo.current.title,
-                color = colors.dim,
-                align = TextAlign.End,
-            )
+        // Each sign gets a square of its own to be hit in, and a gap of untouchable space
+        // between them: side by side with nothing in between, ↻ and + shared a border, and a
+        // thumb aiming at one had every chance of getting the other.
+        actions.forEachIndexed { i, (label, action) ->
+            if (i > 0) Spacer(Modifier.width(glyphGap))
+            Box(
+                Modifier.size(glyphTarget).noRippleClickable(onClick = action),
+                contentAlignment = Alignment.Center,
+            ) { T(label, size = LocalTypo.current.title, color = colors.dim, align = TextAlign.Center) }
         }
         if (trailing != null) {
-            T(
-                trailing,
-                Modifier.then(if (onTrailing != null) Modifier.noRippleClickable(onClick = onTrailing) else Modifier)
-                    .padding(start = if (actions.isEmpty()) 0.dp else 6.dp),
-                size = LocalTypo.current.title,
-                align = TextAlign.End
-            )
+            if (actions.isNotEmpty()) Spacer(Modifier.width(glyphGap))
+            Box(
+                Modifier.size(glyphTarget)
+                    .then(if (onTrailing != null) Modifier.noRippleClickable(onClick = onTrailing) else Modifier),
+                // Flush with the margin, as it was: the square grows towards the inside.
+                contentAlignment = Alignment.CenterEnd,
+            ) { T(trailing, size = LocalTypo.current.title, align = TextAlign.End) }
         }
     }
     Rule()
