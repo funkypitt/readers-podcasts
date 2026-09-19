@@ -1,3 +1,5 @@
+![Reader's Podcasts](docs/banner.png)
+
 # Reader's Podcasts
 
 Un lecteur de podcasts qui ne montre que du texte, dans la ligne des autres apps Reader's.
@@ -81,3 +83,7 @@ Les identifiants sont calculés (`sha1(url)` pour une chaîne, `sha1(feedId|guid
 `InteropTest` lit les fichiers écrits par l'app desktop (`app/src/test/resources`) et laisse les
 siens dans `app/build/interop/`, que `tools/check-interop.py` du dépôt desktop relit. Une dérive
 d'un côté ou de l'autre échoue là plutôt que sur le téléphone de quelqu'un.
+
+## Captures d'écran
+
+<img src="docs/screenshot-1.png" width="30%"> <img src="docs/screenshot-2.png" width="30%">
