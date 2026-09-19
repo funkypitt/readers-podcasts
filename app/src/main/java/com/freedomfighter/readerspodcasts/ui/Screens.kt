@@ -57,6 +57,7 @@ import com.freedomfighter.readerspodcasts.data.Episode
 import com.freedomfighter.readerspodcasts.data.Feed
 import com.freedomfighter.readerspodcasts.data.FontChoice
 import com.freedomfighter.readerspodcasts.data.Prefs
+import com.freedomfighter.readerspodcasts.data.feedLanguage
 import com.freedomfighter.readerspodcasts.data.State
 import com.freedomfighter.readerspodcasts.data.TextSize
 import com.freedomfighter.readerspodcasts.data.clock
@@ -713,6 +714,11 @@ fun TranscribeSheet(episode: Episode, activity: MainActivity, onDismiss: () -> U
     // No language until one is chosen. The phone's own language as a default was twice taken for
     // granted over a talk that was in another one, and an hour of writing down is too long a wait
     // to find that out at the end. So the list opens by itself and nothing runs before an answer.
+    // What this channel was last written down in is ticked and put first — a suggestion one taps,
+    // not a choice made on one's behalf.
+    val suggested = remember(episode.feedId) {
+        feedLanguage(activity.app.store.episodes.value, episode.feedId)
+    }
     var language by remember { mutableStateOf<String?>(null) }
     var quality by remember { mutableStateOf(Models.DEFAULT) }
     var picking by remember { mutableStateOf(true) }
@@ -767,9 +773,18 @@ fun TranscribeSheet(episode: Episode, activity: MainActivity, onDismiss: () -> U
             }
         }
     }
-    if (picking) TextMenu(stringResource(R.string.language), Prompts.choices(Prefs.deviceLanguage()).map { code ->
-        MenuItem(spokenLanguage(code), secondary = if (code == language) "✓" else null) { language = code }
-    }, onDismiss = { picking = false })
+    if (picking) TextMenu(
+        stringResource(R.string.language),
+        (listOfNotNull(suggested) + Prompts.choices(Prefs.deviceLanguage())).distinct().map { code ->
+            val ticked = code == (language ?: suggested)
+            MenuItem(
+                spokenLanguage(code),
+                secondary = if (ticked && code == suggested && language == null) stringResource(R.string.language_last_time)
+                            else if (ticked) "✓" else null,
+            ) { language = code }
+        },
+        onDismiss = { picking = false },
+    )
 }
 
 /** The language whisper is told to expect; "" means it works it out for itself. */

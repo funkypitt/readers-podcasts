@@ -434,3 +434,13 @@ l'action s'allume.
 
 Les deux autres apps gardent la langue du téléphone par défaut ; c'est aux Podcasts que le
 problème se pose, une causerie n'étant pas forcément dans la langue de celui qui l'écoute.
+
+**La chaîne se souvient, sans décider.** Une chaîne est presque toujours dans une seule langue :
+celle du dernier épisode mis par écrit pour cette chaîne-là ouvre la liste, marquée « la dernière
+fois ». C'est une suggestion qu'on tape, jamais un choix fait à la place de l'auditeur — l'action
+reste éteinte tant qu'on n'a rien dit. Elle n'est pas rangée dans un réglage de plus : elle se lit
+dans les épisodes eux-mêmes (`feedLanguage`), puisqu'un épisode garde la langue dans laquelle il a
+été écrit — celle qu'on a demandée, ou celle que whisper a entendue quand on l'a laissé trouver,
+ce qui est la meilleure des deux suggestions. Vérifié à l'écran sur un flux local de deux épisodes,
+le premier marqué comme déjà écrit en allemand : la liste s'ouvre sur « deutsch · la dernière
+fois », sans doublon, et rien ne part avant qu'on y touche.

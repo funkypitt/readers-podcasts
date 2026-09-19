@@ -95,6 +95,20 @@ fun lengthOf(ms: Long): Spoken {
 }
 
 /**
+ * The language this channel was last written down in, or null when it never was.
+ *
+ * A channel is nearly always spoken in one language, and being asked it afresh every time is a
+ * chore — but a language taken for granted is what wrote two talks down in the wrong one. So this
+ * is a suggestion, ticked in the list and never chosen on the listener's behalf. It is read from
+ * the transcripts themselves rather than kept as a setting: an episode records the language it was
+ * written down in, which is the one that was asked for, or the one whisper heard when it was left
+ * to work it out — and that is the better suggestion of the two.
+ */
+fun feedLanguage(episodes: List<Episode>, feedId: String): String? =
+    episodes.filter { it.feedId == feedId && it.transcript && it.transcriptLanguage.isNotBlank() }
+        .maxByOrNull { it.published }?.transcriptLanguage
+
+/**
  * The channels, the one that published last at the top; those with nothing yet fall to the
  * bottom in the order of their names. Kept apart from the store, and typed in Long throughout:
  * `?: 0` here mixed an Int among the Longs, and the comparator threw the moment one channel had

@@ -10,6 +10,7 @@ import com.freedomfighter.readerspodcasts.data.episodeId
 import com.freedomfighter.readerspodcasts.data.Spoken
 import com.freedomfighter.readerspodcasts.data.Episode
 import com.freedomfighter.readerspodcasts.data.channelsByLatest
+import com.freedomfighter.readerspodcasts.data.feedLanguage
 import com.freedomfighter.readerspodcasts.data.lengthOf
 import com.freedomfighter.readerspodcasts.data.Prefs
 import com.freedomfighter.readerspodcasts.ui.clipboardUrl
@@ -333,5 +334,19 @@ class FeedParserTest {
         // Under a minute it is seconds: a rounded "0 min" is not a length.
         assertEquals(Spoken(0, 0, 12), lengthOf(12_000L))
         assertEquals(Spoken(0, 0, 0), lengthOf(0))
+    }
+
+    @Test fun aChannelSuggestsTheLanguageItWasLastWrittenDownIn() {
+        val episodes = listOf(
+            Episode(id = "a", feedId = "f", title = "vieux", mediaUrl = "http://x/a.mp3", published = 100, transcript = true, transcriptLanguage = "de"),
+            Episode(id = "b", feedId = "f", title = "récent", mediaUrl = "http://x/b.mp3", published = 200, transcript = true, transcriptLanguage = "fr"),
+            // Never written down, and another channel's: neither should count.
+            Episode(id = "c", feedId = "f", title = "jamais", mediaUrl = "http://x/c.mp3", published = 300),
+            Episode(id = "d", feedId = "g", title = "ailleurs", mediaUrl = "http://x/d.mp3", published = 400, transcript = true, transcriptLanguage = "ru"),
+        )
+        assertEquals("fr", feedLanguage(episodes, "f"))
+        assertEquals("ru", feedLanguage(episodes, "g"))
+        assertEquals(null, feedLanguage(episodes, "h"))
+        assertEquals(null, feedLanguage(emptyList(), "f"))
     }
 }

@@ -130,6 +130,7 @@
     <string name="model_not_yet">por descargar</string>
     <string name="recommended">recomendado</string>
     <string name="quality_high_hint">4 veces más lenta</string>
+    <string name="language_last_time">la última vez</string>
     <string name="language_to_choose">por elegir</string>
     <string name="quality_normal">corriente</string>
     <string name="quality_high">cuidada</string>
