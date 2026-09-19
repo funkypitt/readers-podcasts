@@ -477,3 +477,35 @@ Et la progression de la traduction avance **à l'intérieur d'un bloc** : un sho
 et un chiffre figé à 0 % pendant des minutes passait — à juste titre — pour un plantage.
 
 Non vérifié sur appareil : l'émulateur est pris par un autre travail.
+
+## 21. Chapitres, liens, et le reste d'une chaîne YouTube (0.5.0, 2026-09-19)
+
+**Les liens d'une description se suivent et se gardent.** Une description est l'endroit où un
+podcast met ce dont il parle — un livre, une page, un formulaire — et un mur de texte brut les
+rendait inatteignables : il fallait les retaper. Un appui ouvre l'adresse, un appui long la copie ;
+un appui long ailleurs copie tout le texte, ce qu'on veut quand l'intéressant est un nom plutôt
+qu'un lien (`LinkedText`, dans le lecteur et en tête de l'écran de lecture).
+
+**Le chapitrage vient de la description elle-même**, pour les podcasts comme pour YouTube : les
+deux mondes écrivent leurs chapitres de la même façon, et c'est exactement ce que YouTube lit pour
+tracer ses propres repères. Rien à aller chercher. Le danger était de lire une table là où il n'y
+en a pas — « il en parle à 12:30 » n'est pas un chapitre : il en faut **au moins deux, dans
+l'ordre, et aucun au-delà de la fin de l'épisode** (`Chapters`, 3 tests couvrant les deux coutumes
+d'écriture, la prose qui cite une heure, et le désordre). Le lecteur montre le chapitre où l'on est
+et ouvre la table ; un chapitre choisi y envoie le son.
+
+**« Charger plus d'épisodes »** sur une chaîne YouTube (build privée : il faut yt-dlp). Le flux
+Atom de YouTube est **une fenêtre sur les quinze derniers**, pas un catalogue — et le constat au
+passage : `merge()` jetait donc à chaque actualisation tout ce qui n'y figurait plus, si bien qu'une
+chaîne YouTube ne pouvait pas dépasser quinze épisodes. Corrigé : pour ces flux rien n'est jeté, et
+c'est le nombre gardé (`keepCount`, relevé par « charger plus ») qui borne la liste. La page de la
+chaîne est lue par `yt-dlp --flat-playlist -J`, vingt-cinq à la fois.
+
+**Pas de dates pour ces anciens épisodes** : un listing plat n'en porte pas, et
+`--extractor-args youtubetab:approximate_date` renvoie **la même date pour toutes les vidéos**
+(mesuré ici sur une chaîne publique) — pire que rien. Ils gardent donc `published = 0`, ce qui les
+range sous les épisodes datés dans l'ordre de la chaîne, et `relativeDate()` n'affiche rien plutôt
+qu'une date fausse : la ligne montre la durée à la place.
+
+Non vérifié sur appareil (émulateur pris) : le retour de `yt-dlp --flat-playlist` a été éprouvé sur
+le poste contre une chaîne publique, pas sur le téléphone.

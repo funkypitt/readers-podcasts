@@ -33,4 +33,10 @@ object Extractor {
     fun update(context: Context): String = ""
 
     fun version(context: Context): String = ""
+
+    /** One video of a channel, as a flat listing would give it. */
+    data class Listed(val videoId: String, val title: String, val durationMs: Long)
+
+    /** The videos beyond the feed's window — not in this build, which has no yt-dlp. */
+    fun listChannel(context: Context, feedUrl: String, from: Int, count: Int): List<Listed> = emptyList()
 }

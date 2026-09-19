@@ -104,6 +104,25 @@ class Store(private val context: Context) {
         changed()
     }
 
+    /**
+     * Older episodes a channel's own page gave up, added below what is already known.
+     *
+     * They carry no date — a flat listing does not have one — so they sort under the dated ones
+     * and keep the order the channel gave, which is the order one wants. The count kept for the
+     * feed is raised to hold them, since that is what the next refresh trims by.
+     */
+    @Synchronized fun addOlder(feedId: String, older: List<Episode>): Int {
+        val known = _episodes.value.filter { it.feedId == feedId }
+        val ids = known.map { it.id }.toSet()
+        val fresh = older.filterNot { it.id in ids }.distinctBy { it.id }
+        if (fresh.isEmpty()) return 0
+        _episodes.value = _episodes.value + fresh
+        updateFeed(feedId) { it.copy(keepCount = maxOf(it.keepCount, known.size + fresh.size + 10)) }
+        saveEpisodes(feedId)
+        changed()
+        return fresh.size
+    }
+
     /** Forget the downloaded file, keeping the episode and where it was left. */
     @Synchronized fun deleteFile(id: String) {
         val e = _episodes.value.firstOrNull { it.id == id } ?: return
@@ -132,7 +151,14 @@ class Store(private val context: Context) {
         // Episodes the feed no longer lists are dropped, unless they are on the phone or begun:
         // a feed that only publishes its last ten items must not delete what one is listening to.
         val fresIds = merged.map { it.id }.toSet()
-        val orphans = mine.values.filter { it.id !in fresIds && (it.downloaded || it.state == State.STARTED || it.starred || it.transcript) }
+        // A YouTube feed is a window on the latest fifteen, not a catalogue: everything older is
+        // simply absent from it, and dropping what is absent emptied a channel back to fifteen at
+        // every refresh — including what « charger plus » had just gone to fetch. So for those
+        // feeds nothing is dropped; the count kept below is what bounds the list.
+        val youtube = _feeds.value.firstOrNull { it.id == feedId }?.kind == Kind.YOUTUBE
+        val orphans = mine.values.filter {
+            it.id !in fresIds && (youtube || it.downloaded || it.state == State.STARTED || it.starred || it.transcript)
+        }
         val all = (merged + orphans).sortedByDescending { it.published }
         // Trimming keeps the newest, and never throws away a file or a begun episode.
         val trimmed = all.filterIndexed { i, e -> i < keep || e.downloaded || e.state == State.STARTED || e.starred || e.transcript }

@@ -122,10 +122,13 @@ fun TextScreen(nav: Nav, app: App, activity: MainActivity, id: String) {
             LazyColumn(Modifier.weight(1f), state = listState, contentPadding = PaddingValues(vertical = 8.dp)) {
                 if (episode.description.isNotBlank()) {
                     item {
-                        Small(
+                        LinkedText(
                             episode.description,
                             Modifier.padding(horizontal = rowPadH).padding(top = 4.dp, bottom = 12.dp),
+                            size = typo.small,
+                            color = colors.dim,
                             maxLines = 6,
+                            onCopied = { activity.toast(context.getString(R.string.copied)) },
                         )
                     }
                 }

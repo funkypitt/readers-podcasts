@@ -56,6 +56,13 @@
     <string name="wifi_only">descargar solo con wifi</string>
     <string name="auto_refresh">actualizar al abrir</string>
     <string name="delete_when_played_hint">salvo favoritos, textos y YouTube</string>
+    <string name="loading_older">buscando los más antiguos…</string>
+    <string name="nothing_older">nada más antiguo</string>
+    <string name="load_older">cargar más episodios</string>
+    <string name="load_older_hint">el flujo solo lleva los quince últimos</string>
+    <string name="chapters">capítulos</string>
+    <string name="chapters_of">%d capítulos</string>
+    <string name="copied">copiado</string>
     <string name="delete_when_played">borrar una vez escuchado</string>
     <string name="settings">ajustes</string>
     <string name="about">podcasts, guardados en el teléfono. nada sale de él salvo las fuentes que va a buscar</string>
@@ -140,4 +147,8 @@
     <string name="language">lengua hablada</string>
     <string name="language_auto">dejar que lo averigüe</string>
     <string name="model_not_here">el modelo no está en el teléfono</string>
+    <plurals name="older_added">
+        <item quantity="one">%d episodio más antiguo</item>
+        <item quantity="other">%d episodios más antiguos</item>
+    </plurals>
 </resources>

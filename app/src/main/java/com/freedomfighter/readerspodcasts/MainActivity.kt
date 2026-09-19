@@ -34,6 +34,8 @@ import com.freedomfighter.readerspodcasts.data.Backup
 import com.freedomfighter.readerspodcasts.data.Episode
 import com.freedomfighter.readerspodcasts.data.Kind
 import com.freedomfighter.readerspodcasts.data.Opml
+import com.freedomfighter.readerspodcasts.data.Feed
+import com.freedomfighter.readerspodcasts.data.episodeId
 import com.freedomfighter.readerspodcasts.data.State
 import com.freedomfighter.readerspodcasts.data.autoDeletable
 import com.freedomfighter.readerspodcasts.net.DownloadService
@@ -350,6 +352,41 @@ class MainActivity : ComponentActivity() {
         ) app.store.deleteFile(e.id)
     }
 
+    /**
+     * The next page of a YouTube channel's own videos, appended to what is known.
+     *
+     * The feed only ever carries fifteen; this walks the channel's page instead, twenty-five at a
+     * time, and stops saying so when a page brings nothing new — a channel does end.
+     */
+    fun loadOlder(feed: Feed) = lifecycleScope.launch {
+        if (!Extractor.AVAILABLE) { toast(getString(R.string.youtube_not_here)); return@launch }
+        val known = app.store.episodesOf(feed.id).size
+        busy = getString(R.string.loading_older)
+        val added = withContext(Dispatchers.IO) {
+            runCatching {
+                val listed = Extractor.listChannel(this@MainActivity, feed.url, known + 1, 25)
+                // The feed names a video by its Atom id; should that ever differ from what is
+                // built here, an address already known is the surer way to spot a repeat.
+                val seen = app.store.episodesOf(feed.id).map { it.mediaUrl }.toSet()
+                app.store.addOlder(feed.id, listed.filterNot { "https://www.youtube.com/watch?v=" + it.videoId in seen }.map { v ->
+                    Episode(
+                        // The same shape the feed gives, or the same video would arrive twice.
+                        id = episodeId(feed.id, "yt:video:" + v.videoId),
+                        feedId = feed.id,
+                        title = v.title,
+                        mediaUrl = "https://www.youtube.com/watch?v=" + v.videoId,
+                        published = 0,
+                        durationMs = v.durationMs,
+                    )
+                })
+            }
+        }
+        busy = ""
+        added.onSuccess { n ->
+            toast(if (n > 0) resources.getQuantityString(R.plurals.older_added, n, n) else getString(R.string.nothing_older))
+        }.onFailure { toast(it.message ?: getString(R.string.nothing_older)) }
+    }
+
     /** The episode's own address, to send to someone or open in a browser. */
     fun share(e: Episode) {
         val send = Intent(Intent.ACTION_SEND).setType("text/plain")
@@ -420,7 +457,7 @@ class MainActivity : ComponentActivity() {
     fun setSpeed(f: Float) { app.prefs.setSpeed(f); controller?.setPlaybackSpeed(f) }
     fun stopPlayback() { controller?.sendCustomCommand(SessionCommand(PlaybackService.ACTION_STOP, Bundle.EMPTY), Bundle.EMPTY) }
 
-    private fun toast(text: String) = Toast.makeText(this, text, Toast.LENGTH_LONG).show()
+    fun toast(text: String) = Toast.makeText(this, text, Toast.LENGTH_LONG).show()
 
     @Composable
     private fun Bars() {

@@ -56,6 +56,9 @@ import com.freedomfighter.readerspodcasts.R
 import com.freedomfighter.readerspodcasts.data.Episode
 import com.freedomfighter.readerspodcasts.data.Feed
 import com.freedomfighter.readerspodcasts.data.FontChoice
+import com.freedomfighter.readerspodcasts.data.Chapters
+import com.freedomfighter.readerspodcasts.data.Kind
+import com.freedomfighter.readerspodcasts.net.Extractor
 import com.freedomfighter.readerspodcasts.data.Prefs
 import com.freedomfighter.readerspodcasts.data.feedLanguage
 import com.freedomfighter.readerspodcasts.data.State
@@ -399,6 +402,18 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
                                 onLongPress = { rowMenu = e.id },
                             )
                         }
+                        // A YouTube feed carries its latest fifteen and nothing else; the rest of
+                        // the channel is only reachable through its own page, which yt-dlp reads.
+                        if (feed != null && feed.kind == Kind.YOUTUBE && Extractor.AVAILABLE) {
+                            item {
+                                Rule()
+                                TextRow(
+                                    stringResource(R.string.load_older),
+                                    secondary = stringResource(R.string.load_older_hint),
+                                    size = LocalTypo.current.title,
+                                ) { activity.loadOlder(feed) }
+                            }
+                        }
                     }
                 }
             }
@@ -531,6 +546,7 @@ fun SearchScreen(nav: Nav, app: App, activity: MainActivity) {
 
 @Composable
 fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
+    val context = LocalContext.current
     val typo = LocalTypo.current
     val tick = rememberTick()
     val all by app.store.episodes.collectAsState()
@@ -542,6 +558,7 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
         ?: all.firstOrNull { it.id == ui.mediaId }
         ?: all.filter { it.lastPlayed > 0 }.maxByOrNull { it.lastPlayed }
     var menu by remember { mutableStateOf(false) }
+    var showChapters by remember { mutableStateOf(false) }
     BackHandler { nav.pop() }
     if (episode == null) { LaunchedEffect(Unit) { nav.pop() }; return }
     val current = ui.mediaId == episode.id
@@ -600,6 +617,17 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
                     val i = Prefs.SPEEDS.indexOf(settings.speed).let { if (it < 0) 1 else it }
                     activity.setSpeed(Prefs.SPEEDS[(i + 1) % Prefs.SPEEDS.size])
                 }
+                // Chapters, when the description holds a list of them: the row says where one is
+                // and opens the whole table, and a chapter chosen sends the sound to its start.
+                val chapters = remember(episode.description, dur) { Chapters.parse(episode.description, dur) }
+                if (chapters.isNotEmpty()) {
+                    val here = Chapters.at(chapters, pos)
+                    TextRow(
+                        here?.title ?: stringResource(R.string.chapters),
+                        secondary = stringResource(R.string.chapters_of, chapters.size),
+                        size = typo.title,
+                    ) { showChapters = true }
+                }
                 Rule(Modifier.padding(vertical = 8.dp))
                 when {
                     live.id == episode.id -> TextRow(
@@ -622,9 +650,10 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
                 }
                 if (episode.description.isNotBlank()) {
                     Rule(Modifier.padding(vertical = 8.dp))
-                    T(
+                    LinkedText(
                         episode.description, Modifier.padding(horizontal = rowPadH, vertical = 8.dp),
-                        size = typo.title, align = TextAlign.Start, lineHeightMul = 1.4f,
+                        size = typo.title,
+                        onCopied = { activity.toast(context.getString(R.string.copied)) },
                     )
                 }
                 VSpace(16.dp)
@@ -632,6 +661,15 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
             Box(Modifier.windowInsetsPadding(WindowInsets.navigationBars))
         }
         if (menu) EpisodeMenu(episode, app, activity, nav, onDismiss = { menu = false }, inPlayer = true)
+        if (showChapters) {
+            val chapters = Chapters.parse(episode.description, dur)
+            val here = Chapters.at(chapters, pos)
+            TextMenu(stringResource(R.string.chapters), chapters.map { c ->
+                MenuItem(c.title, secondary = clock(c.startMs) + (if (c == here) "  ✓" else "")) {
+                    activity.seekOrPlay(episode, c.startMs)
+                }
+            }, onDismiss = { showChapters = false })
+        }
         activity.transcribing?.let { id ->
             val asked = all.firstOrNull { it.id == id }
             if (asked == null) activity.closeTranscribeSheet()

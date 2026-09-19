@@ -56,6 +56,13 @@
     <string name="wifi_only">загружать только по wi-fi</string>
     <string name="auto_refresh">обновлять при открытии</string>
     <string name="delete_when_played_hint">кроме избранного, текстов и YouTube</string>
+    <string name="loading_older">ищем более старые…</string>
+    <string name="nothing_older">старее ничего нет</string>
+    <string name="load_older">загрузить ещё выпуски</string>
+    <string name="load_older_hint">в ленте только последние пятнадцать</string>
+    <string name="chapters">главы</string>
+    <string name="chapters_of">глав: %d</string>
+    <string name="copied">скопировано</string>
     <string name="delete_when_played">удалять после прослушивания</string>
     <string name="settings">настройки</string>
     <string name="about">подкасты, которые остаются на телефоне. наружу уходят только запросы к лентам</string>
@@ -142,4 +149,8 @@
     <string name="language">язык речи</string>
     <string name="language_auto">пусть определит сам</string>
     <string name="model_not_here">модели нет на телефоне</string>
+    <plurals name="older_added">
+        <item quantity="one">%d более старый выпуск</item>
+        <item quantity="other">%d более старых выпусков</item>
+    </plurals>
 </resources>

@@ -12,6 +12,7 @@ import com.freedomfighter.readerspodcasts.data.Episode
 import com.freedomfighter.readerspodcasts.data.channelsByLatest
 import com.freedomfighter.readerspodcasts.data.feedLanguage
 import com.freedomfighter.readerspodcasts.data.autoDeletable
+import com.freedomfighter.readerspodcasts.data.Chapters
 import com.freedomfighter.readerspodcasts.data.lengthOf
 import com.freedomfighter.readerspodcasts.data.Prefs
 import com.freedomfighter.readerspodcasts.ui.clipboardUrl
@@ -359,5 +360,49 @@ class FeedParserTest {
         assertFalse("un épisode mis par écrit se garde", autoDeletable(plain.copy(transcript = true), Kind.RSS))
         assertFalse("YouTube n'a pas de fichier à reprendre", autoDeletable(plain, Kind.YOUTUBE))
         assertTrue("une chaîne inconnue ne protège rien à elle seule", autoDeletable(plain, null))
+    }
+
+    @Test fun chaptersAreReadFromTheDescriptionInBothCustoms() {
+        val youtube = """
+            Une causerie sur l'écoute.
+
+            0:00 Introduction
+            2:14 Ce qu'on entend
+            1:02:03 Questions
+        """.trimIndent()
+        val chapters = Chapters.parse(youtube)
+        assertEquals(3, chapters.size)
+        assertEquals("Introduction", chapters[0].title)
+        assertEquals(134_000L, chapters[1].startMs)
+        assertEquals(3_723_000L, chapters[2].startMs)
+
+        val podcast = """
+            (00:00) Générique
+            (05:30) — L'invité
+            (41:07) Fin
+        """.trimIndent()
+        assertEquals(listOf("Générique", "L'invité", "Fin"), Chapters.parse(podcast).map { it.title })
+
+        val tail = "Introduction - 0:00\nLe sujet — 03:12\nConclusion (58:00)"
+        assertEquals(listOf(0L, 192_000L, 3_480_000L), Chapters.parse(tail).map { it.startMs })
+    }
+
+    @Test fun proseThatNamesATimeIsNotAListOfChapters() {
+        assertTrue(Chapters.parse("Il en parle à 12:30, c'est le meilleur passage.").isEmpty())
+        // Out of order: a mention, not a table of contents.
+        assertTrue(Chapters.parse("10:00 la fin\n2:00 le début").isEmpty())
+        // Past the end of the episode.
+        assertTrue(Chapters.parse("0:00 Un\n45:00 Deux", durationMs = 600_000).isEmpty())
+        assertTrue(Chapters.parse("0:00 Un\n45:00 Deux", durationMs = 3_600_000).size == 2)
+        assertTrue(Chapters.parse("").isEmpty())
+        assertTrue(Chapters.parse("0:00 Un").isEmpty())
+    }
+
+    @Test fun theChapterOneIsInsideIsTheLastOneBegun() {
+        val chapters = Chapters.parse("0:00 Un\n2:00 Deux\n4:00 Trois")
+        assertEquals("Un", Chapters.at(chapters, 0)?.title)
+        assertEquals("Un", Chapters.at(chapters, 119_000)?.title)
+        assertEquals("Deux", Chapters.at(chapters, 120_000)?.title)
+        assertEquals("Trois", Chapters.at(chapters, 999_000)?.title)
     }
 }

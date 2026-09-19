@@ -34,6 +34,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.heightIn
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -197,6 +209,81 @@ fun ScreenTitle(
         }
     }
     Rule()
+}
+
+
+/** Web addresses in a text, as they are written: `https://…`, `www.…`, and bare `example.com/x`. */
+val LINK = Regex("""(https?://[^\s<>"')\]]+|www\.[^\s<>"')\]]+)""", RegexOption.IGNORE_CASE)
+
+/**
+ * A text whose addresses can be followed and kept.
+ *
+ * A description is where a podcast puts what it is talking about — a book, a page, a subscription
+ * form — and a wall of plain text makes those unreachable: one had to retype them by hand. A tap
+ * opens the address; holding it copies it, and holding anywhere else copies the whole text, which
+ * is what one wants when the interesting part is a name rather than a link.
+ */
+@Composable
+fun LinkedText(
+    text: String,
+    modifier: Modifier = Modifier,
+    size: TextUnit = LocalTypo.current.tile,
+    color: Color = LocalColors.current.fg,
+    maxLines: Int = Int.MAX_VALUE,
+    onCopied: (String) -> Unit = {},
+) {
+    val context = LocalContext.current
+    val colors = LocalColors.current
+    val typo = LocalTypo.current
+    val clipboard = LocalClipboardManager.current
+    val spans = remember(text) { LINK.findAll(text).map { it.range to it.value }.toList() }
+    val annotated = remember(text, spans) {
+        buildAnnotatedString {
+            append(text)
+            spans.forEach { (range, _) ->
+                addStyle(
+                    SpanStyle(color = colors.fg, textDecoration = TextDecoration.Underline),
+                    range.first, range.last + 1,
+                )
+            }
+        }
+    }
+    var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    fun linkAt(offset: Offset): String? {
+        val l = layout ?: return null
+        val i = l.getOffsetForPosition(offset)
+        return spans.firstOrNull { (range, _) -> i >= range.first && i <= range.last + 1 }?.second
+    }
+    BasicText(
+        text = annotated,
+        modifier = modifier.pointerInput(spans) {
+            detectTapGestures(
+                onTap = { where ->
+                    val url = linkAt(where) ?: return@detectTapGestures
+                    val full = if (url.startsWith("http", true)) url else "https://$url"
+                    runCatching {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(full)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    }
+                },
+                onLongPress = { where ->
+                    val what = linkAt(where) ?: text
+                    clipboard.setText(AnnotatedString(what))
+                    onCopied(what)
+                },
+            )
+        },
+        style = TextStyle(
+            color = color,
+            fontFamily = typo.family,
+            fontWeight = typo.weight,
+            fontSize = size,
+            lineHeight = size * 1.4f,
+            textAlign = TextAlign.Start,
+        ),
+        maxLines = maxLines,
+        onTextLayout = { layout = it },
+        overflow = TextOverflow.Ellipsis,
+    )
 }
 
 /** Full-screen page frame with the theme background. */

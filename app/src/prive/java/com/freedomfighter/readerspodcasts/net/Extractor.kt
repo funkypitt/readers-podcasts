@@ -83,6 +83,61 @@ object Extractor {
         return file ?: throw IllegalStateException(why(response))
     }
 
+    /** One video of a channel, as a flat listing gives it: enough to make a row of it. */
+    data class Listed(val videoId: String, val title: String, val durationMs: Long)
+
+    /**
+     * The videos of a channel beyond the fifteen its feed carries, [from] (1-based) to [from] +
+     * [count] − 1, newest first.
+     *
+     * YouTube's Atom feed is a window on the latest fifteen, not a catalogue: everything older is
+     * simply not in it. yt-dlp can walk the channel's own page instead, and a flat listing costs
+     * one request for a whole page of videos rather than one per video.
+     *
+     * No dates: a flat listing does not carry them, and yt-dlp's approximate ones came back
+     * identical for every video, which is worse than none. What is known is the order, which the
+     * caller keeps; the row then shows the length instead of a date rather than a date that lies.
+     */
+    fun listChannel(context: Context, feedUrl: String, from: Int, count: Int): List<Listed> {
+        // No weekly freshening here: that belongs to the download service. A yt-dlp too old for
+        // YouTube is caught by [attempt], which fetches a new one and tries again at once.
+        prepare(context)
+        val page = pageOf(feedUrl) ?: throw IllegalStateException("cette chaîne n'a pas de page à lire")
+        val request = YoutubeDLRequest(page).apply {
+            addOption("--flat-playlist")
+            addOption("-J")
+            addOption("--playlist-start", from.toString())
+            addOption("--playlist-end", (from + count - 1).toString())
+            addOption("--no-warnings")
+        }
+        val response = attempt(context) { YoutubeDL.getInstance().execute(request, "list-$page") }
+        val text = response.out.orEmpty().trim()
+        if (text.isEmpty()) throw IllegalStateException(tail(response.err) ?: "yt-dlp : rien à lire")
+        val entries = org.json.JSONObject(text).optJSONArray("entries") ?: return emptyList()
+        return (0 until entries.length()).mapNotNull { i ->
+            val o = entries.optJSONObject(i) ?: return@mapNotNull null
+            val id = o.optString("id").takeIf { it.isNotBlank() } ?: return@mapNotNull null
+            Listed(id, o.optString("title").ifBlank { id }, (o.optDouble("duration", 0.0) * 1000).toLong())
+        }
+    }
+
+    /** The page that lists a channel's videos, from the address of its feed. */
+    private fun pageOf(feedUrl: String): String? {
+        Regex("channel_id=([\\w-]+)").find(feedUrl)?.let { return "https://www.youtube.com/channel/${it.groupValues[1]}/videos" }
+        Regex("playlist_id=([\\w-]+)").find(feedUrl)?.let { return "https://www.youtube.com/playlist?list=${it.groupValues[1]}" }
+        return null
+    }
+
+    /** One attempt, and a second after an update when YouTube turned away an old yt-dlp. */
+    private fun <T> attempt(context: Context, block: () -> T): T = runCatching { block() }.getOrElse { first ->
+        if (!stale(first)) throw IllegalStateException(tail(first.message) ?: first.javaClass.simpleName, first)
+        android.util.Log.w(TAG, "yt-dlp refusé : mise à jour puis nouvel essai")
+        runCatching { update(context) }
+        runCatching { block() }.getOrElse { second ->
+            throw IllegalStateException(tail(second.message) ?: second.javaClass.simpleName, second)
+        }
+    }
+
     private fun run(request: YoutubeDLRequest, id: String, onProgress: (Int) -> Unit): YoutubeDLResponse =
         YoutubeDL.getInstance().execute(request, id) { progress, _, _ ->
             onProgress(progress.toInt().coerceIn(0, 100))

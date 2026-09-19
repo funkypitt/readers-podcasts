@@ -56,6 +56,13 @@
     <string name="wifi_only">nur über WLAN laden</string>
     <string name="auto_refresh">beim Öffnen aktualisieren</string>
     <string name="delete_when_played_hint">außer Favoriten, Texten und YouTube</string>
+    <string name="loading_older">die älteren werden gesucht…</string>
+    <string name="nothing_older">nichts Älteres</string>
+    <string name="load_older">mehr Beiträge laden</string>
+    <string name="load_older_hint">der Feed trägt nur die letzten fünfzehn</string>
+    <string name="chapters">Kapitel</string>
+    <string name="chapters_of">%d Kapitel</string>
+    <string name="copied">kopiert</string>
     <string name="delete_when_played">nach dem Hören löschen</string>
     <string name="settings">Einstellungen</string>
     <string name="about">Podcasts, auf dem Telefon behalten. nichts verlässt es ausser den Feeds, die es holt</string>
@@ -140,4 +147,8 @@
     <string name="language">gesprochene Sprache</string>
     <string name="language_auto">selbst herausfinden lassen</string>
     <string name="model_not_here">das Modell ist nicht auf dem Telefon</string>
+    <plurals name="older_added">
+        <item quantity="one">%d älterer Beitrag</item>
+        <item quantity="other">%d ältere Beiträge</item>
+    </plurals>
 </resources>

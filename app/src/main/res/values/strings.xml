@@ -56,6 +56,13 @@
     <string name="wifi_only">download on wifi only</string>
     <string name="auto_refresh">refresh on opening</string>
     <string name="delete_when_played_hint">not favourites, texts, or YouTube</string>
+    <string name="loading_older">looking for the older ones…</string>
+    <string name="nothing_older">nothing older here</string>
+    <string name="load_older">load more episodes</string>
+    <string name="load_older_hint">the feed only carries the latest fifteen</string>
+    <string name="chapters">chapters</string>
+    <string name="chapters_of">%d chapters</string>
+    <string name="copied">copied</string>
     <string name="delete_when_played">delete when played</string>
     <string name="settings">settings</string>
     <string name="about">podcasts, kept on the phone. nothing leaves it but the feeds it goes to fetch</string>
@@ -140,4 +147,8 @@
     <string name="language">spoken language</string>
     <string name="language_auto">let it work it out</string>
     <string name="model_not_here">the model is not on the phone</string>
+    <plurals name="older_added">
+        <item quantity="one">%d older episode</item>
+        <item quantity="other">%d older episodes</item>
+    </plurals>
 </resources>
