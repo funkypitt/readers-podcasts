@@ -22,7 +22,12 @@ data class Settings(
     /** Refresh the subscriptions when the app is opened, at most once an hour. */
     val autoRefresh: Boolean = true,
     /** Delete the file once the episode has been heard through. */
-    val deleteWhenPlayed: Boolean = true,
+    /**
+     * Off. It used to be on, and an episode listened to once vanished on the spot — including a
+     * YouTube one that had cost a yt-dlp download. Saving room is a choice one makes, not a
+     * default one discovers.
+     */
+    val deleteWhenPlayed: Boolean = false,
     /** Which list the home screen shows: one of the three views, or a feed's id. */
     val view: String = Prefs.VIEW_CHANNELS,
     /** The one it opens on. */
@@ -47,7 +52,7 @@ class Prefs(context: Context) {
         speed = sp.getFloat("speed", 1f),
         wifiOnly = sp.getBoolean("wifi_only", true),
         autoRefresh = sp.getBoolean("auto_refresh", true),
-        deleteWhenPlayed = sp.getBoolean("delete_when_played", true),
+        deleteWhenPlayed = sp.getBoolean("delete_when_played", false),
         defaultView = known(sp.getString("default_view", VIEW_CHANNELS)),
         // The stored view goes through the same mapping: a phone updated from 0.1 held "queue"
         // there, and a name nothing answers to left the screen empty under a title that lied.
@@ -68,7 +73,7 @@ class Prefs(context: Context) {
     }
 
     private fun known(name: String?): String = when (name) {
-        VIEW_CHANNELS, VIEW_EPISODES, VIEW_FAVOURITES -> name
+        VIEW_CHANNELS, VIEW_EPISODES, VIEW_FAVOURITES, VIEW_DOWNLOADED -> name
         "new" -> VIEW_EPISODES
         else -> VIEW_CHANNELS
     }
@@ -124,7 +129,8 @@ class Prefs(context: Context) {
         const val VIEW_CHANNELS = "channels"
         const val VIEW_EPISODES = "episodes"
         const val VIEW_FAVOURITES = "favourites"
-        val VIEWS = listOf(VIEW_CHANNELS, VIEW_EPISODES, VIEW_FAVOURITES)
+        const val VIEW_DOWNLOADED = "downloaded"
+        val VIEWS = listOf(VIEW_CHANNELS, VIEW_EPISODES, VIEW_FAVOURITES, VIEW_DOWNLOADED)
 
         /**
          * The list a stored view really names. [isFeed] says whether it is the id of a feed one

@@ -95,6 +95,18 @@ fun lengthOf(ms: Long): Spoken {
 }
 
 /**
+ * Whether the file of an episode may be thrown away on its own once it has been heard.
+ *
+ * "Delete when played" is meant to save room, not to destroy work. Three episodes are spared
+ * whatever the setting says: one kept as a favourite, one that has been written down — its text
+ * is read against the sound, and a tap on a line has nowhere to send a sound that is gone — and
+ * one from YouTube, which holds no file of its own to fetch again, only a page that takes yt-dlp
+ * and several minutes. What one asks for by hand is another matter and is always obeyed.
+ */
+fun autoDeletable(episode: Episode, kind: Kind?): Boolean =
+    !episode.starred && !episode.transcript && kind != Kind.YOUTUBE
+
+/**
  * The language this channel was last written down in, or null when it never was.
  *
  * A channel is nearly always spoken in one language, and being asked it afresh every time is a

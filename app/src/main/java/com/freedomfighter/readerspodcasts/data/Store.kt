@@ -45,6 +45,13 @@ class Store(private val context: Context) {
     fun favourites(): List<Episode> = _episodes.value.filter { it.starred }.sortedByDescending { it.published }
 
     /**
+     * « Téléchargés » — what is actually on the telephone, the latest first. It answers what the
+     * other lists cannot: what takes up room, and what can be heard with nothing in hand. A
+     * YouTube episode in particular can only be played once it is here.
+     */
+    fun downloaded(): List<Episode> = _episodes.value.filter { it.downloaded }.sortedByDescending { it.published }
+
+    /**
      * « Chaînes » — the subscriptions, the one that published last at the top. A hundred and
      * forty channels in alphabetical order says nothing; in this order the first screen is the
      * news.

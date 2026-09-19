@@ -55,6 +55,7 @@
     <string name="exchange_hint">die zwei Dateien, die alles tragen: die Abos als opml, das jede Podcast-App liest, und die Einstellungen mit der Stelle, an der jede Folge verlassen wurde.</string>
     <string name="wifi_only">nur über WLAN laden</string>
     <string name="auto_refresh">beim Öffnen aktualisieren</string>
+    <string name="delete_when_played_hint">außer Favoriten, Texten und YouTube</string>
     <string name="delete_when_played">nach dem Hören löschen</string>
     <string name="settings">Einstellungen</string>
     <string name="about">Podcasts, auf dem Telefon behalten. nichts verlässt es ausser den Feeds, die es holt</string>
@@ -84,10 +85,12 @@
     <string name="reading_feeds">Feeds werden gelesen: %1$d / %2$d</string>
     <string name="view_channels">Kanäle</string>
     <string name="view_episodes">Folgen</string>
+    <string name="view_downloaded">heruntergeladen</string>
     <string name="view_favourites">Favoriten</string>
     <string name="opens_on">öffnet mit</string>
     <string name="star">als Favorit behalten</string>
     <string name="unstar">kein Favorit mehr</string>
+    <string name="empty_downloaded">noch nichts auf dem Telefon. Was hier liegt, hört man ohne Verbindung.</string>
     <string name="empty_favourites">noch kein Favorit. ein langer Druck auf eine Folge behält sie hier.</string>
     <string name="search">Suche</string>
     <string name="search_hint">ein Kanal, eine Folge</string>
@@ -102,7 +105,7 @@
     <string name="updating_ytdlp">yt-dlp wird aktualisiert…</string>
     <string name="ytdlp_updated">yt-dlp aktualisiert</string>
     <string name="ytdlp_current">yt-dlp ist schon aktuell</string>
-    <string name="youtube_downloads_first">diese Folge wird erst geladen, dann gespielt</string>
+    <string name="youtube_downloads_first">der Ton wird zuerst geholt; er spielt dann von selbst</string>
     <string name="channel_transcription">Transkription</string>
     <string name="phase_model">Modell wird geholt %d %%</string>
     <string name="phase_transcribe">wird aufgeschrieben %d %%</string>

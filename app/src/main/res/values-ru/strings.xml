@@ -55,6 +55,7 @@
     <string name="exchange_hint">два файла, в которых всё: подписки в opml, который читает любое приложение подкастов, и настройки с местом, где каждый выпуск был оставлен.</string>
     <string name="wifi_only">загружать только по wi-fi</string>
     <string name="auto_refresh">обновлять при открытии</string>
+    <string name="delete_when_played_hint">кроме избранного, текстов и YouTube</string>
     <string name="delete_when_played">удалять после прослушивания</string>
     <string name="settings">настройки</string>
     <string name="about">подкасты, которые остаются на телефоне. наружу уходят только запросы к лентам</string>
@@ -86,10 +87,12 @@
     <string name="reading_feeds">чтение лент: %1$d / %2$d</string>
     <string name="view_channels">каналы</string>
     <string name="view_episodes">выпуски</string>
+    <string name="view_downloaded">загруженные</string>
     <string name="view_favourites">избранное</string>
     <string name="opens_on">открывается на</string>
     <string name="star">в избранное</string>
     <string name="unstar">убрать из избранного</string>
+    <string name="empty_downloaded">на телефоне пока ничего. То, что здесь, слушается без сети.</string>
     <string name="empty_favourites">избранного пока нет. долгое нажатие на выпуск оставляет его здесь.</string>
     <string name="search">поиск</string>
     <string name="search_hint">канал, выпуск</string>
@@ -104,7 +107,7 @@
     <string name="updating_ytdlp">обновление yt-dlp…</string>
     <string name="ytdlp_updated">yt-dlp обновлён</string>
     <string name="ytdlp_current">yt-dlp уже обновлён</string>
-    <string name="youtube_downloads_first">этот сначала загружается, потом играет</string>
+    <string name="youtube_downloads_first">сначала загружается звук; потом заиграет сам</string>
     <string name="channel_transcription">расшифровка</string>
     <string name="phase_model">загрузка модели %d %%</string>
     <string name="phase_transcribe">запись текста %d %%</string>

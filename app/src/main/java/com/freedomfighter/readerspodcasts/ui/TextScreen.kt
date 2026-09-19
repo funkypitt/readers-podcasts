@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -32,14 +33,16 @@ import com.freedomfighter.readerspodcasts.App
 import com.freedomfighter.readerspodcasts.MainActivity
 import com.freedomfighter.readerspodcasts.R
 import com.freedomfighter.readerspodcasts.data.Line
+import com.freedomfighter.readerspodcasts.data.clock
 import com.freedomfighter.readerspodcasts.data.Transcripts
 
 /**
  * What was said, read while it is being said.
  *
- * The line being spoken is the inverted one, as everywhere else in the app, and it scrolls itself
- * into view; tapping any line sends the sound there. With a translation in hand, one line at the
- * top swaps the two — the translation is in blocks of some forty seconds rather than line by
+ * A screen with the sound's own controls, because reading along and having to leave in order to
+ * pause is not reading along. The line being spoken is the inverted one, as everywhere else in
+ * the app, and it scrolls itself into view; tapping any line sends the sound there. With a
+ * translation in hand, one line at the top swaps the two — the translation is in blocks of some forty seconds rather than line by
  * line, because matching translated sentences to source sentences only holds three times in four
  * and a reading that drifts against the sound would be worse than no reading at all.
  */
@@ -78,7 +81,7 @@ fun TextScreen(nav: Nav, app: App, activity: MainActivity, id: String) {
     Page {
         Column(Modifier.fillMaxSize()) {
             ScreenTitle(
-                stringResource(if (showTranslation) R.string.translation else R.string.transcript_word),
+                episode.title,
                 onBack = { nav.pop() },
                 trailing = "⋯",
                 onTrailing = { menu = true },
@@ -95,10 +98,37 @@ fun TextScreen(nav: Nav, app: App, activity: MainActivity, id: String) {
                 }
                 Rule()
             }
+            // The sound, from here: one does not leave a reading to pause it.
+            val playingThis = activity.ui.mediaId == id
+            val sounding = playingThis && activity.ui.playing
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f)) {
+                    TextRow(stringResource(R.string.back5), size = typo.title) { if (playingThis) activity.seekBy(-5_000) }
+                }
+                Box(Modifier.weight(1.2f)) {
+                    TextRow(
+                        (if (sounding) "❚❚" else "▶") + "  " + clock(position),
+                        inverted = sounding, size = typo.title,
+                    ) { if (playingThis) activity.toggle() else activity.play(episode) }
+                }
+                Box(Modifier.weight(1f)) {
+                    TextRow(stringResource(R.string.fwd10), size = typo.title) { if (playingThis) activity.seekBy(10_000) }
+                }
+            }
+            Rule()
             if (lines.isEmpty()) {
                 Small(stringResource(R.string.no_text_yet), Modifier.padding(horizontal = rowPadH, vertical = 16.dp), maxLines = 4)
             }
             LazyColumn(Modifier.weight(1f), state = listState, contentPadding = PaddingValues(vertical = 8.dp)) {
+                if (episode.description.isNotBlank()) {
+                    item {
+                        Small(
+                            episode.description,
+                            Modifier.padding(horizontal = rowPadH).padding(top = 4.dp, bottom = 12.dp),
+                            maxLines = 6,
+                        )
+                    }
+                }
                 itemsIndexed(lines) { i, line ->
                     val here = i == current
                     Box(

@@ -11,10 +11,12 @@ import com.freedomfighter.readerspodcasts.data.Spoken
 import com.freedomfighter.readerspodcasts.data.Episode
 import com.freedomfighter.readerspodcasts.data.channelsByLatest
 import com.freedomfighter.readerspodcasts.data.feedLanguage
+import com.freedomfighter.readerspodcasts.data.autoDeletable
 import com.freedomfighter.readerspodcasts.data.lengthOf
 import com.freedomfighter.readerspodcasts.data.Prefs
 import com.freedomfighter.readerspodcasts.ui.clipboardUrl
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -348,5 +350,14 @@ class FeedParserTest {
         assertEquals("ru", feedLanguage(episodes, "g"))
         assertEquals(null, feedLanguage(episodes, "h"))
         assertEquals(null, feedLanguage(emptyList(), "f"))
+    }
+
+    @Test fun whatIsWorthKeepingIsNotThrownAwayOnceHeard() {
+        val plain = Episode(id = "a", feedId = "f", title = "t", mediaUrl = "http://x/a.mp3", published = 1)
+        assertTrue(autoDeletable(plain, Kind.RSS))
+        assertFalse("un favori se garde", autoDeletable(plain.copy(starred = true), Kind.RSS))
+        assertFalse("un épisode mis par écrit se garde", autoDeletable(plain.copy(transcript = true), Kind.RSS))
+        assertFalse("YouTube n'a pas de fichier à reprendre", autoDeletable(plain, Kind.YOUTUBE))
+        assertTrue("une chaîne inconnue ne protège rien à elle seule", autoDeletable(plain, null))
     }
 }

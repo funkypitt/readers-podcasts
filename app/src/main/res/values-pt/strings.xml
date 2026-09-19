@@ -55,6 +55,7 @@
     <string name="exchange_hint">os dois ficheiros que levam tudo: as subscrições em opml, que qualquer app de podcasts lê, e as definições com o ponto em que cada episódio ficou.</string>
     <string name="wifi_only">transferir só com wi-fi</string>
     <string name="auto_refresh">atualizar ao abrir</string>
+    <string name="delete_when_played_hint">salvo favoritos, textos e YouTube</string>
     <string name="delete_when_played">apagar depois de ouvido</string>
     <string name="settings">definições</string>
     <string name="about">podcasts, guardados no telemóvel. nada sai dele além das fontes que vai buscar</string>
@@ -84,10 +85,12 @@
     <string name="reading_feeds">a ler as fontes: %1$d / %2$d</string>
     <string name="view_channels">canais</string>
     <string name="view_episodes">episódios</string>
+    <string name="view_downloaded">transferidos</string>
     <string name="view_favourites">favoritos</string>
     <string name="opens_on">abre em</string>
     <string name="star">guardar nos favoritos</string>
     <string name="unstar">retirar dos favoritos</string>
+    <string name="empty_downloaded">nada no telefone ainda. Um episódio guardado aqui ouve-se sem ligação.</string>
     <string name="empty_favourites">nenhum favorito. um toque longo num episódio guarda-o aqui.</string>
     <string name="search">procura</string>
     <string name="search_hint">um canal, um episódio</string>
@@ -102,7 +105,7 @@
     <string name="updating_ytdlp">a atualizar o yt-dlp…</string>
     <string name="ytdlp_updated">yt-dlp atualizado</string>
     <string name="ytdlp_current">o yt-dlp já está atualizado</string>
-    <string name="youtube_downloads_first">este é transferido antes de tocar</string>
+    <string name="youtube_downloads_first">o áudio é obtido primeiro; tocará sozinho</string>
     <string name="channel_transcription">transcrição</string>
     <string name="phase_model">a obter o modelo %d %%</string>
     <string name="phase_transcribe">a pôr por escrito %d %%</string>

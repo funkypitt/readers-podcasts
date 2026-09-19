@@ -444,3 +444,36 @@ dans les épisodes eux-mêmes (`feedLanguage`), puisqu'un épisode garde la lang
 ce qui est la meilleure des deux suggestions. Vérifié à l'écran sur un flux local de deux épisodes,
 le premier marqué comme déjà écrit en allemand : la liste s'ouvre sur « deutsch · la dernière
 fois », sans doublon, et rien ne part avant qu'on y touche.
+
+## 20. Ce que l'usage a dit (0.4.4, 2026-09-19)
+
+Quatre reproches, tous fondés, et tous du même ordre : l'app décidait à la place de l'auditeur.
+
+**Un appui sur un épisode ne fait plus rien d'autre que l'ouvrir.** Il lançait la lecture — et,
+sur une entrée YouTube, un téléchargement de plusieurs minutes — alors qu'on voulait lire de quoi
+il retourne. « Imaginez quelqu'un qui veut lire la description d'un épisode consacré à la
+dysfonction érectile alors qu'il est au bureau. » C'est ▶ qui décide, et sur une entrée YouTube ▶
+va chercher l'audio puis le joue de lui-même (seulement si l'écran est encore là : personne ne
+veut d'une causerie qui démarre dans sa poche dix minutes plus tard).
+
+**L'effacement automatique était une faute de conception.** Il était **actif par défaut** : écouté
+une fois, l'épisode disparaissait — y compris un épisode YouTube qui avait coûté un téléchargement
+yt-dlp. Il est désormais **inactif par défaut**, et même actif il épargne trois cas (`autoDeletable`,
+testé) : un favori, un épisode **mis par écrit** — son texte se lit contre le son, et un appui sur
+une ligne n'a nulle part où envoyer un son effacé — et **tout ce qui vient de YouTube**, qui n'a pas
+de fichier à reprendre, seulement une page et plusieurs minutes de yt-dlp. Ce qu'on demande à la
+main reste toujours obéi.
+
+**« Téléchargés » est une vue à part entière**, après les favoris, sur le téléphone comme sur le
+bureau : elle répond à ce que les autres listes ne disent pas — ce qui prend de la place, et ce qui
+s'écoute sans connexion.
+
+**Lire en écoutant tenait d'un parcours du combattant** : il fallait trouver une rangée en bas du
+lecteur. Le mot « texte » est maintenant à droite de l'horloge, et l'écran de lecture a ses propres
+commandes (−5 s, ▶/❚❚ avec la position, +10 s) : on ne quitte plus sa lecture pour mettre en pause.
+La description y figure en tête, avant ce qui a été dit.
+
+Et la progression de la traduction avance **à l'intérieur d'un bloc** : un short n'en a que trois,
+et un chiffre figé à 0 % pendant des minutes passait — à juste titre — pour un plantage.
+
+Non vérifié sur appareil : l'émulateur est pris par un autre travail.

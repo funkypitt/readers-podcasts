@@ -25,6 +25,7 @@ import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
 import com.freedomfighter.readerspodcasts.data.Episode
 import com.freedomfighter.readerspodcasts.data.State
+import com.freedomfighter.readerspodcasts.data.autoDeletable
 import com.freedomfighter.readerspodcasts.widget.LastWidgets
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
@@ -148,12 +149,14 @@ class PlaybackService : MediaSessionService() {
 
     /**
      * An episode heard through: marked as played, put back to its beginning, and — if that is
-     * the setting — its file deleted. Podcasts are the one kind of audio one does not keep, and
-     * a phone that quietly fills up with what has already been heard is a phone one distrusts.
+     * the setting, and the episode is not one of those worth keeping — its file deleted. See
+     * [autoDeletable]: a favourite, something written down, and anything from YouTube stay.
      */
     private fun finished(id: String) {
         app.store.updateEpisode(id) { it.copy(positionMs = 0, state = State.PLAYED) }
-        if (app.prefs.settings.value.deleteWhenPlayed) app.store.deleteFile(id)
+        if (!app.prefs.settings.value.deleteWhenPlayed) return
+        val episode = app.store.episodes.value.firstOrNull { it.id == id } ?: return
+        if (autoDeletable(episode, app.store.feed(episode.feedId)?.kind)) app.store.deleteFile(id)
     }
 
     private fun changed() {

@@ -55,6 +55,7 @@
     <string name="exchange_hint">les deux fichiers qui portent tout : les abonnements en opml, que toute app de podcasts lit, et les réglages avec l\'endroit où chaque épisode a été laissé.</string>
     <string name="wifi_only">télécharger en wifi seulement</string>
     <string name="auto_refresh">actualiser à l\'ouverture</string>
+    <string name="delete_when_played_hint">sauf favoris, textes et YouTube</string>
     <string name="delete_when_played">effacer une fois écouté</string>
     <string name="settings">réglages</string>
     <string name="about">des podcasts, gardés sur le téléphone. rien n\'en sort que les flux qu\'il va chercher</string>
@@ -84,10 +85,12 @@
     <string name="reading_feeds">lecture des flux : %1$d / %2$d</string>
     <string name="view_channels">chaînes</string>
     <string name="view_episodes">épisodes</string>
+    <string name="view_downloaded">téléchargés</string>
     <string name="view_favourites">favoris</string>
     <string name="opens_on">s\'ouvre sur</string>
     <string name="star">garder en favori</string>
     <string name="unstar">retirer des favoris</string>
+    <string name="empty_downloaded">rien sur le téléphone pour l\'instant. Un épisode gardé ici s\'écoute sans connexion.</string>
     <string name="empty_favourites">aucun favori. un appui long sur un épisode le garde ici.</string>
     <string name="search">recherche</string>
     <string name="search_hint">une chaîne, un épisode</string>
@@ -102,7 +105,7 @@
     <string name="updating_ytdlp">mise à jour de yt-dlp…</string>
     <string name="ytdlp_updated">yt-dlp mis à jour</string>
     <string name="ytdlp_current">yt-dlp est déjà à jour</string>
-    <string name="youtube_downloads_first">celui-ci se télécharge avant de s\'écouter</string>
+    <string name="youtube_downloads_first">l\'audio est récupéré d\'abord ; la lecture suivra</string>
     <string name="channel_transcription">transcription</string>
     <string name="phase_model">récupération du modèle %d %%</string>
     <string name="phase_transcribe">mise par écrit %d %%</string>

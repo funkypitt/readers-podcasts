@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
@@ -34,6 +35,7 @@ import com.freedomfighter.readerspodcasts.data.Episode
 import com.freedomfighter.readerspodcasts.data.Kind
 import com.freedomfighter.readerspodcasts.data.Opml
 import com.freedomfighter.readerspodcasts.data.State
+import com.freedomfighter.readerspodcasts.data.autoDeletable
 import com.freedomfighter.readerspodcasts.net.DownloadService
 import com.freedomfighter.readerspodcasts.net.Extractor
 import com.freedomfighter.readerspodcasts.net.Refresher
@@ -67,6 +69,9 @@ class MainActivity : ComponentActivity() {
     private var controllerFuture: ListenableFuture<MediaController>? = null
     private var controller: MediaController? = null
     private var pendingPlay: Episode? = null
+
+    /** The episode whose download was asked for by pressing play, and which plays when it lands. */
+    private var playWhenFetched: String? = null
 
     /**
      * What is going on, in one line, or "". An OPML export of a hundred and forty feeds takes
@@ -159,6 +164,17 @@ class MainActivity : ComponentActivity() {
         }
         handle(intent)
         app.refreshIfStale()
+        // The sound one asked for, once yt-dlp has brought it down. Only while the screen is
+        // there: nobody wants a talk starting in their pocket ten minutes after they gave up.
+        lifecycleScope.launch {
+            app.store.episodes.collect { list ->
+                val id = playWhenFetched ?: return@collect
+                val episode = list.firstOrNull { it.id == id } ?: return@collect
+                if (!episode.downloaded) return@collect
+                playWhenFetched = null
+                if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) play(episode)
+            }
+        }
         val activity = this
         setContent {
             val settings by app.prefs.settings.collectAsState()
@@ -329,7 +345,9 @@ class MainActivity : ComponentActivity() {
         app.store.updateEpisode(e.id) {
             it.copy(state = if (played) State.PLAYED else State.NEW, positionMs = 0)
         }
-        if (played && app.prefs.settings.value.deleteWhenPlayed) app.store.deleteFile(e.id)
+        if (played && app.prefs.settings.value.deleteWhenPlayed &&
+            autoDeletable(e, app.store.feed(e.feedId)?.kind)
+        ) app.store.deleteFile(e.id)
     }
 
     /** The episode's own address, to send to someone or open in a browser. */
@@ -348,23 +366,27 @@ class MainActivity : ComponentActivity() {
      * yet — a YouTube entry, which is a page and not a file — starts coming down instead, and
      * the player shows where that has got to rather than somebody else's podcast.
      */
+    /**
+     * Tapping an episode opens it, and nothing else. It used to start playing — and, for a
+     * YouTube entry, to start a download of several minutes — when all one wanted was to read
+     * what the episode is about. What happens next is the listener's to decide: ▶ plays, and on
+     * a YouTube entry ▶ fetches the audio first and then plays it.
+     */
     fun open(e: Episode, nav: com.freedomfighter.readerspodcasts.ui.Nav) {
         nav.push(Screen.Player(e.id))
-        if (!e.downloaded && app.store.feed(e.feedId)?.kind == Kind.YOUTUBE) {
-            if (!DownloadService.Live.busy(e.id)) download(e)
-            return
-        }
-        if (ui.mediaId != e.id) play(e)
     }
 
     fun play(e: Episode) {
         // A YouTube entry is a page, not a file: nothing can play until yt-dlp has been through
-        // it. Asking for it to play starts that instead of failing on a page of HTML.
+        // it. Asking for it to play starts that instead of failing on a page of HTML, and the
+        // sound follows by itself once the file is there — one asked to listen, after all.
         if (!e.downloaded && app.store.feed(e.feedId)?.kind == Kind.YOUTUBE) {
-            download(e)
+            playWhenFetched = e.id
+            if (!DownloadService.Live.busy(e.id)) download(e)
             toast(getString(R.string.youtube_downloads_first))
             return
         }
+        if (playWhenFetched != null && playWhenFetched != e.id) playWhenFetched = null
         val c = controller ?: run { pendingPlay = e; return }
         if (c.currentMediaItem?.mediaId == e.id && c.playbackState != Player.STATE_IDLE) {
             if (c.playbackState == Player.STATE_ENDED) c.seekTo(0)

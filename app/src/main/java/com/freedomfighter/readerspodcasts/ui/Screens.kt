@@ -103,6 +103,7 @@ fun viewLabel(view: String): String = stringResource(
     when (view) {
         Prefs.VIEW_EPISODES -> R.string.view_episodes
         Prefs.VIEW_FAVOURITES -> R.string.view_favourites
+        Prefs.VIEW_DOWNLOADED -> R.string.view_downloaded
         else -> R.string.view_channels
     }
 )
@@ -329,6 +330,7 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
         when {
             feed != null -> app.store.episodesOf(feed.id)
             view == Prefs.VIEW_FAVOURITES -> app.store.favourites()
+            view == Prefs.VIEW_DOWNLOADED -> app.store.downloaded()
             view == Prefs.VIEW_EPISODES -> app.store.recent()
             else -> emptyList()
         }
@@ -384,6 +386,7 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
                                     when {
                                         feeds.isEmpty() -> stringResource(R.string.empty_no_feeds)
                                         view == Prefs.VIEW_FAVOURITES -> stringResource(R.string.empty_favourites)
+                                        view == Prefs.VIEW_DOWNLOADED -> stringResource(R.string.empty_downloaded)
                                         else -> stringResource(R.string.empty_feed)
                                     }
                                 )
@@ -558,7 +561,18 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
             )
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                 VSpace(24.dp)
-                T(clock(pos), Modifier.padding(horizontal = rowPadH), size = typo.big, align = TextAlign.Start, maxLines = 1)
+                // The reading is one tap from here, level with the clock, where there was empty
+                // space: it used to take finding a row further down, which nobody did.
+                Row(Modifier.fillMaxWidth().padding(horizontal = rowPadH), verticalAlignment = Alignment.CenterVertically) {
+                    T(clock(pos), Modifier.weight(1f), size = typo.big, align = TextAlign.Start, maxLines = 1)
+                    if (episode.transcript) {
+                        T(
+                            stringResource(R.string.read_text),
+                            Modifier.noRippleClickable(onClick = { nav.push(Screen.Text(episode.id)) }).padding(start = 12.dp, top = 8.dp, bottom = 8.dp),
+                            size = typo.title, align = TextAlign.End, maxLines = 1,
+                        )
+                    }
+                }
                 Small(
                     listOfNotNull(if (dur > 0) clock(dur) else null, feed?.title).joinToString(" · "),
                     Modifier.padding(horizontal = rowPadH), maxLines = 1,
@@ -640,12 +654,6 @@ fun TextRows(episode: Episode, app: App, activity: MainActivity, nav: Nav) {
     val reading = Prefs.deviceLanguage()
     // A text already written stays readable whatever else is going on: hiding it while its
     // translation was being worked out took away the very thing one had waited for.
-    if (episode.transcript) {
-        TextRow(
-            stringResource(R.string.read_text),
-            secondary = stringResource(R.string.read_text_hint), size = typo.title,
-        ) { nav.push(Screen.Text(episode.id)) }
-    }
     when {
         mine -> TextRow(
             TranscribeService.phaseLabel(context, live.phase, live.percent),
@@ -830,7 +838,10 @@ fun SettingsScreen(nav: Nav, app: App, activity: MainActivity) {
                 }
                 Setting(R.string.wifi_only, onOff(s.wifiOnly)) { app.prefs.setWifiOnly(!s.wifiOnly) }
                 Setting(R.string.auto_refresh, onOff(s.autoRefresh)) { app.prefs.setAutoRefresh(!s.autoRefresh) }
-                Setting(R.string.delete_when_played, onOff(s.deleteWhenPlayed)) { app.prefs.setDeleteWhenPlayed(!s.deleteWhenPlayed) }
+                Setting(
+                    R.string.delete_when_played, onOff(s.deleteWhenPlayed),
+                    secondary = R.string.delete_when_played_hint,
+                ) { app.prefs.setDeleteWhenPlayed(!s.deleteWhenPlayed) }
                 Rule(Modifier.padding(vertical = 8.dp))
                 Small(stringResource(R.string.exchange_hint), Modifier.padding(horizontal = rowPadH).padding(bottom = 6.dp), maxLines = 6)
                 TextRow(stringResource(R.string.export_opml), secondary = "abonnements.opml", size = typo.title) { activity.exportOpml() }
@@ -875,5 +886,10 @@ private fun onOff(v: Boolean) = stringResource(if (v) R.string.on else R.string.
 
 /** `label : value` on one line — the punctuation is the language's, hence a format string. */
 @Composable
-private fun Setting(label: Int, value: String, onClick: () -> Unit) =
-    TextRow(stringResource(R.string.setting_line, stringResource(label), value), size = LocalTypo.current.title, onClick = onClick)
+private fun Setting(label: Int, value: String, secondary: Int? = null, onClick: () -> Unit) =
+    TextRow(
+        stringResource(R.string.setting_line, stringResource(label), value),
+        secondary = secondary?.let { stringResource(it) },
+        size = LocalTypo.current.title,
+        onClick = onClick,
+    )

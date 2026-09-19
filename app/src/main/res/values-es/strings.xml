@@ -55,6 +55,7 @@
     <string name="exchange_hint">los dos archivos que lo llevan todo: las suscripciones en opml, que cualquier app de podcasts lee, y los ajustes con el punto en que se dejó cada episodio.</string>
     <string name="wifi_only">descargar solo con wifi</string>
     <string name="auto_refresh">actualizar al abrir</string>
+    <string name="delete_when_played_hint">salvo favoritos, textos y YouTube</string>
     <string name="delete_when_played">borrar una vez escuchado</string>
     <string name="settings">ajustes</string>
     <string name="about">podcasts, guardados en el teléfono. nada sale de él salvo las fuentes que va a buscar</string>
@@ -84,10 +85,12 @@
     <string name="reading_feeds">leyendo las fuentes: %1$d / %2$d</string>
     <string name="view_channels">canales</string>
     <string name="view_episodes">episodios</string>
+    <string name="view_downloaded">descargados</string>
     <string name="view_favourites">favoritos</string>
     <string name="opens_on">se abre en</string>
     <string name="star">guardar en favoritos</string>
     <string name="unstar">quitar de favoritos</string>
+    <string name="empty_downloaded">nada en el teléfono todavía. Un episodio guardado aquí se escucha sin conexión.</string>
     <string name="empty_favourites">ningún favorito. una pulsación larga en un episodio lo guarda aquí.</string>
     <string name="search">búsqueda</string>
     <string name="search_hint">un canal, un episodio</string>
@@ -102,7 +105,7 @@
     <string name="updating_ytdlp">actualizando yt-dlp…</string>
     <string name="ytdlp_updated">yt-dlp actualizado</string>
     <string name="ytdlp_current">yt-dlp ya está actualizado</string>
-    <string name="youtube_downloads_first">este se descarga antes de sonar</string>
+    <string name="youtube_downloads_first">primero se obtiene el audio; sonará solo</string>
     <string name="channel_transcription">transcripción</string>
     <string name="phase_model">obteniendo el modelo %d %%</string>
     <string name="phase_transcribe">poniendo por escrito %d %%</string>
