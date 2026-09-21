@@ -32,8 +32,14 @@ Plus de détails : [docs/NOTES.md](docs/NOTES.md).
 
 ## Installer
 
-Sur [F-Droid](https://funkypitt.github.io/fdroid-repo/repo) et dans les
-[releases](https://github.com/funkypitt/readers-podcasts/releases).
+
+[<img src="docs/badge_obtainium.png" alt="Disponible sur Obtainium" height="48">](https://gallaz.ch/eink/fr.html#readers-podcasts)
+
+- **F-Droid** (recommandé, les mises à jour arrivent seules) : ajoutez le dépôt depuis [gallaz.ch/eink](https://gallaz.ch/eink/fr.html#fdroid), ou l'adresse `https://funkypitt.github.io/fdroid-repo/repo` dans F-Droid.
+- **Obtainium** : touchez le badge depuis le téléphone, ou ajoutez `https://github.com/funkypitt/readers-podcasts` dans Obtainium.
+- **APK** : joint à la [dernière version](../../releases/latest). Pas de mises à jour automatiques.
+
+Les trois voies livrent le même fichier, avec la même signature.
 
 ## Compiler
 
