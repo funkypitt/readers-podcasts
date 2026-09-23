@@ -1,0 +1,1 @@
+1.1.0 — L'écran + trouve un podcast par son nom : quelques mots suffisent, cherchés dans Apple Podcasts et fyyd pendant la frappe, les deux listes réunies sans doublons ; un toucher abonne, et un podcast déjà suivi le dit et s'ouvre. Coller une adresse marche comme avant, et une adresse présente dans le presse-papier est toujours proposée, sélectionnée.

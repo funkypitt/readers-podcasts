@@ -196,6 +196,7 @@ class MainActivity : ComponentActivity() {
                 when (val screen = nav.current) {
                     Screen.Home -> HomeScreen(nav, app, activity)
                     Screen.Search -> SearchScreen(nav, app, activity)
+                    is Screen.Add -> com.freedomfighter.readerspodcasts.ui.AddScreen(nav, app, activity, screen.initial)
                     is Screen.Player -> PlayerScreen(nav, app, activity, screen.id)
                     is Screen.Text -> TextScreen(nav, app, activity, screen.id)
                     Screen.Settings -> SettingsScreen(nav, app, activity)

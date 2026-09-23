@@ -20,7 +20,7 @@
     <string name="youtube_not_here">youtube channels are not in this version.</string>
     <string name="youtube_no_channel">no channel at that address</string>
     <string name="offline">no connection</string>
-    <string name="empty_no_feeds">no subscriptions yet. + below takes the address of a feed; sharing a link to this app works too.</string>
+    <string name="empty_no_feeds">no subscriptions yet. + at the top finds a podcast by its name, or takes the address of its feed; sharing a link to this app works too.</string>
     <string name="empty_feed">nothing here yet. ⋯ refreshes.</string>
     <string name="auto_download">automatic download</string>
     <string name="auto_download_on">on</string>
@@ -152,4 +152,14 @@
         <item quantity="one">%d older episode</item>
         <item quantity="other">%d older episodes</item>
     </plurals>
+    <string name="add_title">add a podcast</string>
+    <string name="add_field_hint">a name, or a feed\'s address</string>
+    <string name="add_hint">Type a few words of its name to look it up in the public directories, or paste the address of its feed.</string>
+    <string name="subscribe_address">subscribe to this address</string>
+    <string name="catalogue_searching">searching the directories…</string>
+    <string name="catalogue_nothing">no podcast of that name in the directories</string>
+    <string name="catalogue_offline">the directories do not answer — is the phone online?</string>
+    <string name="catalogue_one_failed">%1$s did not answer: these come from the other one</string>
+    <string name="catalogue_source">found in Apple Podcasts and fyyd</string>
+    <string name="already_followed">already followed</string>
 </resources>

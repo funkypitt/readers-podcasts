@@ -20,7 +20,7 @@
     <string name="youtube_not_here">YouTube-Kanäle gibt es in dieser Fassung nicht.</string>
     <string name="youtube_no_channel">kein Kanal unter dieser Adresse</string>
     <string name="offline">keine Verbindung</string>
-    <string name="empty_no_feeds">noch keine Abos. + unten nimmt die Adresse eines Feeds; ein Link, der an diese App geteilt wird, geht auch.</string>
+    <string name="empty_no_feeds">noch keine Abos. + oben findet einen Podcast über seinen Namen oder nimmt die Adresse seines Feeds; ein Link, der an diese App geteilt wird, geht auch.</string>
     <string name="empty_feed">noch nichts hier. ⋯ aktualisiert.</string>
     <string name="auto_download">automatisch laden</string>
     <string name="auto_download_on">an</string>
@@ -152,4 +152,14 @@
         <item quantity="one">%d älterer Beitrag</item>
         <item quantity="other">%d ältere Beiträge</item>
     </plurals>
+    <string name="add_title">Podcast hinzufügen</string>
+    <string name="add_field_hint">ein Name oder die Adresse eines Feeds</string>
+    <string name="add_hint">Ein paar Wörter des Namens tippen, um in den öffentlichen Verzeichnissen zu suchen, oder die Adresse des Feeds einfügen.</string>
+    <string name="subscribe_address">diese Adresse abonnieren</string>
+    <string name="catalogue_searching">Suche in den Verzeichnissen…</string>
+    <string name="catalogue_nothing">kein Podcast dieses Namens in den Verzeichnissen</string>
+    <string name="catalogue_offline">die Verzeichnisse antworten nicht – ist das Telefon online?</string>
+    <string name="catalogue_one_failed">%1$s hat nicht geantwortet: diese kommen vom anderen</string>
+    <string name="catalogue_source">gefunden bei Apple Podcasts und fyyd</string>
+    <string name="already_followed">schon abonniert</string>
 </resources>

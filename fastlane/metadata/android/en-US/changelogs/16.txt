@@ -1,0 +1,1 @@
+1.1.0 — The + screen finds a podcast by its name: a few words are looked up in Apple Podcasts and fyyd as you type, the two lists put together without duplicates; one touch subscribes, and a podcast already followed says so and opens. Pasting an address works as before, and an address on the clipboard is still offered, selected.

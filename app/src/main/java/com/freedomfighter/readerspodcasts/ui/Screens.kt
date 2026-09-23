@@ -1,5 +1,11 @@
 package com.freedomfighter.readerspodcasts.ui
 
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
+import com.freedomfighter.readerspodcasts.net.Catalogue
+import kotlinx.coroutines.delay
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -75,6 +81,9 @@ import com.freedomfighter.readers.speech.whisper.Prompts
 sealed class Screen {
     data object Home : Screen()
     data object Search : Screen()
+
+    /** Adding a podcast: by its address — [initial], the clipboard's if it holds one — or by its name. */
+    data class Add(val initial: String = "") : Screen()
 
     /**
      * The player, for [id] — the episode one tapped, which is not always the one the audio
@@ -327,7 +336,6 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
     var views by remember { mutableStateOf(false) }
     var rowMenu by remember { mutableStateOf<String?>(null) }
     var feedMenu by remember { mutableStateOf<String?>(null) }
-    var adding by remember { mutableStateOf<String?>(null) }
 
     // Whatever is stored, the screen shows something: a feed that is gone, or a name from a
     // version that knew other lists, falls back to the channels rather than to an empty page.
@@ -364,7 +372,7 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
                 actions = if (feed != null) listOf("↻" to { activity.refreshOne(feed.id); Unit })
                 else listOf(
                     "↻" to { activity.refreshAll() },
-                    "+" to { adding = clipboardUrl(clipboard.getText()?.text) },
+                    "+" to { nav.push(Screen.Add(clipboardUrl(clipboard.getText()?.text))) },
                 ),
             )
             PullToRefresh(onRefresh = { if (feed != null) activity.refreshOne(feed.id) else activity.refreshAll() }, modifier = Modifier.weight(1f)) { pulled ->
@@ -447,7 +455,7 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
         if (menu) TextMenu(null, buildList {
             add(MenuItem(stringResource(R.string.search)) { nav.searchQuery = ""; nav.push(Screen.Search) })
             add(MenuItem(stringResource(R.string.refresh)) { activity.refreshAll() })
-            add(MenuItem(stringResource(R.string.add_feed)) { adding = clipboardUrl(clipboard.getText()?.text) })
+            add(MenuItem(stringResource(R.string.add_feed)) { nav.push(Screen.Add(clipboardUrl(clipboard.getText()?.text))) })
             add(MenuItem(stringResource(R.string.import_opml)) { activity.importOpml() })
             add(MenuItem(stringResource(R.string.export_opml), secondary = "abonnements.opml") { activity.exportOpml() })
         }, onDismiss = { menu = false }, footer = listOf(
@@ -464,26 +472,117 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
             val f = feeds.firstOrNull { it.id == id }
             if (f == null) feedMenu = null else FeedMenu(f, app, activity, onDismiss = { feedMenu = null })
         }
-
-        adding?.let { initial ->
-            // The clipboard holds an address often enough that pasting it by hand is a chore;
-            // when it does, it is offered selected, so the first key replaces it and nothing
-            // has to be cleared by holding backspace.
-            TextPrompt(
-                title = stringResource(R.string.add_feed_hint),
-                initial = initial,
-                confirm = stringResource(R.string.subscribe),
-                keyboard = androidx.compose.ui.text.input.KeyboardType.Uri,
-                selectAll = true,
-                onDone = { activity.subscribe(it); adding = null },
-                onCancel = { adding = null },
-            )
-        }
     }
 }
 
 @Composable
 private fun Hint(text: String) = Small(text, Modifier.padding(horizontal = rowPadH, vertical = 16.dp), maxLines = 6)
+
+// ---------------------------------------------------------------------------------------------
+// Adding a podcast. One field takes either: an address (the clipboard's is offered, selected, so
+// the first key replaces it), which is subscribed to as before; or a few words of a name, which
+// are looked up in the public directories as one types. A found podcast goes down the same road
+// as a pasted address.
+// ---------------------------------------------------------------------------------------------
+
+/** An address rather than a name: a scheme, or a host with a dot and no spaces. */
+fun looksLikeAddress(text: String): Boolean {
+    val s = text.trim()
+    return clipboardUrl(s).isNotEmpty() || Regex("^[^\\s/]+\\.[a-zA-Z]{2,}(/\\S*)?$").matches(s)
+}
+
+/** A secondary line is read at a glance; past 44 characters it runs into the edge. */
+fun cut(text: String, max: Int = 44): String = if (text.length <= max) text else text.take(max - 1).trimEnd() + "…"
+
+@Composable
+fun AddScreen(nav: Nav, app: App, activity: MainActivity, initial: String) {
+    val feeds by app.store.feeds.collectAsState()
+    var field by remember { mutableStateOf(TextFieldValue(initial, selection = TextRange(0, initial.length))) }
+    val focus = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+    BackHandler { nav.pop() }
+    LaunchedEffect(Unit) { focus.requestFocus() }
+
+    val text = field.text.trim()
+    val address = looksLikeAddress(text)
+    var outcome by remember { mutableStateOf<Catalogue.Outcome?>(null) }
+    var searching by remember { mutableStateOf(false) }
+    // As one types, once the typing pauses: each new letter cancels the search before it.
+    LaunchedEffect(text, address) {
+        outcome = null
+        searching = false
+        if (address || text.length < 2) return@LaunchedEffect
+        delay(600)
+        searching = true
+        try {
+            outcome = Catalogue.search(text, java.util.Locale.getDefault().country)
+        } finally {
+            searching = false
+        }
+    }
+
+    Page {
+        Column(Modifier.fillMaxSize().imePadding()) {
+            ScreenTitle(stringResource(R.string.add_title), onBack = { nav.pop() })
+            ReaderTextField(
+                value = field,
+                onValueChange = { field = it },
+                modifier = Modifier.fillMaxWidth().padding(horizontal = rowPadH, vertical = 12.dp).focusRequester(focus),
+                placeholder = stringResource(R.string.add_field_hint),
+                imeAction = if (address) ImeAction.Go else ImeAction.Search,
+                onImeAction = { if (address) activity.subscribe(text) else focusManager.clearFocus() },
+                keyboard = androidx.compose.ui.text.input.KeyboardType.Uri,
+            )
+            Rule()
+            LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(top = 4.dp, bottom = 12.dp)) {
+                if (activity.busy.isNotBlank()) {
+                    item { Small(activity.busy, Modifier.padding(horizontal = rowPadH, vertical = 8.dp)) }
+                }
+                when {
+                    address -> item {
+                        TextRow(stringResource(R.string.subscribe_address), secondary = cut(text)) { activity.subscribe(text) }
+                    }
+                    text.length < 2 -> item { Hint(stringResource(R.string.add_hint)) }
+                    searching || outcome == null -> item { Hint(stringResource(R.string.catalogue_searching)) }
+                    else -> {
+                        val out = outcome!!
+                        if (out.found.isEmpty()) item {
+                            Hint(stringResource(if (out.failed.size >= 2) R.string.catalogue_offline else R.string.catalogue_nothing))
+                        }
+                        items(out.found, key = { Catalogue.key(it.url) }) { f ->
+                            val followed = feeds.firstOrNull { Catalogue.key(it.url) == Catalogue.key(f.url) }
+                            FoundRow(f, followed != null) {
+                                if (followed != null) { app.prefs.setView(followed.id); nav.home() }
+                                else { focusManager.clearFocus(); activity.subscribe(f.url) }
+                            }
+                        }
+                        if (out.found.isNotEmpty() || out.failed.size == 1) item {
+                            Small(
+                                if (out.failed.size == 1) stringResource(R.string.catalogue_one_failed, out.failed[0])
+                                else stringResource(R.string.catalogue_source),
+                                Modifier.padding(horizontal = rowPadH, vertical = 12.dp), maxLines = 3,
+                            )
+                        }
+                    }
+                }
+            }
+            Box(Modifier.windowInsetsPadding(WindowInsets.navigationBars))
+        }
+    }
+}
+
+/** A podcast from a directory: its name on up to two lines — they are long, and alike at the start. */
+@Composable
+private fun FoundRow(f: Catalogue.Found, followed: Boolean, onClick: () -> Unit) {
+    val who = f.author.ifBlank { Refresher.hostOf(f.url) }
+    Column(
+        Modifier.fillMaxWidth().heightIn(min = 44.dp).noRippleClickable(onClick = onClick)
+            .padding(horizontal = rowPadH, vertical = rowPadV * 0.7f)
+    ) {
+        T(f.title, maxLines = 2, align = TextAlign.Start)
+        Small(cut(if (followed) stringResource(R.string.already_followed) + " · " + who else who), maxLines = 1)
+    }
+}
 
 // ---------------------------------------------------------------------------------------------
 // Search: over what is already here — the channels one follows and their episodes. Nothing is

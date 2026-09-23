@@ -12,8 +12,8 @@ android {
         applicationId = "com.freedomfighter.readerspodcasts"
         minSdk = 29
         targetSdk = 34
-        versionCode = 15
-        versionName = "1.0.0"
+        versionCode = 16
+        versionName = "1.1.0"
     }
 
     flavorDimensions += "audience"

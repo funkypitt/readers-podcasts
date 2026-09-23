@@ -20,7 +20,7 @@
     <string name="youtube_not_here">каналов YouTube в этой версии нет.</string>
     <string name="youtube_no_channel">по этому адресу канала нет</string>
     <string name="offline">нет связи</string>
-    <string name="empty_no_feeds">подписок пока нет. + внизу принимает адрес ленты; ссылку можно и просто отправить в это приложение.</string>
+    <string name="empty_no_feeds">подписок пока нет. + вверху находит подкаст по названию или принимает адрес его ленты; ссылку можно и просто отправить в это приложение.</string>
     <string name="empty_feed">здесь пока пусто. ⋯ обновляет.</string>
     <string name="auto_download">автоматическая загрузка</string>
     <string name="auto_download_on">вкл</string>
@@ -154,4 +154,14 @@
         <item quantity="one">%d более старый выпуск</item>
         <item quantity="other">%d более старых выпусков</item>
     </plurals>
+    <string name="add_title">добавить подкаст</string>
+    <string name="add_field_hint">название или адрес ленты</string>
+    <string name="add_hint">Введите несколько слов названия, чтобы найти подкаст в открытых каталогах, или вставьте адрес его ленты.</string>
+    <string name="subscribe_address">подписаться по этому адресу</string>
+    <string name="catalogue_searching">поиск в каталогах…</string>
+    <string name="catalogue_nothing">в каталогах нет подкаста с таким названием</string>
+    <string name="catalogue_offline">каталоги не отвечают — есть ли подключение?</string>
+    <string name="catalogue_one_failed">%1$s не ответил: это результаты другого</string>
+    <string name="catalogue_source">найдено в Apple Podcasts и fyyd</string>
+    <string name="already_followed">уже в подписках</string>
 </resources>

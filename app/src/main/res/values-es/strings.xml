@@ -20,7 +20,7 @@
     <string name="youtube_not_here">los canales de YouTube no están en esta versión.</string>
     <string name="youtube_no_channel">ningún canal en esa dirección</string>
     <string name="offline">sin conexión</string>
-    <string name="empty_no_feeds">ninguna suscripción. + abajo toma la dirección de una fuente; compartir un enlace con esta app también sirve.</string>
+    <string name="empty_no_feeds">ninguna suscripción. + arriba encuentra un podcast por su nombre o toma la dirección de su fuente; compartir un enlace con esta app también sirve.</string>
     <string name="empty_feed">nada aquí todavía. ⋯ actualiza.</string>
     <string name="auto_download">descarga automática</string>
     <string name="auto_download_on">activa</string>
@@ -152,4 +152,14 @@
         <item quantity="one">%d episodio más antiguo</item>
         <item quantity="other">%d episodios más antiguos</item>
     </plurals>
+    <string name="add_title">añadir un podcast</string>
+    <string name="add_field_hint">un nombre o la dirección de una fuente</string>
+    <string name="add_hint">Escriba unas palabras del nombre para buscarlo en los directorios públicos, o pegue la dirección de su fuente.</string>
+    <string name="subscribe_address">suscribirse a esta dirección</string>
+    <string name="catalogue_searching">buscando en los directorios…</string>
+    <string name="catalogue_nothing">ningún podcast con ese nombre en los directorios</string>
+    <string name="catalogue_offline">los directorios no responden: ¿está conectado el teléfono?</string>
+    <string name="catalogue_one_failed">%1$s no respondió: estos vienen del otro</string>
+    <string name="catalogue_source">encontrados en Apple Podcasts y fyyd</string>
+    <string name="already_followed">ya suscrito</string>
 </resources>
