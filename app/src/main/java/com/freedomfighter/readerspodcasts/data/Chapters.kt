@@ -52,6 +52,24 @@ object Chapters {
         return found
     }
 
+    // A time written anywhere in a text: 12:34 or 1:02:03, not inside a longer run of digits.
+    private val TIME = Regex("""(?<![\d:.])(?:(\d{1,2}):)?(\d{1,2}):(\d{2})(?![\d:])""")
+
+    /**
+     * Every time written in [text], as (where it stands, where it points in the sound) — for a
+     * tap on « à 12:34 » to go there. A time past the end of the episode ([durationMs], when it
+     * is known) is left alone: that is a clock time, « le 12 mars à 14:30 », not a place in it.
+     */
+    fun times(text: String, durationMs: Long = 0): List<Pair<IntRange, Long>> =
+        TIME.findAll(text).mapNotNull { m ->
+            val hours = m.groupValues[1].toIntOrNull() ?: 0
+            val minutes = m.groupValues[2].toInt()
+            val seconds = m.groupValues[3].toInt()
+            if (seconds > 59 || (m.groupValues[1].isNotEmpty() && minutes > 59)) return@mapNotNull null
+            val ms = (hours * 3600L + minutes * 60L + seconds) * 1000L
+            if (durationMs > 0 && ms >= durationMs) null else m.range to ms
+        }.toList()
+
     /** The chapter one is inside at [positionMs], or null before the first. */
     fun at(chapters: List<Chapter>, positionMs: Long): Chapter? =
         chapters.lastOrNull { it.startMs <= positionMs }

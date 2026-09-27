@@ -405,4 +405,16 @@ class FeedParserTest {
         assertEquals("Deux", Chapters.at(chapters, 120_000)?.title)
         assertEquals("Trois", Chapters.at(chapters, 999_000)?.title)
     }
+
+    @Test fun timesWrittenInTheTextPointIntoTheSound() {
+        val text = "À 12:34 il parle du souffle, puis à 1:02:03 des questions. Le 3 mars à 14:30, 12.5:30 et 123:45 ne sont pas des repères; 9:75 non plus."
+        val found = Chapters.times(text, durationMs = 2 * 3600_000L)
+        assertEquals(listOf(754_000L, 3_723_000L, 870_000L), found.map { it.second })
+        assertEquals("12:34", text.substring(found[0].first))
+        assertEquals("1:02:03", text.substring(found[1].first))
+        // with the length known, a clock time past the end stays text
+        assertEquals(listOf(754_000L), Chapters.times("12:34 et 14:30", durationMs = 800_000L).map { it.second })
+        // unknown length: every well-formed time counts
+        assertEquals(2, Chapters.times("12:34 et 14:30").size)
+    }
 }

@@ -37,6 +37,9 @@ object Extractor {
     /** One video of a channel, as a flat listing would give it. */
     data class Listed(val videoId: String, val title: String, val durationMs: Long)
 
+    /** The words under one video — not in this build. */
+    fun describe(context: Context, url: String): Pair<String, Long>? = null
+
     /** The videos beyond the feed's window — not in this build, which has no yt-dlp. */
     fun listChannel(context: Context, feedUrl: String, from: Int, count: Int): List<Listed> = emptyList()
 }

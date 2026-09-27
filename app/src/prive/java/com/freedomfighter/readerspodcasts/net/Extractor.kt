@@ -121,6 +121,28 @@ object Extractor {
         }
     }
 
+    /**
+     * The words under one video, and its publication date (0 when unknown): what a flat listing
+     * leaves out, fetched when such a video is opened. One request, nothing downloaded.
+     */
+    fun describe(context: Context, url: String): Pair<String, Long>? {
+        prepare(context)
+        val request = YoutubeDLRequest(url).apply {
+            addOption("-J")
+            addOption("--skip-download")
+            addOption("--no-playlist")
+            addOption("--no-warnings")
+        }
+        val response = attempt(context) { YoutubeDL.getInstance().execute(request, "describe-$url") }
+        val o = runCatching { org.json.JSONObject(response.out.orEmpty().trim()) }.getOrNull() ?: return null
+        val day = o.optString("upload_date")   // YYYYMMDD
+        val published = runCatching {
+            java.time.LocalDate.parse(day, java.time.format.DateTimeFormatter.BASIC_ISO_DATE)
+                .atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        }.getOrDefault(0L)
+        return o.optString("description") to published
+    }
+
     /** The page that lists a channel's videos, from the address of its feed. */
     private fun pageOf(feedUrl: String): String? {
         Regex("channel_id=([\\w-]+)").find(feedUrl)?.let { return "https://www.youtube.com/channel/${it.groupValues[1]}/videos" }

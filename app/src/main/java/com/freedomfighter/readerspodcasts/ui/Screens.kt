@@ -6,6 +6,8 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import com.freedomfighter.readerspodcasts.net.Catalogue
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -677,6 +679,24 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
     val dur = if (current && ui.durationMs > 0) ui.durationMs else episode.durationMs
     val feed = app.store.feed(episode.feedId)
     val live = DownloadService.Live
+    // A video reached by « load older » comes with a title and a length only: its words — and the
+    // times in them — are asked for once, when it is opened.
+    LaunchedEffect(episode.id) {
+        if (episode.description.isBlank() && com.freedomfighter.readerspodcasts.net.Extractor.AVAILABLE &&
+            episode.mediaUrl.contains("youtube.com/watch")
+        ) {
+            val got = withContext(Dispatchers.IO) {
+                runCatching { com.freedomfighter.readerspodcasts.net.Extractor.describe(context, episode.mediaUrl) }
+                    .onFailure { android.util.Log.w("Podcasts", "description of ${episode.mediaUrl} not fetched", it) }.getOrNull()
+            } ?: return@LaunchedEffect
+            app.store.updateEpisode(episode.id) {
+                it.copy(
+                    description = got.first.take(10_000),
+                    published = if (it.published <= 0L && got.second > 0L) got.second else it.published,
+                )
+            }
+        }
+    }
 
     Page {
         Column(Modifier.fillMaxSize()) {
@@ -763,6 +783,8 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
                         maxLines = if (unfolded) Int.MAX_VALUE else 8,
                         onOverflow = { if (!unfolded) overflows = it },
                         onCopied = { activity.toast(context.getString(R.string.copied)) },
+                        durationMs = dur,
+                        onTime = { ms -> tick(); activity.seekOrPlay(episode, ms) },
                     )
                     if (overflows && !unfolded) {
                         Small(

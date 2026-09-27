@@ -134,7 +134,7 @@ object FeedParser {
             id = episodeId(feedId, guid), feedId = feedId, title = b.title,
             published = if (b.date > 0) b.date else System.currentTimeMillis(),
             mediaUrl = media, mime = type, bytes = b.bytes, durationMs = b.durationMs,
-            description = b.description.take(2000),
+            description = b.description.take(10_000),
         )
     }
 

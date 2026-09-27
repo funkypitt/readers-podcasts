@@ -244,6 +244,10 @@ fun LinkedText(
     /** Told whether the text ran past [maxLines], so the caller can offer the rest. */
     onOverflow: (Boolean) -> Unit = {},
     onCopied: (String) -> Unit = {},
+    /** Known length of the sound: a time written past it is a clock time, left as text. */
+    durationMs: Long = 0,
+    /** When set, every time written in the text (12:34, 1:02:03) sends the sound there. */
+    onTime: ((Long) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val colors = LocalColors.current
@@ -256,10 +260,16 @@ fun LinkedText(
             (m.range.first until m.range.first + clean.length) to clean
         }.filter { it.second.length > 4 }.toList()
     }
-    val annotated = remember(text, spans) {
+    // Times, outside the addresses (a link can hold « t=1:02 » and is followed as a link).
+    val times = remember(text, spans, durationMs, onTime != null) {
+        if (onTime == null) emptyList()
+        else com.freedomfighter.readerspodcasts.data.Chapters.times(text, durationMs)
+            .filter { (range, _) -> spans.none { (r, _) -> range.first <= r.last && range.last >= r.first } }
+    }
+    val annotated = remember(text, spans, times) {
         buildAnnotatedString {
             append(text)
-            spans.forEach { (range, _) ->
+            (spans.map { it.first } + times.map { it.first }).forEach { range ->
                 addStyle(
                     SpanStyle(color = colors.fg, textDecoration = TextDecoration.Underline),
                     range.first, range.last + 1,
@@ -275,9 +285,12 @@ fun LinkedText(
     }
     BasicText(
         text = annotated,
-        modifier = modifier.pointerInput(spans) {
+        modifier = modifier.pointerInput(spans, times) {
             detectTapGestures(
                 onTap = { where ->
+                    val i = layout?.getOffsetForPosition(where)
+                    val time = if (i == null) null else times.firstOrNull { (range, _) -> i >= range.first && i <= range.last + 1 }
+                    if (time != null && onTime != null) { onTime(time.second); return@detectTapGestures }
                     val url = linkAt(where) ?: return@detectTapGestures
                     val full = if (url.startsWith("http", true)) url else "https://$url"
                     runCatching {
