@@ -17,7 +17,7 @@
     <string name="adding_feed">lecture du flux…</string>
     <string name="subscribed">abonné à %s</string>
     <string name="feed_failed">ce flux n\'a pas pu être lu. %s</string>
-    <string name="youtube_not_here">les chaînes YouTube ne sont pas dans cette version.</string>
+    <string name="youtube_not_here">les chaînes YouTube ne sont pas prises en charge.</string>
     <string name="youtube_no_channel">aucune chaîne à cette adresse</string>
     <string name="offline">pas de connexion</string>
     <string name="empty_no_feeds">aucun abonnement. + en haut trouve un podcast par son nom, ou prend l\'adresse de son flux ; partager un lien vers cette app fonctionne aussi.</string>
@@ -55,7 +55,7 @@
     <string name="exchange_hint">les deux fichiers qui portent tout : les abonnements en opml, que toute app de podcasts lit, et les réglages avec l\'endroit où chaque épisode a été laissé.</string>
     <string name="wifi_only">télécharger en wifi seulement</string>
     <string name="auto_refresh">actualiser à l\'ouverture</string>
-    <string name="delete_when_played_hint">sauf favoris, textes et YouTube</string>
+    <string name="delete_when_played_hint">sauf favoris et épisodes transcrits</string>
     <string name="loading_older">recherche des plus anciens…</string>
     <string name="nothing_older">rien de plus ancien</string>
     <string name="load_older">charger plus d\'épisodes</string>
@@ -66,7 +66,7 @@
     <string name="copied">copié</string>
     <string name="delete_when_played">effacer une fois écouté</string>
     <string name="settings">réglages</string>
-    <string name="about">des podcasts, gardés sur le téléphone. rien n\'en sort que les flux qu\'il va chercher</string>
+    <string name="about">des podcasts, gardés sur le téléphone. l\'app ne se connecte que pour trouver et récupérer des podcasts</string>
     <string name="colours">couleurs</string>
     <string name="theme_dark">blanc sur noir</string>
     <string name="theme_light">noir sur blanc</string>
@@ -98,7 +98,7 @@
     <string name="opens_on">s\'ouvre sur</string>
     <string name="star">garder en favori</string>
     <string name="unstar">retirer des favoris</string>
-    <string name="empty_downloaded">rien sur le téléphone pour l\'instant. Un épisode gardé ici s\'écoute sans connexion.</string>
+    <string name="empty_downloaded">rien sur le téléphone pour l\'instant. un épisode téléchargé s\'écoute sans connexion.</string>
     <string name="empty_favourites">aucun favori. un appui long sur un épisode le garde ici.</string>
     <string name="search">recherche</string>
     <string name="search_hint">une chaîne, un épisode</string>
@@ -162,4 +162,19 @@
     <string name="catalogue_one_failed">%1$s n\'a pas répondu : ces résultats viennent de l\'autre</string>
     <string name="catalogue_source">trouvés dans Apple Podcasts et fyyd</string>
     <string name="already_followed">déjà suivi</string>
+    <string name="error_download_cut">téléchargement interrompu — réessayer pour le reprendre</string>
+    <string name="error_no_space">pas assez de place : %1$d Mo nécessaires</string>
+    <string name="error_no_audio">aucun son dans ce fichier</string>
+    <string name="error_download_http">téléchargement refusé (HTTP %1$d)</string>
+    <string name="size_mb">%1$d Mo</string>
+    <string name="error_server_http">le serveur a répondu par une erreur (HTTP %1$d)</string>
+    <string name="error_cannot_create">impossible de créer %1$s</string>
+    <string name="error_download">échec du téléchargement : %1$s</string>
+    <string name="error_refresh">non actualisé : %1$s</string>
+    <string name="error_transcription">la mise par écrit a échoué : %1$s</string>
+    <string name="error_translation">la traduction a échoué : %1$s</string>
+    <string name="error_ytdlp_update">yt-dlp n\'a pas pu être mis à jour : %1$s</string>
+    <string name="error_older">les épisodes plus anciens n\'ont pas pu être chargés : %1$s</string>
+    <string name="error_no_channel_page">cette chaîne n\'a pas de page à lire</string>
+    <string name="error_ytdlp_nothing">yt-dlp n\'a rien rapporté</string>
 </resources>

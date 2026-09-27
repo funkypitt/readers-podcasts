@@ -80,7 +80,7 @@ object Extractor {
         }
         if (cancelled()) { leftovers(directory, episode.id).forEach { it.delete() }; return null }
         val file = leftovers(directory, episode.id).firstOrNull { !it.name.endsWith(".part") }
-        return file ?: throw IllegalStateException(why(response))
+        return file ?: throw IllegalStateException(why(context, response))
     }
 
     /** One video of a channel, as a flat listing gives it: enough to make a row of it. */
@@ -102,7 +102,7 @@ object Extractor {
         // No weekly freshening here: that belongs to the download service. A yt-dlp too old for
         // YouTube is caught by [attempt], which fetches a new one and tries again at once.
         prepare(context)
-        val page = pageOf(feedUrl) ?: throw IllegalStateException("cette chaîne n'a pas de page à lire")
+        val page = pageOf(feedUrl) ?: throw com.freedomfighter.readerspodcasts.Shown(context.getString(com.freedomfighter.readerspodcasts.R.string.error_no_channel_page))
         val request = YoutubeDLRequest(page).apply {
             addOption("--flat-playlist")
             addOption("-J")
@@ -112,7 +112,7 @@ object Extractor {
         }
         val response = attempt(context) { YoutubeDL.getInstance().execute(request, "list-$page") }
         val text = response.out.orEmpty().trim()
-        if (text.isEmpty()) throw IllegalStateException(tail(response.err) ?: "yt-dlp : rien à lire")
+        if (text.isEmpty()) throw IllegalStateException(tail(response.err) ?: context.getString(com.freedomfighter.readerspodcasts.R.string.error_ytdlp_nothing))
         val entries = org.json.JSONObject(text).optJSONArray("entries") ?: return emptyList()
         return (0 until entries.length()).mapNotNull { i ->
             val o = entries.optJSONObject(i) ?: return@mapNotNull null
@@ -181,10 +181,10 @@ object Extractor {
      * thing, so what is shown is the last line of the error, and the warning only if there is
      * nothing else.
      */
-    private fun why(response: YoutubeDLResponse?): String {
+    private fun why(context: Context, response: YoutubeDLResponse?): String {
         val err = tail(response?.err)
         val out = tail(response?.out)
-        return (err ?: out ?: "yt-dlp: rien à lire")
+        return (err ?: out ?: context.getString(com.freedomfighter.readerspodcasts.R.string.error_ytdlp_nothing))
     }
 
     /**

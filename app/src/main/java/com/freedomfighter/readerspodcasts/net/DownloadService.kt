@@ -115,7 +115,7 @@ class DownloadService : Service() {
                     if (!cancelled.get()) {
                         Live.errorId = job.id
                         // Long enough to hold what yt-dlp says: the player shows it whole.
-                        Live.error = (e.message ?: e.javaClass.simpleName).trim().take(400)
+                        Live.error = com.freedomfighter.readerspodcasts.Errors.describe(this@DownloadService, e, R.string.error_download).take(400)
                     }
                 } finally {
                     Live.id = ""; Live.percent = 0; Live.phase = ""
@@ -175,7 +175,7 @@ class DownloadService : Service() {
         var have = if (part.exists()) part.length() else 0L
         val c = Net.open(episode.mediaUrl, range = have)
         try {
-            if (c.responseCode >= 400) throw IllegalStateException("HTTP ${c.responseCode}")
+            if (c.responseCode >= 400) throw com.freedomfighter.readerspodcasts.HttpStatus(c.responseCode)
             // 206: the server picks up where we stopped. Anything else means it sent the whole
             // file again, so what is on disk is worthless and the part starts over.
             val resuming = c.responseCode == 206
@@ -197,7 +197,7 @@ class DownloadService : Service() {
                     }
                 }
             }
-            if (total > 0 && done < total) throw IllegalStateException("download cut short")
+            if (total > 0 && done < total) throw com.freedomfighter.readerspodcasts.CutShort()
             if (!part.renameTo(target)) { target.delete(); part.renameTo(target) }
             return target
         } finally {

@@ -121,7 +121,11 @@ class TranscribeService : Service() {
                 } catch (e: Exception) {
                     android.util.Log.w("ReadersPodcasts", "transcription failed", e)
                     if (!cancelled.get()) {
-                        Live.error = (e.message ?: e.javaClass.simpleName).trim().take(400)
+                        Live.error = Errors.describe(this@TranscribeService, e, when {
+                            job.fetchTranslator -> R.string.error_download
+                            job.translateTo.isNotBlank() -> R.string.error_translation
+                            else -> R.string.error_transcription
+                        }).take(400)
                         Live.errorId = job.id
                     }
                 } finally {
@@ -170,7 +174,7 @@ class TranscribeService : Service() {
             }
         }
         if (cancelled.get()) return
-        val handle = TranslateModel.open(this) ?: error(getString(R.string.model_not_here))
+        val handle = TranslateModel.open(this) ?: throw Shown(getString(R.string.model_not_here))
         Live.phase = PHASE_TRANSLATE
         Live.percent = 0
         val blocks = withContext(Dispatchers.Default) {

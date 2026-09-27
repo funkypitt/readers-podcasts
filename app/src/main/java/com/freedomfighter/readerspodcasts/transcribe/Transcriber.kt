@@ -46,9 +46,9 @@ object Transcriber {
             Models.download(ctx, model, onProgress = { onProgress("model", it) }, cancelled = cancelled)
         }
         if (cancelled()) return null
-        val uri = source(episode) ?: error(ctx.getString(com.freedomfighter.readerspodcasts.R.string.transcribe_needs_file))
+        val uri = source(episode) ?: throw com.freedomfighter.readerspodcasts.Shown(ctx.getString(com.freedomfighter.readerspodcasts.R.string.transcribe_needs_file))
         // Ours, or a sibling app's copy by file descriptor: either way a path whisper reads.
-        val handle = Models.open(ctx, model) ?: error(ctx.getString(com.freedomfighter.readerspodcasts.R.string.model_not_here))
+        val handle = Models.open(ctx, model) ?: throw com.freedomfighter.readerspodcasts.Shown(ctx.getString(com.freedomfighter.readerspodcasts.R.string.model_not_here))
         val totalMs = durationMs(ctx, uri).takeIf { it > 0 } ?: episode.durationMs.coerceAtLeast(1)
         val segments = ArrayList<Segment>()
         var heard = language.orEmpty()
@@ -104,7 +104,7 @@ object Transcriber {
             put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOCUMENTS + "/" + FOLDER)
         }
         val uri = cr.insert(MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values)
-            ?: error("cannot create $name")
+            ?: throw com.freedomfighter.readerspodcasts.CannotCreate(name)
         cr.openOutputStream(uri)!!.use { it.write(bytes) }
         return uri
     }

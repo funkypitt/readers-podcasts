@@ -17,7 +17,7 @@
     <string name="adding_feed">чтение ленты…</string>
     <string name="subscribed">подписка на %s</string>
     <string name="feed_failed">эту ленту не удалось прочитать. %s</string>
-    <string name="youtube_not_here">каналов YouTube в этой версии нет.</string>
+    <string name="youtube_not_here">каналы YouTube не поддерживаются.</string>
     <string name="youtube_no_channel">по этому адресу канала нет</string>
     <string name="offline">нет связи</string>
     <string name="empty_no_feeds">подписок пока нет. + вверху находит подкаст по названию или принимает адрес его ленты; ссылку можно и просто отправить в это приложение.</string>
@@ -55,7 +55,7 @@
     <string name="exchange_hint">два файла, в которых всё: подписки в opml, который читает любое приложение подкастов, и настройки с местом, где каждый выпуск был оставлен.</string>
     <string name="wifi_only">загружать только по wi-fi</string>
     <string name="auto_refresh">обновлять при открытии</string>
-    <string name="delete_when_played_hint">кроме избранного, текстов и YouTube</string>
+    <string name="delete_when_played_hint">кроме избранного и расшифрованных выпусков</string>
     <string name="loading_older">ищем более старые…</string>
     <string name="nothing_older">старее ничего нет</string>
     <string name="load_older">загрузить ещё выпуски</string>
@@ -66,7 +66,7 @@
     <string name="copied">скопировано</string>
     <string name="delete_when_played">удалять после прослушивания</string>
     <string name="settings">настройки</string>
-    <string name="about">подкасты, которые остаются на телефоне. наружу уходят только запросы к лентам</string>
+    <string name="about">подкасты, которые остаются на телефоне. в сеть приложение выходит, только чтобы найти и загрузить подкасты</string>
     <string name="colours">цвета</string>
     <string name="theme_dark">белое на чёрном</string>
     <string name="theme_light">чёрное на белом</string>
@@ -81,10 +81,10 @@
     <string name="widget_name">Reader\'s Podcasts · последнее</string>
     <string name="widget_empty">пока ничего не прослушано</string>
     <plurals name="feeds_added">
-        <item quantity="one">добавлен %d канал</item>
-        <item quantity="few">добавлено %d канала</item>
-        <item quantity="many">добавлено %d каналов</item>
-        <item quantity="other">добавлено %d каналов</item>
+        <item quantity="one">добавлена %d лента</item>
+        <item quantity="few">добавлено %d ленты</item>
+        <item quantity="many">добавлено %d лент</item>
+        <item quantity="other">добавлено %d лент</item>
     </plurals>
     <string name="widget_desc">последний выпуск и кнопка, чтобы продолжить</string>
     <string name="cant_open">этот выпуск не удалось воспроизвести</string>
@@ -100,7 +100,7 @@
     <string name="opens_on">открывается на</string>
     <string name="star">в избранное</string>
     <string name="unstar">убрать из избранного</string>
-    <string name="empty_downloaded">на телефоне пока ничего. То, что здесь, слушается без сети.</string>
+    <string name="empty_downloaded">на телефоне пока ничего. загруженный выпуск слушается без сети.</string>
     <string name="empty_favourites">избранного пока нет. долгое нажатие на выпуск оставляет его здесь.</string>
     <string name="search">поиск</string>
     <string name="search_hint">канал, выпуск</string>
@@ -152,7 +152,9 @@
     <string name="model_not_here">модели нет на телефоне</string>
     <plurals name="older_added">
         <item quantity="one">%d более старый выпуск</item>
-        <item quantity="other">%d более старых выпусков</item>
+        <item quantity="few">%d более старых выпуска</item>
+        <item quantity="many">%d более старых выпусков</item>
+        <item quantity="other">%d более старого выпуска</item>
     </plurals>
     <string name="add_title">добавить подкаст</string>
     <string name="add_field_hint">название или адрес ленты</string>
@@ -164,4 +166,19 @@
     <string name="catalogue_one_failed">%1$s не ответил: это результаты другого</string>
     <string name="catalogue_source">найдено в Apple Podcasts и fyyd</string>
     <string name="already_followed">уже в подписках</string>
+    <string name="error_download_cut">загрузка прервана — повторите, чтобы продолжить</string>
+    <string name="error_no_space">недостаточно места: нужно %1$d МБ</string>
+    <string name="error_no_audio">в этом файле нет звука</string>
+    <string name="error_download_http">загрузка отклонена (HTTP %1$d)</string>
+    <string name="size_mb">%1$d МБ</string>
+    <string name="error_server_http">сервер ответил ошибкой (HTTP %1$d)</string>
+    <string name="error_cannot_create">не удалось создать %1$s</string>
+    <string name="error_download">ошибка загрузки: %1$s</string>
+    <string name="error_refresh">не обновлено: %1$s</string>
+    <string name="error_transcription">не удалось записать сказанное: %1$s</string>
+    <string name="error_translation">перевод не удался: %1$s</string>
+    <string name="error_ytdlp_update">не удалось обновить yt-dlp: %1$s</string>
+    <string name="error_older">не удалось загрузить более старые выпуски: %1$s</string>
+    <string name="error_no_channel_page">у этого канала нет страницы для чтения</string>
+    <string name="error_ytdlp_nothing">yt-dlp ничего не вернул</string>
 </resources>

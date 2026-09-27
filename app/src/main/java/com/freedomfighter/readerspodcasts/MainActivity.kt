@@ -250,7 +250,7 @@ class MainActivity : ComponentActivity() {
             nav.home()
             toast(getString(R.string.subscribed, feed.title))
         }.onFailure { e ->
-            toast(if (e is Refresher.Refused) getString(e.reasonRes) else getString(R.string.feed_failed, (e.message ?: "").take(80)))
+            toast(if (e is Refresher.Refused) getString(e.reasonRes) else getString(R.string.feed_failed, (Errors.known(this@MainActivity, e) ?: e.message.orEmpty()).take(80)))
         }
     }
 
@@ -338,7 +338,7 @@ class MainActivity : ComponentActivity() {
         val result = withContext(Dispatchers.IO) { runCatching { Extractor.update(this@MainActivity) } }
         busy = ""
         result.onSuccess { toast(getString(if (it == "DONE") R.string.ytdlp_updated else R.string.ytdlp_current)) }
-            .onFailure { toast((it.message ?: it.javaClass.simpleName).take(120)) }
+            .onFailure { toast(Errors.describe(this@MainActivity, it, R.string.error_ytdlp_update).take(160)) }
     }
 
     /** The star, which is the one list the app never fills or empties by itself. */
@@ -386,7 +386,7 @@ class MainActivity : ComponentActivity() {
         busy = ""
         added.onSuccess { n ->
             toast(if (n > 0) resources.getQuantityString(R.plurals.older_added, n, n) else getString(R.string.nothing_older))
-        }.onFailure { toast(it.message ?: getString(R.string.nothing_older)) }
+        }.onFailure { toast(Errors.describe(this@MainActivity, it, R.string.error_older).take(400)) }
     }
 
     /** The episode's own address, to send to someone or open in a browser. */

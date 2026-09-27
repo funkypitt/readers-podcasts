@@ -17,7 +17,7 @@
     <string name="adding_feed">reading the feed…</string>
     <string name="subscribed">subscribed to %s</string>
     <string name="feed_failed">that feed could not be read. %s</string>
-    <string name="youtube_not_here">youtube channels are not in this version.</string>
+    <string name="youtube_not_here">YouTube channels are not supported.</string>
     <string name="youtube_no_channel">no channel at that address</string>
     <string name="offline">no connection</string>
     <string name="empty_no_feeds">no subscriptions yet. + at the top finds a podcast by its name, or takes the address of its feed; sharing a link to this app works too.</string>
@@ -55,7 +55,7 @@
     <string name="exchange_hint">the two files that carry everything: the subscriptions as opml, which any podcast app reads, and the settings with where each episode was left.</string>
     <string name="wifi_only">download on wifi only</string>
     <string name="auto_refresh">refresh on opening</string>
-    <string name="delete_when_played_hint">not favourites, texts, or YouTube</string>
+    <string name="delete_when_played_hint">except favourites and transcribed episodes</string>
     <string name="loading_older">looking for the older ones…</string>
     <string name="nothing_older">nothing older here</string>
     <string name="load_older">load more episodes</string>
@@ -66,7 +66,7 @@
     <string name="copied">copied</string>
     <string name="delete_when_played">delete when played</string>
     <string name="settings">settings</string>
-    <string name="about">podcasts, kept on the phone. nothing leaves it but the feeds it goes to fetch</string>
+    <string name="about">podcasts, kept on the phone. it goes online only to find and fetch podcasts</string>
     <string name="colours">colours</string>
     <string name="theme_dark">white on black</string>
     <string name="theme_light">black on white</string>
@@ -97,8 +97,8 @@
     <string name="view_favourites">favourites</string>
     <string name="opens_on">opens on</string>
     <string name="star">keep as a favourite</string>
-    <string name="unstar">no longer a favourite</string>
-    <string name="empty_downloaded">nothing on the telephone yet. An episode kept here plays with nothing in hand.</string>
+    <string name="unstar">remove from favourites</string>
+    <string name="empty_downloaded">nothing on the phone yet. a downloaded episode plays without a connection.</string>
     <string name="empty_favourites">no favourite yet. a long press on an episode keeps it here.</string>
     <string name="search">search</string>
     <string name="search_hint">a channel, an episode</string>
@@ -124,7 +124,7 @@
     <string name="stop_transcription">stop</string>
     <string name="transcribe">write down what is said</string>
     <string name="transcribe_hint">on the phone; long, and nothing leaves it</string>
-    <string name="transcribe_needs_file">the episode has to come down first</string>
+    <string name="transcribe_needs_file">download the episode first</string>
     <string name="transcribe_again">write it down again</string>
     <string name="read_text">the text</string>
     <string name="read_text_hint">read it while it is said</string>
@@ -162,4 +162,19 @@
     <string name="catalogue_one_failed">%1$s did not answer: these come from the other one</string>
     <string name="catalogue_source">found in Apple Podcasts and fyyd</string>
     <string name="already_followed">already followed</string>
+    <string name="error_download_cut">download cut short — try again to carry on</string>
+    <string name="error_no_space">not enough space: %1$d MB needed</string>
+    <string name="error_no_audio">no sound in this file</string>
+    <string name="error_download_http">download refused (HTTP %1$d)</string>
+    <string name="size_mb">%1$d MB</string>
+    <string name="error_server_http">the server answered with an error (HTTP %1$d)</string>
+    <string name="error_cannot_create">could not create %1$s</string>
+    <string name="error_download">download failed: %1$s</string>
+    <string name="error_refresh">not refreshed: %1$s</string>
+    <string name="error_transcription">could not write it down: %1$s</string>
+    <string name="error_translation">the translation failed: %1$s</string>
+    <string name="error_ytdlp_update">yt-dlp could not be updated: %1$s</string>
+    <string name="error_older">the older episodes could not be loaded: %1$s</string>
+    <string name="error_no_channel_page">this channel has no page to read</string>
+    <string name="error_ytdlp_nothing">yt-dlp brought nothing back</string>
 </resources>

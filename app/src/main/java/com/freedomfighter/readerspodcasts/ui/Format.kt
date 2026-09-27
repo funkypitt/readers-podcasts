@@ -22,8 +22,8 @@ fun relativeDate(context: Context, ms: Long): String {
         days == 0 -> context.getString(R.string.today)
         days == 1 -> context.getString(R.string.yesterday)
         days in 2..6 -> SimpleDateFormat("EEEE", locale).format(then.time).replaceFirstChar { it.lowercase(locale) }
-        then.get(Calendar.YEAR) == now.get(Calendar.YEAR) -> SimpleDateFormat("d MMM", locale).format(then.time)
-        else -> SimpleDateFormat("d MMM yyyy", locale).format(then.time)
+        then.get(Calendar.YEAR) == now.get(Calendar.YEAR) -> SimpleDateFormat(android.text.format.DateFormat.getBestDateTimePattern(locale, "dMMM"), locale).format(then.time)
+        else -> SimpleDateFormat(android.text.format.DateFormat.getBestDateTimePattern(locale, "dMMMyyyy"), locale).format(then.time)
     }
 }
 

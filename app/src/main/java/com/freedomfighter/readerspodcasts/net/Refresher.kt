@@ -76,7 +76,7 @@ object Refresher {
             if (feed.autoDownload) queueNew(context, store, feed.id, before)
             true
         } catch (e: Exception) {
-            store.updateFeed(feed.id) { it.copy(lastError = (e.message ?: e.javaClass.simpleName).take(120)) }
+            store.updateFeed(feed.id) { it.copy(lastError = com.freedomfighter.readerspodcasts.Errors.describe(context, e, R.string.error_refresh).take(120)) }
             false
         }
     }
@@ -125,7 +125,7 @@ object Refresher {
     private fun fetch(url: String, id: String, kind: Kind): FeedParser.Parsed {
         val c = Net.open(url)
         try {
-            if (c.responseCode >= 400) throw IllegalStateException("HTTP ${c.responseCode}")
+            if (c.responseCode >= 400) throw com.freedomfighter.readerspodcasts.HttpStatus(c.responseCode)
             return Net.body(c).use { FeedParser.parse(id, kind, it) }
         } finally {
             runCatching { c.disconnect() }
