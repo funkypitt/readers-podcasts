@@ -177,4 +177,13 @@
     <string name="error_older">no se pudieron cargar los episodios más antiguos: %1$s</string>
     <string name="error_no_channel_page">este canal no tiene página que leer</string>
     <string name="error_ytdlp_nothing">yt-dlp no devolvió nada</string>
+    <string name="season_n">temporada %d</string>
+    <string name="season_none">otros episodios</string>
+    <plurals name="episodes_n">
+        <item quantity="one">%d episodio</item>
+        <item quantity="other">%d episodios</item>
+    </plurals>
+    <string name="unheard_n">%d sin escuchar</string>
+    <string name="opml_all_known">todas las suscripciones de ese archivo ya están aquí</string>
+    <string name="feeds_added_partly">%1$d fuentes añadidas, %2$d no se pudieron leer</string>
 </resources>

@@ -177,4 +177,13 @@
     <string name="error_older">the older episodes could not be loaded: %1$s</string>
     <string name="error_no_channel_page">this channel has no page to read</string>
     <string name="error_ytdlp_nothing">yt-dlp brought nothing back</string>
+    <string name="season_n">season %d</string>
+    <string name="season_none">other episodes</string>
+    <plurals name="episodes_n">
+        <item quantity="one">%d episode</item>
+        <item quantity="other">%d episodes</item>
+    </plurals>
+    <string name="unheard_n">%d unheard</string>
+    <string name="opml_all_known">every subscription in that file is already here</string>
+    <string name="feeds_added_partly">%1$d feeds added, %2$d could not be read</string>
 </resources>

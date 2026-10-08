@@ -53,7 +53,7 @@ object Refresher {
         val parsed = fetch(url, id, kind)
         val feed = Feed(
             id = id, url = url, title = parsed.title.ifBlank { hostOf(url) }, author = parsed.author,
-            kind = kind, lastFetch = System.currentTimeMillis(),
+            kind = kind, lastFetch = System.currentTimeMillis(), serial = parsed.serial,
         )
         store.addFeed(feed)
         store.merge(id, parsed.episodes)
@@ -65,6 +65,8 @@ object Refresher {
         try {
             val parsed = fetch(feed.url, feed.id, feed.kind)
             val before = store.episodesOf(feed.id).map { it.id }.toSet()
+            // Before the episodes are folded in: whether the feed is a serial decides how many are kept.
+            store.updateFeed(feed.id) { it.copy(serial = parsed.serial) }
             store.merge(feed.id, parsed.episodes)
             store.updateFeed(feed.id) {
                 it.copy(

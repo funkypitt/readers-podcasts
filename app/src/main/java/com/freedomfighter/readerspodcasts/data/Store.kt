@@ -136,7 +136,10 @@ class Store(private val context: Context) {
      * only what the feed owns: its title, its date, its media. Publishers do edit their items.
      */
     @Synchronized fun merge(feedId: String, fresh: List<Episode>) {
-        val keep = _feeds.value.firstOrNull { it.id == feedId }?.keepCount ?: 50
+        val feed = _feeds.value.firstOrNull { it.id == feedId }
+        // A serial is a catalogue and not the news: keeping its latest fifty would throw away
+        // the very episodes one is meant to begin with.
+        val keep = (feed?.keepCount ?: 50).let { if (feed?.serial == true) maxOf(it, fresh.size) else it }
         val mine = _episodes.value.filter { it.feedId == feedId }.associateBy { it.id }
         val merged = fresh.map { new ->
             val old = mine[new.id] ?: return@map new
@@ -182,7 +185,7 @@ class Store(private val context: Context) {
                 kind = runCatching { Kind.valueOf(o.optString("kind", "RSS")) }.getOrDefault(Kind.RSS),
                 addedAt = o.optLong("addedAt"), lastFetch = o.optLong("lastFetch"),
                 autoDownload = o.optBoolean("autoDownload"), keepCount = o.optInt("keepCount", 50),
-                lastError = o.optString("lastError"),
+                lastError = o.optString("lastError"), serial = o.optBoolean("serial"),
             )
         }
     }.getOrDefault(emptyList())
@@ -194,6 +197,7 @@ class Store(private val context: Context) {
                 put("id", f.id); put("url", f.url); put("title", f.title); put("author", f.author)
                 put("kind", f.kind.name); put("addedAt", f.addedAt); put("lastFetch", f.lastFetch)
                 put("autoDownload", f.autoDownload); put("keepCount", f.keepCount); put("lastError", f.lastError)
+                put("serial", f.serial)
             })
         }
         runCatching { index.writeText(arr.toString()) }
@@ -214,6 +218,7 @@ class Store(private val context: Context) {
                 starred = o.optBoolean("starred"), transcript = o.optBoolean("transcript"),
                 transcriptLanguage = o.optString("transcriptLanguage"), translation = o.optString("translation"),
                 transcriptUri = o.optString("transcriptUri"),
+                season = o.optInt("season"), seasonName = o.optString("seasonName"), number = o.optInt("number"),
             )
         }
     }.getOrDefault(emptyList())
@@ -233,6 +238,7 @@ class Store(private val context: Context) {
                 put("description", e.description); put("starred", e.starred)
                 put("transcript", e.transcript); put("transcriptLanguage", e.transcriptLanguage)
                 put("translation", e.translation); put("transcriptUri", e.transcriptUri)
+                put("season", e.season); put("seasonName", e.seasonName); put("number", e.number)
             })
         }
         runCatching { File(dir, "$feedId.json").writeText(arr.toString()) }

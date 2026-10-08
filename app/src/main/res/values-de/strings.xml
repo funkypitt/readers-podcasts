@@ -177,4 +177,13 @@
     <string name="error_older">ältere Folgen konnten nicht geladen werden: %1$s</string>
     <string name="error_no_channel_page">dieser Kanal hat keine Seite zum Lesen</string>
     <string name="error_ytdlp_nothing">yt-dlp hat nichts geliefert</string>
+    <string name="season_n">Staffel %d</string>
+    <string name="season_none">weitere Folgen</string>
+    <plurals name="episodes_n">
+        <item quantity="one">%d Folge</item>
+        <item quantity="other">%d Folgen</item>
+    </plurals>
+    <string name="unheard_n">%d ungehört</string>
+    <string name="opml_all_known">alle Abos dieser Datei sind schon hier</string>
+    <string name="feeds_added_partly">%1$d Feeds hinzugefügt, %2$d konnten nicht gelesen werden</string>
 </resources>

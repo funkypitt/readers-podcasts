@@ -27,6 +27,8 @@ data class Feed(
     val keepCount: Int = 50,
     /** Empty, or why the last refresh failed. */
     val lastError: String = "",
+    /** The feed says it is meant to be heard from its first episode on (`itunes:type` serial). */
+    val serial: Boolean = false,
 )
 
 /**
@@ -58,6 +60,10 @@ data class Episode(
     val translation: String = "",
     /** The exported .txt in Documents/Transcriptions, "" when none was saved. */
     val transcriptUri: String = "",
+    /** The season the feed puts it in and its number there; 0 when the feed says neither. */
+    val season: Int = 0,
+    val seasonName: String = "",
+    val number: Int = 0,
 ) {
     val downloaded: Boolean get() = localPath.isNotBlank()
     /** What plays: the file if it is here, the network otherwise. */

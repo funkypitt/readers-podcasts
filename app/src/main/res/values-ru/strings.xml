@@ -181,4 +181,15 @@
     <string name="error_older">не удалось загрузить более старые выпуски: %1$s</string>
     <string name="error_no_channel_page">у этого канала нет страницы для чтения</string>
     <string name="error_ytdlp_nothing">yt-dlp ничего не вернул</string>
+    <string name="season_n">сезон %d</string>
+    <string name="season_none">другие выпуски</string>
+    <plurals name="episodes_n">
+        <item quantity="one">%d выпуск</item>
+        <item quantity="few">%d выпуска</item>
+        <item quantity="many">%d выпусков</item>
+        <item quantity="other">%d выпуска</item>
+    </plurals>
+    <string name="unheard_n">не прослушано: %d</string>
+    <string name="opml_all_known">все подписки из этого файла уже здесь</string>
+    <string name="feeds_added_partly">добавлено лент: %1$d, не удалось прочитать: %2$d</string>
 </resources>

@@ -45,7 +45,10 @@ object Opml {
         return out.distinctBy { it.url }
     }
 
-    private fun esc(s: String) = s
+    /** What XML does not allow at all — a control character copied from a feed's title — cannot be escaped, only left out. */
+    private val notXml = Regex("[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\uFFFE\\uFFFF]")
+
+    private fun esc(s: String) = s.replace(notXml, "")
         .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
         .replace("\"", "&quot;").replace("'", "&apos;")
 }

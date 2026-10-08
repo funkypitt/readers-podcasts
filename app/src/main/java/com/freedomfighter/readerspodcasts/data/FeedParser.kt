@@ -17,7 +17,7 @@ import java.util.TimeZone
  */
 object FeedParser {
 
-    data class Parsed(val title: String, val author: String, val episodes: List<Episode>)
+    data class Parsed(val title: String, val author: String, val episodes: List<Episode>, val serial: Boolean = false)
 
     private class Building {
         var title = ""
@@ -31,6 +31,9 @@ object FeedParser {
         var link = ""
         var durationMs = 0L
         var description = ""
+        var season = 0
+        var seasonName = ""
+        var number = 0
     }
 
     /**
@@ -44,6 +47,7 @@ object FeedParser {
 
         var feedTitle = ""
         var feedAuthor = ""
+        var serial = false
         var inItem = false
         var item = Building()
         val out = ArrayList<Episode>()
@@ -61,6 +65,8 @@ object FeedParser {
                         tag == "author" && feedAuthor.isEmpty() -> feedAuthor = text(p).trim()
                         tag == "managingEditor" && feedAuthor.isEmpty() -> feedAuthor = text(p).trim()
                         tag == "name" && feedAuthor.isEmpty() -> feedAuthor = text(p).trim()
+                        // <itunes:type>serial</itunes:type>: to be heard from the first episode on.
+                        tag == "type" -> if (text(p).trim().equals("serial", true)) serial = true
                     }
                 }
                 XmlPullParser.END_TAG -> {
@@ -77,7 +83,7 @@ object FeedParser {
         // Seed series and in more than one news feed. Two episodes with the same id are a list
         // that cannot be drawn at all, so the first one wins and the other is dropped here,
         // rather than further down where it would take a screen with it.
-        return Parsed(feedTitle, feedAuthor, out.distinctBy { it.id })
+        return Parsed(feedTitle, feedAuthor, out.distinctBy { it.id }, serial)
     }
 
     private fun readItemTag(p: XmlPullParser, tag: String, item: Building) {
@@ -109,6 +115,12 @@ object FeedParser {
                 else if (item.link.isEmpty()) item.link = text(p).trim()
             }
             "duration" -> if (item.durationMs == 0L) item.durationMs = duration(text(p))
+            // <itunes:season> carries a number; <podcast:season> may give it a name as well.
+            "season" -> if (item.season == 0) {
+                item.seasonName = p.getAttributeValue(null, "name")?.trim().orEmpty()
+                item.season = number(text(p))
+            }
+            "episode" -> if (item.number == 0) item.number = number(text(p))
             "description", "summary" -> if (item.description.isEmpty()) item.description = strip(text(p))
         }
     }
@@ -135,8 +147,12 @@ object FeedParser {
             published = if (b.date > 0) b.date else System.currentTimeMillis(),
             mediaUrl = media, mime = type, bytes = b.bytes, durationMs = b.durationMs,
             description = b.description.take(10_000),
+            season = b.season, seasonName = b.seasonName, number = b.number,
         )
     }
+
+    /** A season or an episode number as feeds write it: `3`, ` 03 `, sometimes `3.0`. */
+    private fun number(raw: String): Int = raw.trim().toDoubleOrNull()?.toInt()?.coerceAtLeast(0) ?: 0
 
     private fun local(name: String?): String = (name ?: "").substringAfterLast(':')
 

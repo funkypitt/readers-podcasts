@@ -99,14 +99,28 @@ class MainActivity : ComponentActivity() {
                 runCatching { contentResolver.openInputStream(uri)!!.use { Opml.parse(it) } }.getOrDefault(emptyList())
             }
             if (lines.isEmpty()) { toast(getString(R.string.opml_empty)); return@launch }
+            val fresh = lines.filter { line -> app.store.feeds.value.none { it.url == line.url } }
+            if (fresh.isEmpty()) { toast(getString(R.string.opml_all_known)); return@launch }
+            // Four at a time, as a refresh does: nearly all of it is waiting for servers to answer.
             var added = 0
-            lines.forEachIndexed { i, line ->
-                busy = getString(R.string.reading_feeds, i + 1, lines.size)
-                val known = app.store.feeds.value.any { it.url == line.url }
-                if (!known && Refresher.add(this@MainActivity, app.store, line.url).isSuccess) added++
+            var seen = 0
+            val gate = kotlinx.coroutines.sync.Semaphore(4)
+            busy = getString(R.string.reading_feeds, 0, fresh.size)
+            kotlinx.coroutines.coroutineScope {
+                fresh.forEach { line ->
+                    launch {
+                        gate.acquire()
+                        val ok = try { Refresher.add(this@MainActivity, app.store, line.url).isSuccess } finally { gate.release() }
+                        if (ok) added++
+                        busy = getString(R.string.reading_feeds, ++seen, fresh.size)
+                    }
+                }
             }
             busy = ""
-            toast(resources.getQuantityString(R.plurals.feeds_added, added, added))
+            toast(
+                if (added == fresh.size) resources.getQuantityString(R.plurals.feeds_added, added, added)
+                else getString(R.string.feeds_added_partly, added, fresh.size - added)
+            )
         }
     }
 
@@ -152,7 +166,9 @@ class MainActivity : ComponentActivity() {
 
     private fun write(uri: Uri, text: String, okRes: Int) = lifecycleScope.launch {
         val ok = withContext(Dispatchers.IO) {
-            runCatching { contentResolver.openOutputStream(uri)!!.use { it.write(text.toByteArray()) } }.isSuccess
+            // "wt", not the default: written over a longer file, plain "w" leaves the end of the
+            // old one after the new — a file no other program can read.
+            runCatching { contentResolver.openOutputStream(uri, "wt")!!.use { it.write(text.toByteArray()) } }.isSuccess
         }
         toast(getString(if (ok) okRes else R.string.write_failed))
     }

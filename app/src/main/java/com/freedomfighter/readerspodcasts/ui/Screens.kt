@@ -53,6 +53,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -68,6 +69,7 @@ import com.freedomfighter.readerspodcasts.data.Chapters
 import com.freedomfighter.readerspodcasts.data.Kind
 import com.freedomfighter.readerspodcasts.net.Extractor
 import com.freedomfighter.readerspodcasts.data.Prefs
+import com.freedomfighter.readerspodcasts.data.Seasons
 import com.freedomfighter.readerspodcasts.data.feedLanguage
 import com.freedomfighter.readerspodcasts.data.State
 import com.freedomfighter.readerspodcasts.data.TextSize
@@ -105,6 +107,8 @@ class Nav {
     /** Where each list of the home screen was left: a hundred and forty channels are not scrolled twice. */
     private val lists = HashMap<String, androidx.compose.foundation.lazy.LazyListState>()
     fun listState(view: String) = lists.getOrPut(view) { androidx.compose.foundation.lazy.LazyListState() }
+    /** The seasons shown open in each channel that has seasons, for as long as the app is up. */
+    val openSeasons = androidx.compose.runtime.mutableStateMapOf<String, Set<Int>>()
 
     val stack = mutableStateListOf<Screen>(Screen.Home)
     val current: Screen get() = stack.last()
@@ -244,6 +248,23 @@ fun FeedMenu(feed: Feed, app: App, activity: MainActivity, onDismiss: () -> Unit
     ), onDismiss = onDismiss)
 }
 
+/** The heading of a season: a touch opens it or folds it away. */
+@Composable
+fun SeasonRow(shelf: Seasons.Shelf, open: Boolean, onClick: () -> Unit) {
+    val count = shelf.episodes.size
+    val unheard = shelf.episodes.count { it.state != State.PLAYED }
+    val name = if (shelf.season <= 0) stringResource(R.string.season_none)
+    else stringResource(R.string.season_n, shelf.season) + if (shelf.name.isNotBlank()) " · ${shelf.name}" else ""
+    TextRow(
+        (if (open) "▾ " else "▸ ") + name,
+        secondary = listOf(
+            pluralStringResource(R.plurals.episodes_n, count, count),
+            if (unheard in 1 until count) stringResource(R.string.unheard_n, unheard) else "",
+        ).filter { it.isNotBlank() }.joinToString(" · "),
+        onClick = onClick,
+    )
+}
+
 /** The row of a channel: when it last published, and how many are unheard. */
 @Composable
 fun FeedRow(feed: Feed, app: App, latest: Long, unheard: Int, onClick: () -> Unit, onLongPress: () -> Unit) {
@@ -355,6 +376,14 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
         }
     }
     val channels = remember(all, feeds) { app.store.channels() }
+    // A channel cut into seasons shows them as headings; a serial without seasons is simply
+    // listed from its first episode on.
+    val shelves = remember(episodes, feed?.serial) {
+        if (feed != null) Seasons.shelves(episodes, feed.serial) else emptyList()
+    }
+    val listed = remember(episodes, feed?.serial) {
+        if (feed != null && feed.serial) Seasons.inOrder(episodes, true) else episodes
+    }
     val showingChannels = feed == null && view == Prefs.VIEW_CHANNELS
 
     // Back from inside a channel returns to the channels, not out of the app.
@@ -415,7 +444,24 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
                                 )
                             }
                         }
-                        items(episodes, key = { it.id }) { e ->
+                        if (feed != null && shelves.isNotEmpty()) {
+                            val open = nav.openSeasons[feed.id] ?: setOf(Seasons.open(shelves, episodes))
+                            shelves.forEach { shelf ->
+                                val isOpen = shelf.season in open
+                                item(key = "season:${shelf.season}") {
+                                    SeasonRow(shelf, isOpen) {
+                                        nav.openSeasons[feed.id] = if (isOpen) open - shelf.season else open + shelf.season
+                                    }
+                                }
+                                if (isOpen) items(shelf.episodes, key = { it.id }) { e ->
+                                    EpisodeRow(
+                                        e, app, activity,
+                                        onClick = { activity.open(e, nav) },
+                                        onLongPress = { rowMenu = e.id },
+                                    )
+                                }
+                            }
+                        } else items(listed, key = { it.id }) { e ->
                             EpisodeRow(
                                 e, app, activity, withFeed = feed == null,
                                 onClick = { activity.open(e, nav) },
