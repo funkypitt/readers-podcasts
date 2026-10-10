@@ -1064,6 +1064,8 @@ fun SettingsScreen(nav: Nav, app: App, activity: MainActivity) {
     val s by app.prefs.settings.collectAsState()
     val colors = LocalColors.current
     val typo = LocalTypo.current
+    var prompt by remember { mutableStateOf<String?>(null) }
+    val all by app.store.episodes.collectAsState()
     BackHandler { nav.pop() }
     Page {
         Column(Modifier.fillMaxSize()) {
@@ -1087,6 +1089,27 @@ fun SettingsScreen(nav: Nav, app: App, activity: MainActivity) {
                 TextRow(stringResource(R.string.import_opml), size = typo.title) { activity.importOpml() }
                 TextRow(stringResource(R.string.export_settings), secondary = "reglages.json", size = typo.title) { activity.exportSettings() }
                 TextRow(stringResource(R.string.import_settings), size = typo.title) { activity.importSettings() }
+                Rule(Modifier.padding(vertical = 8.dp))
+                // The transcripts, sent to the library of Reader's Books.
+                Small(stringResource(R.string.shelf_hint), Modifier.padding(horizontal = rowPadH).padding(bottom = 6.dp), maxLines = 12)
+                TextRow(s.shelfUrl.ifBlank { stringResource(R.string.shelf_url) }, secondary = stringResource(R.string.shelf_url), size = typo.title) { prompt = "url" }
+                TextRow(s.shelfUsername.ifBlank { stringResource(R.string.shelf_username) }, secondary = stringResource(R.string.shelf_username), size = typo.title) { prompt = "username" }
+                TextRow(if (s.shelfPassword.isEmpty()) stringResource(R.string.shelf_password) else "••••••••", secondary = stringResource(R.string.shelf_password), size = typo.title) { prompt = "password" }
+                TextRow(stringResource(R.string.shelf_import), size = typo.title) { activity.importShelf() }
+                if (com.freedomfighter.readerspodcasts.net.Shelf.configured(s)) {
+                    val waiting = remember(all) { com.freedomfighter.readerspodcasts.net.Shelf.pending(app).size }
+                    val made = remember(all) { all.count { it.transcript } }
+                    TextRow(
+                        if (waiting > 0) pluralStringResource(R.plurals.shelf_waiting, waiting, waiting) else pluralStringResource(R.plurals.shelf_sent, made, made),
+                        secondary = when {
+                            s.shelfError == "login" -> stringResource(R.string.shelf_refused)
+                            s.shelfError.isNotBlank() -> stringResource(R.string.shelf_failed, s.shelfError)
+                            waiting > 0 -> stringResource(R.string.shelf_send)
+                            else -> null
+                        },
+                        size = typo.title,
+                    ) { com.freedomfighter.readerspodcasts.net.Shelf.send(app) }
+                }
                 Rule(Modifier.padding(vertical = 8.dp))
                 Setting(R.string.colours, if (colors.isDark) stringResource(R.string.theme_dark) else stringResource(R.string.theme_light)) { app.prefs.toggleTheme(colors.isDark) }
                 Setting(R.string.text_size, when (s.textSize) { TextSize.SMALL -> "S"; TextSize.MEDIUM -> "M"; TextSize.LARGE -> "L" }) {
@@ -1116,6 +1139,24 @@ fun SettingsScreen(nav: Nav, app: App, activity: MainActivity) {
                 ) { }
             }
             Box(Modifier.windowInsetsPadding(WindowInsets.navigationBars))
+        }
+        prompt?.let { field ->
+            TextPrompt(
+                stringResource(when (field) { "url" -> R.string.shelf_url; "username" -> R.string.shelf_username; else -> R.string.shelf_password }),
+                when (field) { "url" -> s.shelfUrl; "username" -> s.shelfUsername; else -> "" },
+                password = field == "password",
+                keyboard = if (field == "url") androidx.compose.ui.text.input.KeyboardType.Uri else androidx.compose.ui.text.input.KeyboardType.Text,
+                onDone = { v ->
+                    when (field) {
+                        "url" -> app.prefs.setShelf(v, s.shelfUsername, s.shelfPassword)
+                        "username" -> app.prefs.setShelf(s.shelfUrl, v, s.shelfPassword)
+                        else -> app.prefs.setShelf(s.shelfUrl, s.shelfUsername, v)
+                    }
+                    prompt = null
+                    com.freedomfighter.readerspodcasts.net.Shelf.send(app)
+                },
+                onCancel = { prompt = null },
+            )
         }
     }
 }

@@ -147,7 +147,7 @@ class Store(private val context: Context) {
                 localPath = old.localPath, positionMs = old.positionMs, state = old.state,
                 lastPlayed = old.lastPlayed, starred = old.starred, transcript = old.transcript,
                 transcriptLanguage = old.transcriptLanguage, translation = old.translation,
-                transcriptUri = old.transcriptUri,
+                transcriptUri = old.transcriptUri, sent = old.sent,
                 durationMs = if (new.durationMs > 0) new.durationMs else old.durationMs,
             )
         }
@@ -219,6 +219,7 @@ class Store(private val context: Context) {
                 transcriptLanguage = o.optString("transcriptLanguage"), translation = o.optString("translation"),
                 transcriptUri = o.optString("transcriptUri"),
                 season = o.optInt("season"), seasonName = o.optString("seasonName"), number = o.optInt("number"),
+                sent = o.optString("sent"),
             )
         }
     }.getOrDefault(emptyList())
@@ -239,6 +240,7 @@ class Store(private val context: Context) {
                 put("transcript", e.transcript); put("transcriptLanguage", e.transcriptLanguage)
                 put("translation", e.translation); put("transcriptUri", e.transcriptUri)
                 put("season", e.season); put("seasonName", e.seasonName); put("number", e.number)
+                put("sent", e.sent)
             })
         }
         runCatching { File(dir, "$feedId.json").writeText(arr.toString()) }

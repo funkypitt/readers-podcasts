@@ -34,6 +34,12 @@ data class Settings(
     val defaultView: String = Prefs.VIEW_CHANNELS,
     /** When yt-dlp was last brought up to date, in the build that has one. */
     val ytdlpUpdated: Long = 0,
+    /** The library of Reader's Books (a WebDAV address and its login): transcripts are sent to its "transcriptions" folder. */
+    val shelfUrl: String = "",
+    val shelfUsername: String = "",
+    val shelfPassword: String = "",
+    /** Why the last sending failed: "" (it did not), "login", or what the network said. */
+    val shelfError: String = "",
 )
 
 class Prefs(context: Context) {
@@ -58,6 +64,10 @@ class Prefs(context: Context) {
         // there, and a name nothing answers to left the screen empty under a title that lied.
         view = stored(sp.getString("view", null)) ?: known(sp.getString("default_view", VIEW_CHANNELS)),
         ytdlpUpdated = sp.getLong("ytdlp_updated", 0),
+        shelfUrl = sp.getString("shelf_url", "") ?: "",
+        shelfUsername = sp.getString("shelf_username", "") ?: "",
+        shelfPassword = Secret.decrypt(sp.getString("shelf_password", "") ?: ""),
+        shelfError = sp.getString("shelf_error", "") ?: "",
     )
 
     /**
@@ -91,6 +101,12 @@ class Prefs(context: Context) {
     fun setAutoRefresh(v: Boolean) = sp.edit().putBoolean("auto_refresh", v).apply()
     fun setDeleteWhenPlayed(v: Boolean) = sp.edit().putBoolean("delete_when_played", v).apply()
     fun setView(v: String) = sp.edit().putString("view", v).apply()
+    /** The password is kept encrypted, and none of this leaves with the exported settings. */
+    fun setShelf(url: String, username: String, password: String) = sp.edit()
+        .putString("shelf_url", url.trim()).putString("shelf_username", username.trim())
+        .putString("shelf_password", if (password.isEmpty()) "" else runCatching { Secret.encrypt(password) }.getOrDefault(""))
+        .putString("shelf_error", "").apply()
+    fun setShelfError(reason: String) { if (reason != _settings.value.shelfError) sp.edit().putString("shelf_error", reason).apply() }
     fun setYtdlpUpdated(at: Long) = sp.edit().putLong("ytdlp_updated", at).apply()
     fun setDefaultView(v: String) = sp.edit().putString("default_view", v).putString("view", v).apply()
 

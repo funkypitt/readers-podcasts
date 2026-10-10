@@ -162,6 +162,7 @@ class TranscribeService : Service() {
                 it.copy(transcript = true, transcriptLanguage = heard, transcriptUri = uri?.toString() ?: it.transcriptUri)
             }
         }
+        com.freedomfighter.readerspodcasts.net.Shelf.send(app)      // to the library of Reader's Books, when one is named
     }
 
     private suspend fun translate(job: Job) {
@@ -200,6 +201,7 @@ class TranscribeService : Service() {
             )
             app.store.updateEpisode(job.id) { it.copy(translation = job.translateTo) }
         }
+        com.freedomfighter.readerspodcasts.net.Shelf.send(app)
     }
 
     private suspend fun fetchTranslator() {

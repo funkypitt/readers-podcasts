@@ -18,6 +18,7 @@ class App : Application() {
 
     override fun onCreate() {
         super.onCreate(); prefs; store
+        com.freedomfighter.readerspodcasts.net.Shelf.send(this)     // what could not be sent the last time
     }
 
     /**

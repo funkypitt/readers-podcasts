@@ -64,6 +64,8 @@ data class Episode(
     val season: Int = 0,
     val seasonName: String = "",
     val number: Int = 0,
+    /** What of it is on the drive, for Reader's Books: "" nothing, "t" the transcript, "t+fr" a translation as well. */
+    val sent: String = "",
 ) {
     val downloaded: Boolean get() = localPath.isNotBlank()
     /** What plays: the file if it is here, the network otherwise. */

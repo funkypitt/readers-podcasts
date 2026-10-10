@@ -20,12 +20,17 @@ avec le [jumeau de bureau](https://github.com/funkypitt/readers-podcasts-desktop
   l'écoute ; il s'exporte en `.txt`.
 * Traduire (Gemma 3 4B, sur le téléphone) : demande un téléphone de 8 Go. Les modèles sont
   téléchargés une fois et partagés avec les autres apps Reader's.
+* Les transcriptions vont dans [Reader's Books](https://github.com/funkypitt/readers-books) :
+  avec l'adresse WebDAV de sa bibliothèque dans les réglages (ou le fichier d'identifiants),
+  chaque transcription part dans un dossier `transcriptions` de cette bibliothèque, un petit
+  livre par épisode, un dossier par chaîne, et une traduction en fait un second. On les y lit
+  page par page, on les surligne, on les commente.
 * « Effacer une fois écouté » est inactif par défaut ; actif, il épargne les favoris et ce qui
   a été mis par écrit.
 * Export/import OPML et JSON (réglages et position de chaque épisode) : c'est la
   synchronisation avec le bureau, sans serveur. Recherche hors connexion.
 * Un widget : la dernière écoute et un bouton pour reprendre. Six langues.
-* Le réseau ne sert qu'aux flux, aux épisodes et aux modèles. Pas de YouTube dans cette
+* Le réseau ne sert qu'aux flux, aux épisodes, aux modèles et, si on le demande, à l'envoi des transcriptions. Pas de YouTube dans cette
   version publique : une adresse YouTube y est refusée en toutes lettres.
 
 Plus de détails : [docs/NOTES.md](docs/NOTES.md).

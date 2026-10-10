@@ -186,4 +186,24 @@
     <string name="unheard_n">%d unheard</string>
     <string name="opml_all_known">every subscription in that file is already here</string>
     <string name="feeds_added_partly">%1$d feeds added, %2$d could not be read</string>
+    <!-- transcripts sent to the library of Reader's Books -->
+    <string name="shelf_hint">Transcripts for Reader\'s Books: give the WebDAV address of its library, with the username and the application password, and every transcript made here is sent to a « transcriptions » folder there, a small book per episode. Reader\'s Books lists them with the other books, to be read, highlighted and commented.</string>
+    <string name="shelf_url">address of the library</string>
+    <string name="shelf_username">username</string>
+    <string name="shelf_password">password</string>
+    <string name="shelf_import">import credentials</string>
+    <string name="shelf_imported">credentials imported</string>
+    <string name="shelf_not_credentials">not a Reader\'s credentials file</string>
+    <string name="shelf_nothing">this file names no drive</string>
+    <string name="shelf_send">touch to send</string>
+    <string name="shelf_refused">the drive refused the login</string>
+    <string name="shelf_failed">they could not be sent: %1$s</string>
+    <plurals name="shelf_waiting">
+        <item quantity="one">%d transcript to send</item>
+        <item quantity="other">%d transcripts to send</item>
+    </plurals>
+    <plurals name="shelf_sent">
+        <item quantity="one">%d transcript in the library</item>
+        <item quantity="other">%d transcripts in the library</item>
+    </plurals>
 </resources>

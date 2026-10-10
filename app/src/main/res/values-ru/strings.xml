@@ -192,4 +192,28 @@
     <string name="unheard_n">не прослушано: %d</string>
     <string name="opml_all_known">все подписки из этого файла уже здесь</string>
     <string name="feeds_added_partly">добавлено лент: %1$d, не удалось прочитать: %2$d</string>
+    <!-- transcripts sent to the library of Reader's Books -->
+    <string name="shelf_hint">Расшифровки для Reader\'s Books: укажите адрес WebDAV его библиотеки с именем пользователя и паролем приложения, и каждая сделанная здесь расшифровка отправляется туда в папку « transcriptions », маленькая книга на выпуск. Reader\'s Books показывает их среди других книг: их можно читать, выделять и комментировать.</string>
+    <string name="shelf_url">адрес библиотеки</string>
+    <string name="shelf_username">имя пользователя</string>
+    <string name="shelf_password">пароль</string>
+    <string name="shelf_import">импортировать учётные данные</string>
+    <string name="shelf_imported">учётные данные импортированы</string>
+    <string name="shelf_not_credentials">это не файл учётных данных Reader\'s</string>
+    <string name="shelf_nothing">в этом файле не указан диск</string>
+    <string name="shelf_send">нажмите, чтобы отправить</string>
+    <string name="shelf_refused">диск отклонил вход</string>
+    <string name="shelf_failed">не удалось отправить: %1$s</string>
+    <plurals name="shelf_waiting">
+        <item quantity="one">%d расшифровка к отправке</item>
+        <item quantity="few">%d расшифровки к отправке</item>
+        <item quantity="many">%d расшифровок к отправке</item>
+        <item quantity="other">%d расшифровки к отправке</item>
+    </plurals>
+    <plurals name="shelf_sent">
+        <item quantity="one">%d расшифровка в библиотеке</item>
+        <item quantity="few">%d расшифровки в библиотеке</item>
+        <item quantity="many">%d расшифровок в библиотеке</item>
+        <item quantity="other">%d расшифровки в библиотеке</item>
+    </plurals>
 </resources>

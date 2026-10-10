@@ -288,6 +288,28 @@ class MainActivity : ComponentActivity() {
 
     fun exportOpml() = runCatching { writeOpml.launch("abonnements.opml") }
     fun importOpml() = runCatching { readOpml.launch(arrayOf("*/*")) }
+    /**
+     * The library's account, taken from a Reader's credentials file: Reader's Books' own section,
+     * else the drive and login of an app that keeps its files on the same kind of drive.
+     */
+    private val readShelf = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@registerForActivityResult
+        lifecycleScope.launch {
+            val text = withContext(Dispatchers.IO) { runCatching { contentResolver.openInputStream(uri)!!.use { it.readBytes().decodeToString() } }.getOrDefault("") }
+            val found = com.freedomfighter.readerspodcasts.data.ShelfAccount.read(text)
+            when {
+                found == null -> toast(getString(R.string.shelf_not_credentials))
+                found.url.isBlank() -> toast(getString(R.string.shelf_nothing))
+                else -> {
+                    app.prefs.setShelf(found.url, found.username, found.password)
+                    toast(getString(R.string.shelf_imported))
+                    com.freedomfighter.readerspodcasts.net.Shelf.send(app)
+                }
+            }
+        }
+    }
+    fun importShelf() = runCatching { readShelf.launch(arrayOf("*/*")) }
+
     fun exportSettings() = runCatching { writeBackup.launch("reglages.json") }
     fun importSettings() = runCatching { readBackup.launch(arrayOf("*/*")) }
 

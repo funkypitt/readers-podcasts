@@ -186,4 +186,24 @@
     <string name="unheard_n">%d à écouter</string>
     <string name="opml_all_known">tous les abonnements de ce fichier sont déjà ici</string>
     <string name="feeds_added_partly">%1$d flux ajoutés, %2$d n\'ont pas pu être lus</string>
+    <!-- transcripts sent to the library of Reader's Books -->
+    <string name="shelf_hint">Transcriptions pour Reader\'s Books : donnez l\'adresse WebDAV de sa bibliothèque, avec le nom d\'utilisateur et le mot de passe d\'application, et chaque transcription faite ici est envoyée dans un dossier « transcriptions » de cette bibliothèque, un petit livre par épisode. Reader\'s Books les liste avec les autres livres, à lire, surligner et commenter.</string>
+    <string name="shelf_url">adresse de la bibliothèque</string>
+    <string name="shelf_username">nom d\'utilisateur</string>
+    <string name="shelf_password">mot de passe</string>
+    <string name="shelf_import">importer les identifiants</string>
+    <string name="shelf_imported">identifiants importés</string>
+    <string name="shelf_not_credentials">ce n\'est pas un fichier d\'identifiants Reader\'s</string>
+    <string name="shelf_nothing">ce fichier ne nomme aucun drive</string>
+    <string name="shelf_send">toucher pour envoyer</string>
+    <string name="shelf_refused">le drive a refusé l\'identification</string>
+    <string name="shelf_failed">elles n\'ont pas pu être envoyées : %1$s</string>
+    <plurals name="shelf_waiting">
+        <item quantity="one">%d transcription à envoyer</item>
+        <item quantity="other">%d transcriptions à envoyer</item>
+    </plurals>
+    <plurals name="shelf_sent">
+        <item quantity="one">%d transcription dans la bibliothèque</item>
+        <item quantity="other">%d transcriptions dans la bibliothèque</item>
+    </plurals>
 </resources>
