@@ -28,8 +28,9 @@ import java.util.concurrent.TimeUnit
  * other book, and they can be read, highlighted and commented there.
  *
  * Sent as soon as a transcript is made; what could not be sent (no network, a login refused) is
- * sent the next time the app starts or another transcript is made. Nothing already sent is ever
- * written again: a highlight made in Reader's Books is a place in that very text.
+ * sent the next time the app starts or another transcript is made. Nothing already there is ever
+ * written again, whether it was sent from here or from the desktop app: a highlight made in
+ * Reader's Books is a place in that very text.
  */
 object Shelf {
     const val FOLDER = "transcriptions"
@@ -82,6 +83,13 @@ object Shelf {
             .use { if (it.code != 201 && it.code != 405 && it.code != 301) check(it.code) }     // made, or there already
     }
 
+    /** Whether a file is there already: a book once in the library is never written again, whoever put it there. */
+    private fun there(url: String, auth: String): Boolean =
+        http.newCall(Request.Builder().url(url).head().header("Authorization", auth).build()).execute().use {
+            if (it.code == 401 || it.code == 403) throw Refused()
+            it.code == 200
+        }
+
     private fun put(url: String, auth: String, body: ByteArray) {
         http.newCall(Request.Builder().url(url).put(body.toRequestBody("application/epub+zip".toMediaType())).header("Authorization", auth).build())
             .execute().use { check(it.code) }
@@ -100,15 +108,17 @@ object Shelf {
         fun folders() { if (!made) { folder(base, auth); folder(place, auth); made = true } }
         if (!e.sent.startsWith("t")) {
             val (language, lines) = Transcripts.load(app, e.id) ?: return
-            folders()
-            put(place + enc("$name.epub"), auth, Epub.build(e.id, e.title, channel, language, source, Transcripts.asText(lines)))
+            val target = place + enc("$name.epub")
+            if (!there(target, auth)) { folders(); put(target, auth, Epub.build(e.id, e.title, channel, language, source, Transcripts.asText(lines))) }
             app.store.updateEpisode(e.id) { it.copy(sent = "t") }
         }
         if (e.translation.isNotBlank() && e.sent != wanted(e)) {
             val lines = Transcripts.loadTranslation(app, e.id, e.translation) ?: return
-            folders()
-            put(place + enc("$name · ${e.translation}.epub"), auth,
-                Epub.build(e.id + "." + e.translation, "${e.title} · ${e.translation}", channel, e.translation, source, Transcripts.asText(lines)))
+            val target = place + enc("$name · ${e.translation}.epub")
+            if (!there(target, auth)) {
+                folders()
+                put(target, auth, Epub.build(e.id + "." + e.translation, "${e.title} · ${e.translation}", channel, e.translation, source, Transcripts.asText(lines)))
+            }
             app.store.updateEpisode(e.id) { it.copy(sent = wanted(it)) }
         }
     }

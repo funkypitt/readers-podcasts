@@ -1,0 +1,1 @@
+1.3.1 — A transcript already in the library of Reader's Books (sent from the desktop app, for instance) is left as it is: a book once there is never written again, so the highlights made in it keep their place.
