@@ -70,6 +70,7 @@ import com.freedomfighter.readerspodcasts.data.Chapters
 import com.freedomfighter.readerspodcasts.data.Kind
 import com.freedomfighter.readerspodcasts.net.Extractor
 import com.freedomfighter.readerspodcasts.data.Prefs
+import com.freedomfighter.readerspodcasts.data.withoutShort
 import com.freedomfighter.readerspodcasts.data.Seasons
 import com.freedomfighter.readerspodcasts.data.feedLanguage
 import com.freedomfighter.readerspodcasts.data.State
@@ -367,12 +368,12 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
     val view = Prefs.viewOrChannels(settings.view, feed != null)
     // `all` and `feeds` are read above so that Compose knows these lists depend on them: the
     // store's queries read the same state, and a download finishing has to redraw its row.
-    val episodes = remember(view, all, feeds) {
+    val episodes = remember(view, all, feeds, settings.hideShort) {
         when {
-            feed != null -> app.store.episodesOf(feed.id)
+            feed != null -> app.store.episodesOf(feed.id).withoutShort(settings.hideShort)
             view == Prefs.VIEW_FAVOURITES -> app.store.favourites()
             view == Prefs.VIEW_DOWNLOADED -> app.store.downloaded()
-            view == Prefs.VIEW_EPISODES -> app.store.recent()
+            view == Prefs.VIEW_EPISODES -> app.store.recent().withoutShort(settings.hideShort)
             else -> emptyList()
         }
     }
@@ -1084,6 +1085,7 @@ fun SettingsScreen(nav: Nav, app: App, activity: MainActivity) {
                     R.string.delete_when_played, onOff(s.deleteWhenPlayed),
                     secondary = R.string.delete_when_played_hint,
                 ) { app.prefs.setDeleteWhenPlayed(!s.deleteWhenPlayed) }
+                Setting(R.string.hide_short, onOff(s.hideShort), secondary = R.string.hide_short_hint) { app.prefs.setHideShort(!s.hideShort) }
                 Rule(Modifier.padding(vertical = 8.dp))
                 Small(stringResource(R.string.exchange_hint), Modifier.padding(horizontal = rowPadH).padding(bottom = 6.dp), maxLines = 6)
                 TextRow(stringResource(R.string.export_opml), secondary = Exports.OPML_NAME, size = typo.title) { activity.exportOpml() }

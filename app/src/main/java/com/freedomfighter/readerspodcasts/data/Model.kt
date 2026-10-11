@@ -147,3 +147,13 @@ fun clock(ms: Long): String {
     val s = ms.coerceAtLeast(0) / 1000
     return if (s >= 3600) "%d:%02d:%02d".format(s / 3600, s % 3600 / 60, s % 60) else "%02d:%02d".format(s / 60, s % 60)
 }
+
+/** Under this, an episode is a trailer or a snippet: left out when the setting says so. */
+const val SHORT_MS = 10 * 60 * 1000L
+
+/**
+ * The episodes a list shows: all of them, or without the short ones. An episode whose length
+ * is not known stays. Favourites and downloads are the person's own picks and are never hidden.
+ */
+fun List<Episode>.withoutShort(hide: Boolean, ownPicks: Boolean = false): List<Episode> =
+    if (!hide || ownPicks) this else filter { it.durationMs <= 0L || it.durationMs >= SHORT_MS }

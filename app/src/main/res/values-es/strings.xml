@@ -65,6 +65,8 @@
     <string name="chapters_of">%d capítulos</string>
     <string name="copied">copiado</string>
     <string name="delete_when_played">borrar una vez escuchado</string>
+    <string name="hide_short">ocultar los episodios de menos de 10 minutos</string>
+    <string name="hide_short_hint">avances y fragmentos; los favoritos y las descargas se quedan</string>
     <string name="settings">ajustes</string>
     <string name="about">podcasts, guardados en el teléfono. solo se conecta para buscar y descargar podcasts</string>
     <string name="colours">colores</string>

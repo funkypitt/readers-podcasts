@@ -65,6 +65,8 @@
     <string name="chapters_of">%d capítulos</string>
     <string name="copied">copiado</string>
     <string name="delete_when_played">apagar depois de ouvido</string>
+    <string name="hide_short">ocultar os episódios com menos de 10 minutos</string>
+    <string name="hide_short_hint">trailers e excertos; os favoritos e as transferências ficam</string>
     <string name="settings">definições</string>
     <string name="about">podcasts, guardados no telemóvel. só se liga à rede para procurar e descarregar podcasts</string>
     <string name="colours">cores</string>

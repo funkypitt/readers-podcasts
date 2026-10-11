@@ -65,6 +65,8 @@
     <string name="chapters_of">%d chapters</string>
     <string name="copied">copied</string>
     <string name="delete_when_played">delete when played</string>
+    <string name="hide_short">hide episodes under 10 minutes</string>
+    <string name="hide_short_hint">trailers and snippets; favourites and downloads stay</string>
     <string name="settings">settings</string>
     <string name="about">podcasts, kept on the phone. it goes online only to find and fetch podcasts</string>
     <string name="colours">colours</string>

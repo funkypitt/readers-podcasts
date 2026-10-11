@@ -28,6 +28,8 @@ data class Settings(
      * default one discovers.
      */
     val deleteWhenPlayed: Boolean = false,
+    /** Leave out the episodes under ten minutes — trailers, snippets — from a channel and from « episodes ». */
+    val hideShort: Boolean = false,
     /** Which list the home screen shows: one of the three views, or a feed's id. */
     val view: String = Prefs.VIEW_CHANNELS,
     /** The one it opens on. */
@@ -59,6 +61,7 @@ class Prefs(context: Context) {
         wifiOnly = sp.getBoolean("wifi_only", true),
         autoRefresh = sp.getBoolean("auto_refresh", true),
         deleteWhenPlayed = sp.getBoolean("delete_when_played", false),
+        hideShort = sp.getBoolean("hide_short", false),
         defaultView = known(sp.getString("default_view", VIEW_CHANNELS)),
         // The stored view goes through the same mapping: a phone updated from 0.1 held "queue"
         // there, and a name nothing answers to left the screen empty under a title that lied.
@@ -100,6 +103,7 @@ class Prefs(context: Context) {
     fun setWifiOnly(v: Boolean) = sp.edit().putBoolean("wifi_only", v).apply()
     fun setAutoRefresh(v: Boolean) = sp.edit().putBoolean("auto_refresh", v).apply()
     fun setDeleteWhenPlayed(v: Boolean) = sp.edit().putBoolean("delete_when_played", v).apply()
+    fun setHideShort(v: Boolean) = sp.edit().putBoolean("hide_short", v).apply()
     fun setView(v: String) = sp.edit().putString("view", v).apply()
     /** The password is kept encrypted, and none of this leaves with the exported settings. */
     fun setShelf(url: String, username: String, password: String) = sp.edit()
@@ -121,7 +125,7 @@ class Prefs(context: Context) {
             "theme" to s.theme.name, "font" to s.font.name, "text_size" to s.textSize.name,
             "align" to s.align.name, "haptics" to s.haptics, "speed" to s.speed,
             "wifi_only" to s.wifiOnly, "auto_refresh" to s.autoRefresh,
-            "delete_when_played" to s.deleteWhenPlayed, "default_view" to s.defaultView,
+            "delete_when_played" to s.deleteWhenPlayed, "hide_short" to s.hideShort, "default_view" to s.defaultView,
         )
     }
 
@@ -137,6 +141,7 @@ class Prefs(context: Context) {
         (m["wifi_only"] as? Boolean)?.let { e.putBoolean("wifi_only", it) }
         (m["auto_refresh"] as? Boolean)?.let { e.putBoolean("auto_refresh", it) }
         (m["delete_when_played"] as? Boolean)?.let { e.putBoolean("delete_when_played", it) }
+        (m["hide_short"] as? Boolean)?.let { e.putBoolean("hide_short", it) }
         (m["default_view"] as? String)?.let { e.putString("default_view", it) }
         e.apply()
     }

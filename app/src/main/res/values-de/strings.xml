@@ -65,6 +65,8 @@
     <string name="chapters_of">%d Kapitel</string>
     <string name="copied">kopiert</string>
     <string name="delete_when_played">nach dem Hören löschen</string>
+    <string name="hide_short">Episoden unter 10 Minuten ausblenden</string>
+    <string name="hide_short_hint">Trailer und Ausschnitte; Favoriten und Downloads bleiben</string>
     <string name="settings">Einstellungen</string>
     <string name="about">Podcasts, auf dem Telefon behalten. die App geht nur online, um Podcasts zu finden und zu laden</string>
     <string name="colours">Farben</string>

@@ -65,6 +65,8 @@
     <string name="chapters_of">глав: %d</string>
     <string name="copied">скопировано</string>
     <string name="delete_when_played">удалять после прослушивания</string>
+    <string name="hide_short">скрывать выпуски короче 10 минут</string>
+    <string name="hide_short_hint">трейлеры и отрывки; избранное и загруженное остаются</string>
     <string name="settings">настройки</string>
     <string name="about">подкасты, которые остаются на телефоне. в сеть приложение выходит, только чтобы найти и загрузить подкасты</string>
     <string name="colours">цвета</string>

@@ -20,6 +20,8 @@ avec le [jumeau de bureau](https://github.com/funkypitt/readers-podcasts-desktop
   l'écoute ; il s'exporte en `.txt`.
 * Traduire (Gemma 3 4B, sur le téléphone) : demande un téléphone de 8 Go. Les modèles sont
   téléchargés une fois et partagés avec les autres apps Reader's.
+* Un réglage masque les épisodes de moins de dix minutes (bandes-annonces, extraits) dans les
+  chaînes et dans « épisodes » ; les favoris et les téléchargements restent.
 * Les paragraphes suivent la parole : un petit modèle de voix (six mégaoctets, dans l'app)
   écoute le son autour de chaque trou entre deux lignes et dit si une autre personne parle
   ensuite — une question et sa réponse font deux paragraphes, sans étiquette de locuteur ; les

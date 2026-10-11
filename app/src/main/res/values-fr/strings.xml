@@ -65,6 +65,8 @@
     <string name="chapters_of">%d chapitres</string>
     <string name="copied">copié</string>
     <string name="delete_when_played">effacer une fois écouté</string>
+    <string name="hide_short">masquer les épisodes de moins de 10 minutes</string>
+    <string name="hide_short_hint">bandes-annonces et extraits ; les favoris et les téléchargements restent</string>
     <string name="settings">réglages</string>
     <string name="about">des podcasts, gardés sur le téléphone. l\'app ne se connecte que pour trouver et récupérer des podcasts</string>
     <string name="colours">couleurs</string>
