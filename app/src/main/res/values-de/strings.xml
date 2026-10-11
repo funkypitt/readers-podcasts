@@ -46,9 +46,9 @@
     <string name="export_opml">Abos exportieren</string>
     <string name="import_settings">Einstellungen importieren</string>
     <string name="export_settings">Einstellungen exportieren</string>
-    <string name="opml_exported">Abos exportiert</string>
     <string name="opml_empty">kein Abo in dieser Datei</string>
-    <string name="settings_exported">Einstellungen exportiert</string>
+    <string name="export_saved">gespeichert als %1$s</string>
+    <string name="share_export">diese Datei teilen…</string>
     <string name="settings_imported">Einstellungen importiert</string>
     <string name="settings_unreadable">diese Datei konnte nicht gelesen werden</string>
     <string name="write_failed">Schreiben nicht möglich</string>

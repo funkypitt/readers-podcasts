@@ -46,9 +46,9 @@
     <string name="export_opml">exporter les abonnements</string>
     <string name="import_settings">importer des réglages</string>
     <string name="export_settings">exporter les réglages</string>
-    <string name="opml_exported">abonnements exportés</string>
     <string name="opml_empty">aucun abonnement dans ce fichier</string>
-    <string name="settings_exported">réglages exportés</string>
+    <string name="export_saved">enregistré sous %1$s</string>
+    <string name="share_export">partager ce fichier…</string>
     <string name="settings_imported">réglages importés</string>
     <string name="settings_unreadable">ce fichier n\'a pas pu être lu</string>
     <string name="write_failed">écriture impossible</string>

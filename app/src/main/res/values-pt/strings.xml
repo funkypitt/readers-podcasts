@@ -46,9 +46,9 @@
     <string name="export_opml">exportar as subscrições</string>
     <string name="import_settings">importar definições</string>
     <string name="export_settings">exportar as definições</string>
-    <string name="opml_exported">subscrições exportadas</string>
     <string name="opml_empty">nenhuma subscrição nesse ficheiro</string>
-    <string name="settings_exported">definições exportadas</string>
+    <string name="export_saved">guardado como %1$s</string>
+    <string name="share_export">partilhar este ficheiro…</string>
     <string name="settings_imported">definições importadas</string>
     <string name="settings_unreadable">não foi possível ler esse ficheiro</string>
     <string name="write_failed">não foi possível escrever</string>

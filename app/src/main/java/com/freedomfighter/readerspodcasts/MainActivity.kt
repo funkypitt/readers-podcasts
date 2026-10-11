@@ -32,6 +32,7 @@ import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionToken
 import com.freedomfighter.readerspodcasts.data.Backup
 import com.freedomfighter.readerspodcasts.data.Episode
+import com.freedomfighter.readerspodcasts.data.Exports
 import com.freedomfighter.readerspodcasts.data.Kind
 import com.freedomfighter.readerspodcasts.data.Opml
 import com.freedomfighter.readerspodcasts.data.Feed
@@ -87,9 +88,9 @@ class MainActivity : ComponentActivity() {
 
     // ---- the two files that carry everything: subscriptions, and settings with positions ----
 
-    private val writeOpml = registerForActivityResult(ActivityResultContracts.CreateDocument("text/xml")) { uri ->
+    private val writeOpml = registerForActivityResult(ActivityResultContracts.CreateDocument(Exports.OPML_MIME)) { uri ->
         if (uri == null) return@registerForActivityResult
-        write(uri, Opml.export(app.store.feeds.value), R.string.opml_exported)
+        write(uri, Exports.OPML_NAME, Exports.OPML_MIME) { Opml.export(app.store.feeds.value) }
     }
 
     private val readOpml = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -124,9 +125,9 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private val writeBackup = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+    private val writeBackup = registerForActivityResult(ActivityResultContracts.CreateDocument(Exports.SETTINGS_MIME)) { uri ->
         if (uri == null) return@registerForActivityResult
-        write(uri, Backup.export(app.prefs.exportMap(), app.store.feeds.value, app.store.episodes.value), R.string.settings_exported)
+        write(uri, Exports.SETTINGS_NAME, Exports.SETTINGS_MIME) { Backup.export(app.prefs.exportMap(), app.store.feeds.value, app.store.episodes.value) }
     }
 
     private val readBackup = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -164,13 +165,15 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun write(uri: Uri, text: String, okRes: Int) = lifecycleScope.launch {
-        val ok = withContext(Dispatchers.IO) {
-            // "wt", not the default: written over a longer file, plain "w" leaves the end of the
-            // old one after the new — a file no other program can read.
-            runCatching { contentResolver.openOutputStream(uri, "wt")!!.use { it.write(text.toByteArray()) } }.isSuccess
-        }
-        toast(getString(if (ok) okRes else R.string.write_failed))
+    /**
+     * The export just saved, as (file name, mime), for the menu that offers to share it; null
+     * when there is none to offer.
+     */
+    var exported by mutableStateOf<Pair<String, String>?>(null)
+
+    private fun write(uri: Uri, name: String, mime: String, text: () -> String) = lifecycleScope.launch {
+        val ok = withContext(Dispatchers.IO) { Exports.save(this@MainActivity, uri, name, text()) }
+        if (ok) exported = name to mime else toast(getString(R.string.write_failed))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -218,6 +221,15 @@ class MainActivity : ComponentActivity() {
                     Screen.Settings -> SettingsScreen(nav, app, activity)
                 }
                 com.freedomfighter.readerspodcasts.ui.Notice(notice) { notice = "" }
+                // Saved where the person chose; now the same file to Telegram, a drive, an e-mail…
+                exported?.let { (name, mime) ->
+                    val shareTitle = androidx.compose.ui.res.stringResource(R.string.share_export)
+                    com.freedomfighter.readerspodcasts.ui.TextMenu(
+                        androidx.compose.ui.res.stringResource(R.string.export_saved, name),
+                        listOf(com.freedomfighter.readerspodcasts.ui.MenuItem(shareTitle) { Exports.share(activity, name, mime, shareTitle) }),
+                        onDismiss = { exported = null },
+                    )
+                }
             }
         }
     }
@@ -286,7 +298,7 @@ class MainActivity : ComponentActivity() {
         Refresher.Live.running = 0
     }
 
-    fun exportOpml() = runCatching { writeOpml.launch("abonnements.opml") }
+    fun exportOpml() = runCatching { writeOpml.launch(Exports.OPML_NAME) }
     fun importOpml() = runCatching { readOpml.launch(arrayOf("*/*")) }
     /**
      * The library's account, taken from a Reader's credentials file: Reader's Books' own section,
@@ -310,7 +322,7 @@ class MainActivity : ComponentActivity() {
     }
     fun importShelf() = runCatching { readShelf.launch(arrayOf("*/*")) }
 
-    fun exportSettings() = runCatching { writeBackup.launch("reglages.json") }
+    fun exportSettings() = runCatching { writeBackup.launch(Exports.SETTINGS_NAME) }
     fun importSettings() = runCatching { readBackup.launch(arrayOf("*/*")) }
 
     // ---- episodes ----

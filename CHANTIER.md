@@ -64,13 +64,13 @@ Pas de Room : fichiers JSON, comme `Library.kt` et Reader's Notes.
   `{id (guid), title, published, durationMs, mediaUrl, localPath, positionMs,
   state: neuf|encours|ecoute, transcriptUri, hasPoints, language}`, plafonné à
   `keepCount` entrées.
-- `settings` (SharedPreferences) + export `reglages.json`.
+- `settings` (SharedPreferences) + export `readers-podcasts-settings.json`.
 
 **Formats d'échange téléphone ↔ bureau** (il n'y a pas de serveur, les fichiers *sont* la
 synchronisation) :
 
-- `abonnements.opml` — OPML 2.0, compatible avec n'importe quel autre lecteur ;
-- `reglages.json` — réglages + états de lecture (`{feedId, episodeId, positionMs, state}`),
+- `readers-podcasts-subscriptions.opml` — OPML 2.0, compatible avec n'importe quel autre lecteur ;
+- `readers-podcasts-settings.json` — réglages + états de lecture (`{feedId, episodeId, positionMs, state}`),
   fusion par « le plus récent gagne » sur `lastPlayed`.
 
 ## 5. YouTube — variante privée seulement
@@ -96,15 +96,15 @@ Points de vigilance :
 ## 6. Desktop (en parallèle)
 
 `~/code/readers-podcasts-desktop/readers_podcasts.py`, PyQt5 fichier unique, patron de
-Reader's Notes desktop : `feedparser` + `QMediaPlayer`, mêmes `abonnements.opml` et
-`reglages.json`, transcription déléguée au poste (WhisperX + GPU) plutôt qu'à whisper.cpp.
+Reader's Notes desktop : `feedparser` + `QMediaPlayer`, mêmes `readers-podcasts-subscriptions.opml` et
+`readers-podcasts-settings.json`, transcription déléguée au poste (WhisperX + GPU) plutôt qu'à whisper.cpp.
 yt-dlp y est trivial (binaire du système), donc pas de scission public/privé côté bureau.
 Livraison : `.deb` + PKGBUILD + GitHub Actions PyInstaller (.exe et deux .dmg par tag),
 comme les trois autres desktops — pièges connus : `tzdata` et le nom de fuseau de Qt sous
 Windows.
 
-Mener les deux de front a un intérêt précis : figer tôt `abonnements.opml` et
-`reglages.json`, qui sont le seul lien entre les deux.
+Mener les deux de front a un intérêt précis : figer tôt `readers-podcasts-subscriptions.opml` et
+`readers-podcasts-settings.json`, qui sont le seul lien entre les deux.
 
 ## 7. Découpage
 
@@ -158,7 +158,7 @@ Ce que le premier import de 140 flux a montré, et ce qui a été demandé dans 
   cent quarante chaînes. Les présentations sont maintenant **chaînes** (défaut), **épisodes** et
   **favoris**, et un réglage dit laquelle s'ouvre.
 - **Favoris** : une étoile, gardée à la main ; c'est la seule liste que l'app ne remplit ni ne
-  vide toute seule. Elle voyage dans `reglages.json`, même sur un épisode jamais commencé.
+  vide toute seule. Elle voyage dans `readers-podcasts-settings.json`, même sur un épisode jamais commencé.
 - **Chaînes par ordre du dernier épisode paru** — l'ordre alphabétique ne disait rien.
 - **Tirer pour actualiser**, avec une ligne de texte plutôt qu'une roue qui tourne (Material
   n'entre pas dans une app sans icônes), et **↻** et **+** à gauche du ⋯.

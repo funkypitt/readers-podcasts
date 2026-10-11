@@ -46,9 +46,9 @@
     <string name="export_opml">экспортировать подписки</string>
     <string name="import_settings">импортировать настройки</string>
     <string name="export_settings">экспортировать настройки</string>
-    <string name="opml_exported">подписки экспортированы</string>
     <string name="opml_empty">в этом файле нет подписок</string>
-    <string name="settings_exported">настройки экспортированы</string>
+    <string name="export_saved">сохранено как %1$s</string>
+    <string name="share_export">поделиться этим файлом…</string>
     <string name="settings_imported">настройки импортированы</string>
     <string name="settings_unreadable">этот файл не удалось прочитать</string>
     <string name="write_failed">не удалось записать файл</string>

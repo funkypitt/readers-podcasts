@@ -4,7 +4,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * `reglages.json` — the settings, the subscriptions and where each episode was left, in one
+ * `readers-podcasts-settings.json` — the settings, the subscriptions and where each episode was left, in one
  * file. With OPML it is the whole of what moves between the phone and the desktop: there is no
  * server, so these two files *are* the synchronisation, and both are readable by hand.
  *

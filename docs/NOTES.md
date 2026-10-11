@@ -50,7 +50,7 @@ Kotlin, Jetpack Compose, Media3 — la même charpente que Reader's Audio Player
 
 Les identifiants sont calculés (`sha1(url)` pour une chaîne, `sha1(feedId|guid)` pour un
 épisode), donc le bureau trouve le même identifiant pour le même épisode : c'est ce qui permet
-à `reglages.json` de porter une position d'un appareil à l'autre sans serveur.
+à `readers-podcasts-settings.json` de porter une position d'un appareil à l'autre sans serveur.
 
 ## Tests
 

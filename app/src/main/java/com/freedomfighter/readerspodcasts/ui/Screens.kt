@@ -63,6 +63,7 @@ import com.freedomfighter.readerspodcasts.App
 import com.freedomfighter.readerspodcasts.MainActivity
 import com.freedomfighter.readerspodcasts.R
 import com.freedomfighter.readerspodcasts.data.Episode
+import com.freedomfighter.readerspodcasts.data.Exports
 import com.freedomfighter.readerspodcasts.data.Feed
 import com.freedomfighter.readerspodcasts.data.FontChoice
 import com.freedomfighter.readerspodcasts.data.Chapters
@@ -505,7 +506,7 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
             add(MenuItem(stringResource(R.string.refresh)) { activity.refreshAll() })
             add(MenuItem(stringResource(R.string.add_feed)) { nav.push(Screen.Add(clipboardUrl(clipboard.getText()?.text))) })
             add(MenuItem(stringResource(R.string.import_opml)) { activity.importOpml() })
-            add(MenuItem(stringResource(R.string.export_opml), secondary = "abonnements.opml") { activity.exportOpml() })
+            add(MenuItem(stringResource(R.string.export_opml), secondary = Exports.OPML_NAME) { activity.exportOpml() })
         }, onDismiss = { menu = false }, footer = listOf(
             MenuItem(if (colors.isDark) stringResource(R.string.theme_light) else stringResource(R.string.theme_dark)) { app.prefs.toggleTheme(colors.isDark) },
             MenuItem(stringResource(R.string.settings)) { nav.push(Screen.Settings) },
@@ -1085,9 +1086,9 @@ fun SettingsScreen(nav: Nav, app: App, activity: MainActivity) {
                 ) { app.prefs.setDeleteWhenPlayed(!s.deleteWhenPlayed) }
                 Rule(Modifier.padding(vertical = 8.dp))
                 Small(stringResource(R.string.exchange_hint), Modifier.padding(horizontal = rowPadH).padding(bottom = 6.dp), maxLines = 6)
-                TextRow(stringResource(R.string.export_opml), secondary = "abonnements.opml", size = typo.title) { activity.exportOpml() }
+                TextRow(stringResource(R.string.export_opml), secondary = Exports.OPML_NAME, size = typo.title) { activity.exportOpml() }
                 TextRow(stringResource(R.string.import_opml), size = typo.title) { activity.importOpml() }
-                TextRow(stringResource(R.string.export_settings), secondary = "reglages.json", size = typo.title) { activity.exportSettings() }
+                TextRow(stringResource(R.string.export_settings), secondary = Exports.SETTINGS_NAME, size = typo.title) { activity.exportSettings() }
                 TextRow(stringResource(R.string.import_settings), size = typo.title) { activity.importSettings() }
                 Rule(Modifier.padding(vertical = 8.dp))
                 // The transcripts, sent to the library of Reader's Books.

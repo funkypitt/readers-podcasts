@@ -16,7 +16,8 @@ import java.io.File
 /**
  * The phone and the desktop, against each other's files.
  *
- * There is no server between the two apps: `abonnements.opml` and `reglages.json` *are* the
+ * There is no server between the two apps: the subscriptions file (`readers-podcasts-subscriptions.opml`)
+ * and the settings file (`readers-podcasts-settings.json`) *are* the
  * synchronisation, so what matters is not that each app reads its own writing but that it reads
  * the other's. The fixtures under `resources/` were written by the desktop app itself
  * (tools/make-fixtures.sh), and what this test writes into `build/interop/` is read back by the
