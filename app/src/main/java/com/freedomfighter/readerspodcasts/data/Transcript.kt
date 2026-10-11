@@ -1,13 +1,14 @@
 package com.freedomfighter.readerspodcasts.data
 
 import android.content.Context
+import com.freedomfighter.readers.speech.whisper.Paragraphs
 import com.freedomfighter.readers.speech.whisper.Segment
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 
-/** One line of a transcript, and where it sits in the sound. */
-data class Line(val startMs: Long, val endMs: Long, val text: String)
+/** One line of a transcript, where it sits in the sound, and whether another voice starts with it. */
+data class Line(val startMs: Long, val endMs: Long, val text: String, val newVoice: Boolean = false)
 
 /**
  * What was said, kept as lines with their times.
@@ -45,29 +46,38 @@ object Transcripts {
         dir(ctx).listFiles { f -> f.name.startsWith("$id.") || f.name == "$id.json" }?.forEach { it.delete() }
     }
 
-    /** What leaves the app: the lines run together into paragraphs, on a pause of over a second. */
+    /** Where the paragraphs begin: the shared rule — another voice, the pauses, the long paragraphs. */
+    fun starts(lines: List<Line>): BooleanArray =
+        Paragraphs.starts(lines.map { Segment(it.startMs, it.endMs, it.text, it.newVoice) })
+
+    /** What leaves the app: the lines run together into paragraphs. */
     fun asText(lines: List<Line>): String {
+        val kept = lines.filter { it.text.isNotBlank() }
+        val starts = starts(kept)
         val out = StringBuilder()
-        var lastEnd = -1L
-        lines.forEach { line ->
-            val text = line.text.trim()
-            if (text.isEmpty()) return@forEach
-            if (out.isEmpty()) out.append(text)
-            else if (lastEnd >= 0 && line.startMs - lastEnd > 1_200) out.append("\n\n").append(text)
-            else out.append(' ').append(text)
-            lastEnd = line.endMs
+        kept.forEachIndexed { i, line ->
+            if (out.isEmpty()) out.append(line.text.trim())
+            else if (starts[i]) out.append("\n\n").append(line.text.trim())
+            else out.append(' ').append(line.text.trim())
         }
         return out.toString()
     }
 
     fun fromSegments(segments: List<Segment>): List<Line> =
-        segments.map { Line(it.startMs, it.endMs, it.text.trim()) }.filter { it.text.isNotEmpty() }
+        segments.map { Line(it.startMs, it.endMs, it.text.trim(), it.newVoice) }.filter { it.text.isNotEmpty() }
 
     private fun write(target: File, language: String, lines: List<Line>) {
         val root = JSONObject()
         root.put("language", language)
+        // "p" marks every line a paragraph begins with (the desktop app believes them), "v" the
+        // lines where another voice starts; a file without "p" is cut on the pauses when read.
+        val starts = starts(lines)
         root.put("lines", JSONArray().apply {
-            lines.forEach { put(JSONObject().apply { put("a", it.startMs); put("b", it.endMs); put("t", it.text) }) }
+            lines.forEachIndexed { i, it -> put(JSONObject().apply {
+                put("a", it.startMs); put("b", it.endMs); put("t", it.text)
+                if (starts[i]) put("p", 1)
+                if (it.newVoice) put("v", 1)
+            }) }
         })
         runCatching { target.writeText(root.toString()) }
     }
@@ -77,7 +87,7 @@ object Transcripts {
         val arr = root.getJSONArray("lines")
         val lines = (0 until arr.length()).map { i ->
             val o = arr.getJSONObject(i)
-            Line(o.optLong("a"), o.optLong("b"), o.optString("t"))
+            Line(o.optLong("a"), o.optLong("b"), o.optString("t"), o.optInt("v") == 1)
         }
         root.optString("language") to lines
     }.getOrNull()

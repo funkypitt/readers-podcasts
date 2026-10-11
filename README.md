@@ -20,6 +20,11 @@ avec le [jumeau de bureau](https://github.com/funkypitt/readers-podcasts-desktop
   l'écoute ; il s'exporte en `.txt`.
 * Traduire (Gemma 3 4B, sur le téléphone) : demande un téléphone de 8 Go. Les modèles sont
   téléchargés une fois et partagés avec les autres apps Reader's.
+* Les paragraphes suivent la parole : un petit modèle de voix (six mégaoctets, dans l'app)
+  écoute le son autour de chaque trou entre deux lignes et dit si une autre personne parle
+  ensuite — une question et sa réponse font deux paragraphes, sans étiquette de locuteur ; les
+  pauses et les longs paragraphes coupent le reste, comme sur le bureau, qui lit ces paragraphes
+  tels quels dans les transcriptions envoyées à la bibliothèque.
 * Les transcriptions vont dans [Reader's Books](https://github.com/funkypitt/readers-books) :
   avec l'adresse WebDAV de sa bibliothèque dans les réglages (ou le fichier d'identifiants),
   chaque transcription part dans un dossier `transcriptions` de cette bibliothèque, un petit
