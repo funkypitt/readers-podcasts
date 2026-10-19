@@ -61,6 +61,8 @@ import kotlinx.coroutines.withContext
 class PlayerUi {
     var mediaId by mutableStateOf("")
     var playing by mutableStateOf(false)
+    /** Asked to play and still filling up: the sound is on its way. */
+    var waiting by mutableStateOf(false)
     var positionMs by mutableLongStateOf(0L)
     var durationMs by mutableLongStateOf(0L)
 }
@@ -74,7 +76,8 @@ class MainActivity : ComponentActivity() {
     private var pendingPlay: Episode? = null
 
     /** The episode whose download was asked for by pressing play, and which plays when it lands. */
-    private var playWhenFetched: String? = null
+    var playWhenFetched: String? by mutableStateOf(null)
+        private set
 
     /**
      * What is going on, in one line, or "". An OPML export of a hundred and forty feeds takes
@@ -206,6 +209,7 @@ class MainActivity : ComponentActivity() {
                         controller?.let { c ->
                             ui.mediaId = c.currentMediaItem?.mediaId ?: ""
                             ui.playing = c.isPlaying
+                            ui.waiting = c.playWhenReady && c.playbackState == Player.STATE_BUFFERING
                             ui.positionMs = c.currentPosition
                             ui.durationMs = c.duration.takeIf { it > 0 } ?: 0L
                         }
@@ -491,7 +495,8 @@ class MainActivity : ComponentActivity() {
     fun toggle() {
         val c = controller ?: return
         when {
-            c.isPlaying -> c.pause()
+            // a press while the sound is still on its way takes the request back
+            c.isPlaying || (c.playWhenReady && c.playbackState == Player.STATE_BUFFERING) -> c.pause()
             c.mediaItemCount == 0 -> app.store.last()?.let { play(it) }
             c.playbackState == Player.STATE_ENDED -> { c.seekTo(0); c.play() }
             c.playbackState == Player.STATE_IDLE -> { c.prepare(); c.play() }

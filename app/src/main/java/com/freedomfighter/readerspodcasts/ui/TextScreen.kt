@@ -1,5 +1,6 @@
 package com.freedomfighter.readerspodcasts.ui
 
+import kotlinx.coroutines.delay
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -101,14 +102,15 @@ fun TextScreen(nav: Nav, app: App, activity: MainActivity, id: String) {
             // The sound, from here: one does not leave a reading to pause it.
             val playingThis = activity.ui.mediaId == id
             val sounding = playingThis && activity.ui.playing
+            val waiting = playingThis && !sounding && activity.ui.waiting
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f)) {
                     TextRow(stringResource(R.string.back5), size = typo.title) { if (playingThis) activity.seekBy(-5_000) }
                 }
                 Box(Modifier.weight(1.2f)) {
                     TextRow(
-                        (if (sounding) "❚❚" else "▶") + "  " + clock(position),
-                        inverted = sounding, size = typo.title,
+                        (if (sounding) "❚❚" else if (waiting) waitingLabel() else "▶") + "  " + clock(position),
+                        inverted = sounding || waiting, size = typo.title,
                     ) { if (playingThis) activity.toggle() else activity.play(episode) }
                 }
                 Box(Modifier.weight(1f)) {

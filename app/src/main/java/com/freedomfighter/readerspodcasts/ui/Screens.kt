@@ -36,6 +36,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -723,6 +724,12 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
     if (episode == null) { LaunchedEffect(Unit) { nav.pop() }; return }
     val current = ui.mediaId == episode.id
     val playing = current && ui.playing
+    // The press is answered before the sound is: the player says when it is filling up, a video
+    // is fetched first, and for the first moments after a tap, before the player has anything
+    // to report, the tap itself is the reason. A button that stays « ▶ » reads as a press lost.
+    var tapped by remember(episode.id) { mutableStateOf(false) }
+    LaunchedEffect(tapped, playing) { if (tapped) { if (!playing) delay(2500); tapped = false } }
+    val waiting = !playing && ((current && ui.waiting) || activity.playWhenFetched == episode.id || tapped)
     val pos = if (current) ui.positionMs else episode.positionMs
     val dur = if (current && ui.durationMs > 0) ui.durationMs else episode.durationMs
     val feed = app.store.feed(episode.feedId)
@@ -804,7 +811,10 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
                 ) { Progress(if (dur > 0) (pos.toFloat() / dur).coerceIn(0f, 1f) else 0f) }
                 Row(Modifier.fillMaxWidth()) {
                     Control(stringResource(R.string.back5), Modifier.weight(1f)) { tick(); if (current) activity.seekBy(-5_000) }
-                    Control(if (playing) "❚❚" else "▶", Modifier.weight(1f), inverted = playing) { tick(); if (current) activity.toggle() else activity.play(episode) }
+                    Control(
+                        when { playing -> "❚❚"; waiting -> waitingLabel(); else -> "▶" },
+                        Modifier.weight(1f), inverted = playing || waiting
+                    ) { tick(); if (!playing) tapped = true; if (current) activity.toggle() else activity.play(episode) }
                     Control(stringResource(R.string.fwd10), Modifier.weight(1f)) { tick(); if (current) activity.seekBy(10_000) }
                 }
                 // Chapters, when the description holds a list of them: the row says where one is
@@ -1044,6 +1054,17 @@ fun spokenLanguage(code: String): String =
 /** A language as it is said in itself: "français", "English". */
 fun languageName(code: String): String =
     java.util.Locale(code).getDisplayLanguage(java.util.Locale(code)).replaceFirstChar { it.lowercase() }
+
+
+/**
+ * The play button while the sound is on its way — a stream filling up, a video being fetched
+ * first. The glyph stays and dots come and go after it: the press was taken, the sound follows.
+ */
+@Composable
+fun waitingLabel(): String {
+    val step by produceState(0) { while (true) { delay(400); value = (value + 1) % 3 } }
+    return "▶ " + "· ".repeat(step + 1).trim()
+}
 
 @Composable
 private fun Control(label: String, modifier: Modifier, inverted: Boolean = false, onClick: () -> Unit) {
