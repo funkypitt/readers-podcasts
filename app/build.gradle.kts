@@ -12,8 +12,8 @@ android {
         applicationId = "com.freedomfighter.readerspodcasts"
         minSdk = 29
         targetSdk = 34
-        versionCode = 26
-        versionName = "1.8.0"
+        versionCode = 27
+        versionName = "1.9.0"
     }
 
     flavorDimensions += "audience"
@@ -29,7 +29,7 @@ android {
             // installs over it and keeps the subscriptions and the listening positions. The
             // version code is lifted well above the public one so that F-Droid, which only ever
             // offers something newer, never quietly puts the public build back in its place.
-            versionCode = 1000 + (android.defaultConfig.versionCode ?: 1)
+            versionCode = 27 + (android.defaultConfig.versionCode ?: 1)
             versionNameSuffix = "-prive"
             // yt-dlp carries its own Python, one copy per architecture. Two are kept — the
             // phone's and the emulator's — rather than the four the library ships with; the

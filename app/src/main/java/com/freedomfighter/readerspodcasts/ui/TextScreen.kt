@@ -139,14 +139,14 @@ fun TextScreen(nav: Nav, app: App, activity: MainActivity, id: String) {
                     Box(
                         Modifier
                             .fillMaxWidth()
-                            .background(if (here) colors.fg else Color.Transparent)
+                            .background(if (here) colors.accent else Color.Transparent)
                             .noRippleClickable { activity.seekOrPlay(episode, line.startMs) }
                             .padding(horizontal = rowPadH, vertical = 8.dp)
                     ) {
                         T(
                             line.text,
                             size = typo.title,
-                            color = if (here) colors.bg else colors.fg,
+                            color = if (here) colors.onAccent else colors.fg,
                             align = TextAlign.Start,
                             lineHeightMul = 1.45f,
                         )

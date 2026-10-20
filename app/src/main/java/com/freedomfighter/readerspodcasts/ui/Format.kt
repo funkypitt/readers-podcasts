@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import com.freedomfighter.readerspodcasts.R
+import com.freedomfighter.readerspodcasts.data.ThemeMode
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -40,3 +41,14 @@ private fun daysBetween(then: Calendar, now: Calendar): Int {
 private fun startOfDay(c: Calendar): Long = (c.clone() as Calendar).apply {
     set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
 }.timeInMillis
+
+/** The name of a theme, as the settings row and the menu show it. */
+fun themeName(context: Context, m: ThemeMode): String = context.getString(when (m) {
+    ThemeMode.DARK -> R.string.theme_dark; ThemeMode.LIGHT -> R.string.theme_light; ThemeMode.SYSTEM -> R.string.theme_system
+    ThemeMode.LAVANDE -> R.string.theme_lavande; ThemeMode.SAUGE -> R.string.theme_sauge; ThemeMode.NORDIQUE -> R.string.theme_nordique
+    ThemeMode.TERRACOTTA -> R.string.theme_terracotta; ThemeMode.COQUETTE -> R.string.theme_coquette; ThemeMode.MILITANTE -> R.string.theme_militante
+    ThemeMode.TORRIDE -> R.string.theme_torride; ThemeMode.NATURE -> R.string.theme_nature
+})
+
+@Composable
+fun themeName(m: ThemeMode): String = themeName(LocalContext.current, m)

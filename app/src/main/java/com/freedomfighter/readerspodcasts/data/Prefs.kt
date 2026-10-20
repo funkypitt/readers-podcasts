@@ -5,7 +5,8 @@ import android.content.SharedPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-enum class ThemeMode { DARK, LIGHT, SYSTEM }
+/** The inks, the phone's choice between them, then the Plume palettes (see [Palettes]). */
+enum class ThemeMode { DARK, LIGHT, SYSTEM, LAVANDE, SAUGE, NORDIQUE, TERRACOTTA, COQUETTE, MILITANTE, TORRIDE, NATURE }
 enum class FontChoice { SERIF, SANS, MONO }
 enum class TextSize { SMALL, MEDIUM, LARGE }
 enum class Align { LEFT, CENTER }
@@ -114,10 +115,8 @@ class Prefs(context: Context) {
     fun setYtdlpUpdated(at: Long) = sp.edit().putLong("ytdlp_updated", at).apply()
     fun setDefaultView(v: String) = sp.edit().putString("default_view", v).putString("view", v).apply()
 
-    fun toggleTheme(systemIsDark: Boolean) {
-        val dark = when (_settings.value.theme) { ThemeMode.DARK -> true; ThemeMode.LIGHT -> false; ThemeMode.SYSTEM -> systemIsDark }
-        setTheme(if (dark) ThemeMode.LIGHT else ThemeMode.DARK)
-    }
+    /** One tap: the next theme, round and round — the two inks first, then the Plume palettes. */
+    fun nextTheme() = setTheme(Palettes.next(_settings.value.theme))
 
     /** Everything settable, for the backup file. Keys match the JSON the desktop reads and writes. */
     fun exportMap(): Map<String, Any> = _settings.value.let { s ->

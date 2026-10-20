@@ -132,9 +132,9 @@ fun TextRow(
     onClick: (() -> Unit)? = null
 ) {
     val colors = LocalColors.current
-    val bg = if (inverted) colors.fg else Color.Transparent
-    val fg = if (inverted) colors.bg else colors.fg
-    val dim = if (inverted) colors.bg.copy(alpha = 0.6f) else colors.dim
+    val bg = if (inverted) colors.accent else Color.Transparent
+    val fg = if (inverted) colors.onAccent else colors.fg
+    val dim = if (inverted) colors.onAccent.copy(alpha = 0.6f) else colors.dim
     Column(
         modifier
             .fillMaxWidth()
@@ -333,9 +333,9 @@ fun Notice(text: String, onDismiss: () -> Unit) {
         // two ran into one white block in which neither could be told from the other.
         Column(Modifier.fillMaxWidth().background(colors.bg).padding(top = 4.dp)) {
             Box(
-                Modifier.fillMaxWidth().background(colors.fg).noRippleClickable(onClick = onDismiss)
+                Modifier.fillMaxWidth().background(colors.accent).noRippleClickable(onClick = onDismiss)
                     .padding(horizontal = rowPadH, vertical = 14.dp)
-            ) { T(text, size = LocalTypo.current.small * 1.15f, color = colors.bg, align = TextAlign.Start, maxLines = 6) }
+            ) { T(text, size = LocalTypo.current.small * 1.15f, color = colors.onAccent, align = TextAlign.Start, maxLines = 6) }
         }
     }
 }

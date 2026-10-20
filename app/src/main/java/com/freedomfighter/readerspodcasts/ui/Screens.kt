@@ -70,6 +70,7 @@ import com.freedomfighter.readerspodcasts.data.FontChoice
 import com.freedomfighter.readerspodcasts.data.Chapters
 import com.freedomfighter.readerspodcasts.data.Kind
 import com.freedomfighter.readerspodcasts.net.Extractor
+import com.freedomfighter.readerspodcasts.data.Palettes
 import com.freedomfighter.readerspodcasts.data.Prefs
 import com.freedomfighter.readerspodcasts.data.withoutShort
 import com.freedomfighter.readerspodcasts.data.Seasons
@@ -166,12 +167,12 @@ fun EpisodeRow(
     onLongPress: () -> Unit,
 ) {
     val colors = LocalColors.current
-    val fg = if (inverted) colors.bg else colors.fg
-    val dim = if (inverted) colors.bg.copy(alpha = 0.6f) else colors.dim
+    val fg = if (inverted) colors.onAccent else colors.fg
+    val dim = if (inverted) colors.onAccent.copy(alpha = 0.6f) else colors.dim
     Column(
         Modifier
             .fillMaxWidth()
-            .background(if (inverted) colors.fg else Color.Transparent)
+            .background(if (inverted) colors.accent else Color.Transparent)
             .pressable(onClick = onClick, onLongPress = onLongPress)
             .padding(horizontal = rowPadH, vertical = rowPadV * 0.7f)
     ) {
@@ -513,7 +514,7 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
             add(MenuItem(stringResource(R.string.import_opml)) { activity.importOpml() })
             add(MenuItem(stringResource(R.string.export_opml), secondary = Exports.OPML_NAME) { activity.exportOpml() })
         }, onDismiss = { menu = false }, footer = listOf(
-            MenuItem(if (colors.isDark) stringResource(R.string.theme_light) else stringResource(R.string.theme_dark)) { app.prefs.toggleTheme(colors.isDark) },
+            MenuItem(themeName(Palettes.next(settings.theme))) { app.prefs.nextTheme() },
             MenuItem(stringResource(R.string.settings)) { nav.push(Screen.Settings) },
         ))
 
@@ -1082,10 +1083,10 @@ private fun Control(label: String, modifier: Modifier, inverted: Boolean = false
     val colors = LocalColors.current
     val typo = LocalTypo.current
     Box(
-        modifier.height(76.dp).background(if (inverted) colors.fg else Color.Transparent).noRippleClickable(onClick = onClick),
+        modifier.height(76.dp).background(if (inverted) colors.accent else Color.Transparent).noRippleClickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        T(label, size = typo.title, color = if (inverted) colors.bg else colors.fg, align = TextAlign.Center, maxLines = 1)
+        T(label, size = typo.title, color = if (inverted) colors.onAccent else colors.fg, align = TextAlign.Center, maxLines = 1)
     }
 }
 
@@ -1146,7 +1147,7 @@ fun SettingsScreen(nav: Nav, app: App, activity: MainActivity) {
                     ) { com.freedomfighter.readerspodcasts.net.Shelf.send(app) }
                 }
                 Rule(Modifier.padding(vertical = 8.dp))
-                Setting(R.string.colours, if (colors.isDark) stringResource(R.string.theme_dark) else stringResource(R.string.theme_light)) { app.prefs.toggleTheme(colors.isDark) }
+                Setting(R.string.colours, themeName(s.theme)) { app.prefs.nextTheme() }
                 Setting(R.string.text_size, when (s.textSize) { TextSize.SMALL -> "S"; TextSize.MEDIUM -> "M"; TextSize.LARGE -> "L" }) {
                     app.prefs.setTextSize(when (s.textSize) { TextSize.SMALL -> TextSize.MEDIUM; TextSize.MEDIUM -> TextSize.LARGE; TextSize.LARGE -> TextSize.SMALL })
                 }

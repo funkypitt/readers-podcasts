@@ -1,0 +1,1 @@
+1.8.0 — Colour themes: white on black and black on white as before, then, one tap after another, the palettes of the Plume keyboard: lavender, sage, nordic, terracotta, coquette, activist, sultry, nature. The playing row, the play button and the widget follow.
