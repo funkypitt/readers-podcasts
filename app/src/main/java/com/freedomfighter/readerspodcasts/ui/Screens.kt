@@ -101,6 +101,9 @@ sealed class Screen {
 
     /** What was said, read while it is said. */
     data class Text(val id: String) : Screen()
+
+    /** What was said, read as a text: paragraphs, and nothing of the sound. */
+    data class Read(val id: String) : Screen()
     data object Settings : Screen()
 }
 
@@ -916,7 +919,15 @@ fun TextRows(episode: Episode, app: App, activity: MainActivity, nav: Nav) {
             secondary = stringResource(R.string.stop_transcription), size = typo.title,
         ) { activity.cancelTranscription() }
 
-        episode.transcript -> TranslateRow(episode, activity, reading)
+        episode.transcript -> {
+            // The text as a text, for reading rather than listening: the paragraphs the .txt has,
+            // in the app, with nothing moving under them.
+            TextRow(
+                stringResource(R.string.read_transcript),
+                secondary = stringResource(R.string.read_transcript_hint), size = typo.title,
+            ) { nav.push(Screen.Read(episode.id)) }
+            TranslateRow(episode, activity, reading)
+        }
 
         !episode.downloaded -> TextRow(
             stringResource(R.string.transcribe),

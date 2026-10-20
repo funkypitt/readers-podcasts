@@ -131,6 +131,8 @@
     <string name="read_text">le texte</string>
     <string name="read_text_hint">à lire pendant qu\'on écoute</string>
     <string name="transcript_word">texte</string>
+    <string name="read_transcript">lire la transcription</string>
+    <string name="read_transcript_hint">en paragraphes, sans le son</string>
     <string name="translation">traduction</string>
     <string name="transcript_saved">un .txt dans Documents/Transcriptions</string>
     <string name="share_transcript">partager le texte</string>

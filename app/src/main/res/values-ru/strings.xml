@@ -133,6 +133,8 @@
     <string name="read_text">текст</string>
     <string name="read_text_hint">читать, пока слушаешь</string>
     <string name="transcript_word">текст</string>
+    <string name="read_transcript">читать расшифровку</string>
+    <string name="read_transcript_hint">абзацами, без звука</string>
     <string name="translation">перевод</string>
     <string name="transcript_saved">файл .txt в Documents/Transcriptions</string>
     <string name="share_transcript">поделиться текстом</string>

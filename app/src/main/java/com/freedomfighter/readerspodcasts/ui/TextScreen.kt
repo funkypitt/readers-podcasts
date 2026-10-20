@@ -156,6 +156,7 @@ fun TextScreen(nav: Nav, app: App, activity: MainActivity, id: String) {
             Box(Modifier.windowInsetsPadding(WindowInsets.navigationBars))
         }
         if (menu) TextMenu(episode.title, buildList {
+            add(MenuItem(stringResource(R.string.read_transcript), secondary = stringResource(R.string.read_transcript_hint)) { nav.pop(); nav.push(Screen.Read(episode.id)) })
             add(MenuItem(stringResource(R.string.share_transcript)) { activity.shareTranscript(episode, showTranslation) })
             if (episode.transcriptUri.isNotBlank()) {
                 add(MenuItem(stringResource(R.string.open_transcript), secondary = stringResource(R.string.transcript_saved)) { activity.openTranscript(episode) })

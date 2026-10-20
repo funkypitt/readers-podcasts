@@ -1,0 +1,1 @@
+1.8.0 — Read the transcript. Once an episode is written down, "read the transcript" (under the player, and in the ⋯ menu of the text) opens it as paragraphs, without the sound: the same paragraphs as the .txt and as the book sent to Reader's Books, and the text can be selected. Reading along with the sound, line by line, is still "the text".

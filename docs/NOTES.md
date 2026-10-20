@@ -47,6 +47,7 @@ Kotlin, Jetpack Compose, Media3 — la même charpente que Reader's Audio Player
 | `TranscribeService.kt`, `transcribe/` | whisper et la traduction, en avant-plan sous wake lock |
 | `data/Transcript.kt` | les lignes et leurs temps, un fichier par épisode et par langue |
 | `ui/TextScreen.kt` | la lecture du texte au fil du son |
+| `ui/ReadScreen.kt` | la transcription en paragraphes, sans le son |
 
 Les identifiants sont calculés (`sha1(url)` pour une chaîne, `sha1(feedId|guid)` pour un
 épisode), donc le bureau trouve le même identifiant pour le même épisode : c'est ce qui permet

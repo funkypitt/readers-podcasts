@@ -17,7 +17,8 @@ avec le [jumeau de bureau](https://github.com/funkypitt/readers-podcasts-desktop
   long sur un épisode le garde en favori ; un lien se suit d'un appui, se garde d'un appui long.
 * Mettre par écrit (whisper, sur le téléphone) : on dit la langue, on choisit l'ordinaire ou la
   soignée, quatre fois plus lente. Le texte suit le son, un appui sur une ligne y envoie
-  l'écoute ; il s'exporte en `.txt`.
+  l'écoute ; « lire la transcription » la donne en paragraphes, sans le son, comme un
+  article ; elle s'exporte en `.txt`.
 * Traduire (Gemma 3 4B, sur le téléphone) : demande un téléphone de 8 Go. Les modèles sont
   téléchargés une fois et partagés avec les autres apps Reader's.
 * Un réglage masque les épisodes de moins de dix minutes (bandes-annonces, extraits) dans les

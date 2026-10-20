@@ -1,0 +1,1 @@
+1.8.0 — Lire la transcription. Une fois l'épisode mis par écrit, « lire la transcription » (sous le lecteur, et dans le menu ⋯ du texte) l'ouvre en paragraphes, sans le son : les mêmes paragraphes que le .txt et que le livre envoyé à Reader's Books, et le texte s'y sélectionne. La lecture au fil du son, ligne par ligne, reste « le texte ».
