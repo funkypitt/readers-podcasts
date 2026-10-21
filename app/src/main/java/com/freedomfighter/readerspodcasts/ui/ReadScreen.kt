@@ -74,10 +74,10 @@ fun ReadScreen(nav: Nav, app: App, activity: MainActivity, id: String) {
             if (translation != null) {
                 Row(Modifier.fillMaxWidth()) {
                     Box(Modifier.weight(1f)) {
-                        TextRow(stringResource(R.string.transcript_word), inverted = !showTranslation, size = typo.title) { showTranslation = false }
+                        Side(end = false) { TextRow(stringResource(R.string.transcript_word), inverted = !showTranslation, size = typo.title) { showTranslation = false } }
                     }
                     Box(Modifier.weight(1f)) {
-                        TextRow(stringResource(R.string.translation), inverted = showTranslation, size = typo.title) { showTranslation = true }
+                        Side(start = false) { TextRow(stringResource(R.string.translation), inverted = showTranslation, size = typo.title) { showTranslation = true } }
                     }
                 }
                 Rule()

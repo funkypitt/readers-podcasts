@@ -91,10 +91,10 @@ fun TextScreen(nav: Nav, app: App, activity: MainActivity, id: String) {
                 // Two words, the one being read inverted: the whole of the choice on offer.
                 Row(Modifier.fillMaxWidth()) {
                     Box(Modifier.weight(1f)) {
-                        TextRow(stringResource(R.string.transcript_word), inverted = !showTranslation, size = typo.title) { showTranslation = false }
+                        Side(end = false) { TextRow(stringResource(R.string.transcript_word), inverted = !showTranslation, size = typo.title) { showTranslation = false } }
                     }
                     Box(Modifier.weight(1f)) {
-                        TextRow(stringResource(R.string.translation), inverted = showTranslation, size = typo.title) { showTranslation = true }
+                        Side(start = false) { TextRow(stringResource(R.string.translation), inverted = showTranslation, size = typo.title) { showTranslation = true } }
                     }
                 }
                 Rule()
@@ -105,16 +105,18 @@ fun TextScreen(nav: Nav, app: App, activity: MainActivity, id: String) {
             val waiting = playingThis && !sounding && activity.ui.waiting
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f)) {
-                    TextRow(stringResource(R.string.back5), size = typo.title) { if (playingThis) activity.seekBy(-5_000) }
+                    Side(end = false) { TextRow(stringResource(R.string.back5), size = typo.title) { if (playingThis) activity.seekBy(-5_000) } }
                 }
                 Box(Modifier.weight(1.2f)) {
-                    TextRow(
-                        (if (sounding) "❚❚" else if (waiting) waitingLabel() else "▶") + "  " + clock(position),
-                        inverted = sounding || waiting, size = typo.title,
-                    ) { if (playingThis) activity.toggle() else activity.play(episode) }
+                    Side(start = false, end = false) {
+                        TextRow(
+                            (if (sounding) "❚❚" else if (waiting) waitingLabel() else "▶") + "  " + clock(position),
+                            inverted = sounding || waiting, size = typo.title,
+                        ) { if (playingThis) activity.toggle() else activity.play(episode) }
+                    }
                 }
                 Box(Modifier.weight(1f)) {
-                    TextRow(stringResource(R.string.fwd10), size = typo.title) { if (playingThis) activity.seekBy(10_000) }
+                    Side(start = false) { TextRow(stringResource(R.string.fwd10), size = typo.title) { if (playingThis) activity.seekBy(10_000) } }
                 }
             }
             Rule()

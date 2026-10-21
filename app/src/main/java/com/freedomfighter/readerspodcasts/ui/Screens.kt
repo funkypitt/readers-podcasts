@@ -837,12 +837,20 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
                     contentAlignment = Alignment.Center
                 ) { Progress(if (dur > 0) (pos.toFloat() / dur).coerceIn(0f, 1f) else 0f) }
                 Row(Modifier.fillMaxWidth()) {
-                    Control(stringResource(R.string.back5), Modifier.weight(1f)) { tick(); if (current) activity.seekBy(-5_000) }
-                    Control(
-                        when { playing -> "❚❚"; waiting -> waitingLabel(); else -> "▶" },
-                        Modifier.weight(1f), inverted = playing || waiting
-                    ) { tick(); if (!playing) tapped = true; if (current) activity.toggle() else activity.play(episode) }
-                    Control(stringResource(R.string.fwd10), Modifier.weight(1f)) { tick(); if (current) activity.seekBy(10_000) }
+                    Box(Modifier.weight(1f)) {
+                        Side(end = false) { Control(stringResource(R.string.back5), Modifier.fillMaxWidth()) { tick(); if (current) activity.seekBy(-5_000) } }
+                    }
+                    Box(Modifier.weight(1f)) {
+                        Side(start = false, end = false) {
+                            Control(
+                                when { playing -> "❚❚"; waiting -> waitingLabel(); else -> "▶" },
+                                Modifier.fillMaxWidth(), inverted = playing || waiting
+                            ) { tick(); if (!playing) tapped = true; if (current) activity.toggle() else activity.play(episode) }
+                        }
+                    }
+                    Box(Modifier.weight(1f)) {
+                        Side(start = false) { Control(stringResource(R.string.fwd10), Modifier.fillMaxWidth()) { tick(); if (current) activity.seekBy(10_000) } }
+                    }
                 }
                 // Chapters, when the description holds a list of them: the row says where one is
                 // and opens the whole table, and a chapter chosen sends the sound to its start.
