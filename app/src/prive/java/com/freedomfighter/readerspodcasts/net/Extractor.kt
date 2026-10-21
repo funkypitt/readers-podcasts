@@ -122,10 +122,14 @@ object Extractor {
     }
 
     /**
-     * The words under one video, and its publication date (0 when unknown): what a flat listing
-     * leaves out, fetched when such a video is opened. One request, nothing downloaded.
+     * The words under one video, its publication date and its length (0 when unknown): what a
+     * flat listing leaves out, fetched when such a video is opened — and the length of a short,
+     * which the channel's page does not list. One request, nothing downloaded.
      */
-    fun describe(context: Context, url: String): Pair<String, Long>? {
+    /** What one video says of itself: its words, its date (0 when unknown), its length (0 when unknown). */
+    data class Described(val description: String, val published: Long, val durationMs: Long)
+
+    fun describe(context: Context, url: String): Described? {
         prepare(context)
         val request = YoutubeDLRequest(url).apply {
             addOption("-J")
@@ -140,7 +144,7 @@ object Extractor {
             java.time.LocalDate.parse(day, java.time.format.DateTimeFormatter.BASIC_ISO_DATE)
                 .atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
         }.getOrDefault(0L)
-        return o.optString("description") to published
+        return Described(o.optString("description"), published, (o.optDouble("duration", 0.0) * 1000).toLong())
     }
 
     /** The page that lists a channel's videos, from the address of its feed. */

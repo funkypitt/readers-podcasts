@@ -10,6 +10,7 @@ import com.freedomfighter.readerspodcasts.R
 import com.freedomfighter.readerspodcasts.data.Feed
 import com.freedomfighter.readerspodcasts.data.FeedParser
 import com.freedomfighter.readerspodcasts.data.Kind
+import com.freedomfighter.readerspodcasts.data.Lengths
 import com.freedomfighter.readerspodcasts.data.State
 import com.freedomfighter.readerspodcasts.data.Store
 import com.freedomfighter.readerspodcasts.data.feedId
@@ -75,6 +76,7 @@ object Refresher {
                     lastFetch = System.currentTimeMillis(), lastError = "",
                 )
             }
+            if (feed.kind == Kind.YOUTUBE) fillLengths(context, store, feed)
             if (feed.autoDownload) queueNew(context, store, feed.id, before)
             true
         } catch (e: Exception) {
@@ -123,6 +125,37 @@ object Refresher {
             .take(3)
             .forEach { DownloadService.start(context, it.id) }
     }
+
+    /**
+     * A channel's feed gives no lengths, and « hide the episodes under ten minutes » cannot act
+     * on a video without one. The channel's page lists its latest videos with their lengths in
+     * one request; what it leaves out — the shorts, above all — is asked for one by one, a few
+     * at each refresh, so that a refresh never waits on a long channel. A length yt-dlp does not
+     * give back (an upcoming stream) is marked as such and not asked for again. Any failure is
+     * logged and the refresh counts as done: the lengths are a comfort, the episodes the point.
+     */
+    private fun fillLengths(context: Context, store: Store, feed: Feed) {
+        if (!Extractor.AVAILABLE) return
+        if (Lengths.lacking(store.episodesOf(feed.id)).isEmpty()) return
+        runCatching {
+            val listed = Extractor.listChannel(context, feed.url, 1, 30)
+            Lengths.fromListing(store.episodesOf(feed.id), listed).forEach { (id, ms) -> store.updateEpisode(id) { it.copy(durationMs = ms) } }
+        }.onFailure { android.util.Log.w("Podcasts", "lengths of ${feed.title} not listed", it) }
+        Lengths.lacking(store.episodesOf(feed.id)).take(ONE_BY_ONE).forEach { e ->
+            val got = runCatching { Extractor.describe(context, e.mediaUrl) }
+                .onFailure { android.util.Log.w("Podcasts", "length of ${e.mediaUrl} not fetched", it) }.getOrNull() ?: return@forEach
+            store.updateEpisode(e.id) {
+                it.copy(
+                    durationMs = if (got.durationMs > 0L) got.durationMs else Lengths.UNKNOWN,
+                    description = it.description.ifBlank { got.description.take(10_000) },
+                    published = if (it.published <= 0L && got.published > 0L) got.published else it.published,
+                )
+            }
+        }
+    }
+
+    /** Videos asked for one by one at a refresh: a few seconds each. */
+    private const val ONE_BY_ONE = 4
 
     private fun fetch(url: String, id: String, kind: Kind): FeedParser.Parsed {
         val c = Net.open(url)

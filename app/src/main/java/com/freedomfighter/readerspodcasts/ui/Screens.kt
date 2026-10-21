@@ -763,7 +763,7 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
     // times in them — are asked for once, when it is opened.
     LaunchedEffect(episode.id) {
         if (episode.description.isBlank() && com.freedomfighter.readerspodcasts.net.Extractor.AVAILABLE &&
-            episode.mediaUrl.contains("youtube.com/watch")
+            episode.mediaUrl.contains("youtube.com/")
         ) {
             val got = withContext(Dispatchers.IO) {
                 runCatching { com.freedomfighter.readerspodcasts.net.Extractor.describe(context, episode.mediaUrl) }
@@ -771,8 +771,9 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
             } ?: return@LaunchedEffect
             app.store.updateEpisode(episode.id) {
                 it.copy(
-                    description = got.first.take(10_000),
-                    published = if (it.published <= 0L && got.second > 0L) got.second else it.published,
+                    description = got.description.take(10_000),
+                    published = if (it.published <= 0L && got.published > 0L) got.published else it.published,
+                    durationMs = if (it.durationMs <= 0L && got.durationMs > 0L) got.durationMs else it.durationMs,
                 )
             }
         }

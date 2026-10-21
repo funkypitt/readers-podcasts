@@ -1,0 +1,1 @@
+The length of a YouTube video is now known: the channel's feed never gives one, so « hide the episodes under 10 minutes » left every short in place. After a refresh the latest videos take their lengths from the channel's page, and the shorts are asked for a few at a time; the length also comes with a video's description when it is opened.
