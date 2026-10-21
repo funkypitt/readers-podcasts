@@ -10,6 +10,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -29,6 +31,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -167,14 +174,26 @@ fun EpisodeRow(
     onLongPress: () -> Unit,
 ) {
     val colors = LocalColors.current
+    val tiles = colors.tiles
     val fg = if (inverted) colors.onAccent else colors.fg
     val dim = if (inverted) colors.onAccent.copy(alpha = 0.6f) else colors.dim
+    // With a colour theme the row is a card: the playing one keeps the accent, the others sit
+    // on the tile colour and show the press colour under the finger.
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val bg = when {
+        inverted -> colors.accent
+        tiles && pressed -> colors.press
+        tiles -> colors.tile
+        else -> Color.Transparent
+    }
     Column(
         Modifier
             .fillMaxWidth()
-            .background(if (inverted) colors.accent else Color.Transparent)
-            .pressable(onClick = onClick, onLongPress = onLongPress)
-            .padding(horizontal = rowPadH, vertical = rowPadV * 0.7f)
+            .tileCard(bg)
+            .background(bg)
+            .pressable(onClick = onClick, onLongPress = onLongPress, interaction = interaction)
+            .padding(horizontal = if (tiles) rowPadH - tileGap else rowPadH, vertical = rowPadV * 0.7f)
     ) {
         T(episode.title, color = fg, maxLines = 2)
         val status = episodeStatus(episode, app, activity, withFeed)
@@ -630,9 +649,10 @@ fun AddScreen(nav: Nav, app: App, activity: MainActivity, initial: String) {
 @Composable
 private fun FoundRow(f: Catalogue.Found, followed: Boolean, onClick: () -> Unit) {
     val who = f.author.ifBlank { Refresher.hostOf(f.url) }
+    val tiles = LocalColors.current.tiles
     Column(
-        Modifier.fillMaxWidth().heightIn(min = 44.dp).noRippleClickable(onClick = onClick)
-            .padding(horizontal = rowPadH, vertical = rowPadV * 0.7f)
+        Modifier.fillMaxWidth().tileCard().heightIn(min = 44.dp).noRippleClickable(onClick = onClick)
+            .padding(horizontal = if (tiles) rowPadH - tileGap else rowPadH, vertical = rowPadV * 0.7f)
     ) {
         T(f.title, maxLines = 2, align = TextAlign.Start)
         Small(cut(if (followed) stringResource(R.string.already_followed) + " · " + who else who), maxLines = 1)
@@ -713,6 +733,7 @@ fun SearchScreen(nav: Nav, app: App, activity: MainActivity) {
 fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
     val context = LocalContext.current
     val typo = LocalTypo.current
+    val colors = LocalColors.current
     val tick = rememberTick()
     val all by app.store.episodes.collectAsState()
     val settings by app.prefs.settings.collectAsState()
@@ -781,20 +802,22 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
                 // which turns on a tap, and the text when there is one to read along.
                 Row(Modifier.fillMaxWidth().padding(horizontal = rowPadH), verticalAlignment = Alignment.CenterVertically) {
                     T(clock(pos), Modifier.weight(1f), size = typo.big, align = TextAlign.Start, maxLines = 1)
+                    // With a colour theme the two words are small cards, chips beside the clock.
+                    val chip = if (colors.tiles) Modifier.clip(RoundedCornerShape(tileCorner)).background(colors.tile) else Modifier
                     T(
                         speedLabel(settings.speed),
-                        Modifier.noRippleClickable(onClick = {
+                        Modifier.padding(start = if (colors.tiles) 8.dp else 0.dp).then(chip).noRippleClickable(onClick = {
                             tick()
                             val i = Prefs.SPEEDS.indexOf(settings.speed).let { if (it < 0) 1 else it }
                             activity.setSpeed(Prefs.SPEEDS[(i + 1) % Prefs.SPEEDS.size])
-                        }).padding(start = 16.dp, top = 12.dp, bottom = 12.dp),
+                        }).padding(horizontal = if (colors.tiles) 14.dp else 0.dp).padding(start = if (colors.tiles) 0.dp else 16.dp, top = 12.dp, bottom = 12.dp),
                         size = typo.title, align = TextAlign.End, maxLines = 1,
                     )
                     if (episode.transcript) {
                         T(
                             stringResource(R.string.read_text),
-                            Modifier.noRippleClickable(onClick = { nav.push(Screen.Text(episode.id)) })
-                                .padding(start = 24.dp, top = 12.dp, bottom = 12.dp),
+                            Modifier.padding(start = if (colors.tiles) 8.dp else 0.dp).then(chip).noRippleClickable(onClick = { nav.push(Screen.Text(episode.id)) })
+                                .padding(horizontal = if (colors.tiles) 14.dp else 0.dp).padding(start = if (colors.tiles) 0.dp else 24.dp, top = 12.dp, bottom = 12.dp),
                             size = typo.title, align = TextAlign.End, maxLines = 1,
                         )
                     }
@@ -851,8 +874,8 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
                     if (overflows && !unfolded) {
                         Small(
                             stringResource(R.string.read_on),
-                            Modifier.fillMaxWidth().noRippleClickable(onClick = { unfolded = true })
-                                .padding(horizontal = rowPadH, vertical = 10.dp),
+                            Modifier.fillMaxWidth().tileCard().noRippleClickable(onClick = { unfolded = true })
+                                .padding(horizontal = if (colors.tiles) rowPadH - tileGap else rowPadH, vertical = 10.dp),
                             maxLines = 1,
                         )
                     }
@@ -995,12 +1018,17 @@ fun TranscribeSheet(episode: Episode, activity: MainActivity, onDismiss: () -> U
     var picking by remember { mutableStateOf(true) }
     val downloading by Models.downloading.collectAsState()
     BackHandler(onBack = onDismiss)
+    val tiles = colors.tiles
     Box(Modifier.fillMaxSize().background(colors.bg.copy(alpha = 0.6f)).noRippleClickable(onClick = onDismiss)) {
+        CompositionLocalProvider(LocalInTile provides true) {
         Column(
-            Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(colors.bg).noRippleClickable { }
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                // a rounded card with a colour theme, as the kit's menus
+                .then(if (tiles) Modifier.padding(horizontal = tileGap).clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)) else Modifier)
+                .background(if (tiles) colors.tile else colors.bg).noRippleClickable { }
                 .windowInsetsPadding(WindowInsets.navigationBars)
         ) {
-            Rule(color = colors.fg)
+            if (tiles) Spacer(Modifier.height(10.dp)) else Rule(color = colors.fg)
             Small(episode.title, Modifier.padding(horizontal = rowPadH).padding(top = 14.dp, bottom = 2.dp), maxLines = 1)
             TextRow(
                 language?.let { spokenLanguage(it) } ?: stringResource(R.string.language_to_choose),
@@ -1025,7 +1053,8 @@ fun TranscribeSheet(episode: Episode, activity: MainActivity, onDismiss: () -> U
                     inverted = quality == m.key, secondary = stringResource(R.string.size_mb, m.mb) + note + state, size = typo.title,
                 ) { quality = m.key }
             }
-            Rule(color = colors.fg)
+            if (tiles) Canvas(Modifier.fillMaxWidth().padding(horizontal = rowPadH, vertical = 6.dp).height(1.dp)) { drawRect(colors.press) }
+            else Rule(color = colors.fg)
             Row(Modifier.fillMaxWidth()) {
                 Box(Modifier.weight(1f)) { TextRow(stringResource(R.string.action_cancel), onClick = onDismiss) }
                 Box(Modifier.weight(1f)) {
@@ -1042,6 +1071,8 @@ fun TranscribeSheet(episode: Episode, activity: MainActivity, onDismiss: () -> U
                     )
                 }
             }
+            if (tiles) Spacer(Modifier.height(8.dp))
+        }
         }
     }
     if (picking) TextMenu(
@@ -1082,8 +1113,18 @@ fun waitingLabel(): String {
 private fun Control(label: String, modifier: Modifier, inverted: Boolean = false, onClick: () -> Unit) {
     val colors = LocalColors.current
     val typo = LocalTypo.current
+    // With a colour theme each control is a card; the play button keeps the accent while it sounds.
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val bg = when {
+        inverted -> colors.accent
+        colors.tiles && pressed -> colors.press
+        colors.tiles -> colors.tile
+        else -> Color.Transparent
+    }
     Box(
-        modifier.height(76.dp).background(if (inverted) colors.accent else Color.Transparent).noRippleClickable(onClick = onClick),
+        modifier.height(if (colors.tiles) 84.dp else 76.dp).tileCard(bg).background(bg)
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         T(label, size = typo.title, color = if (inverted) colors.onAccent else colors.fg, align = TextAlign.Center, maxLines = 1)
