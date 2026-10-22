@@ -212,16 +212,24 @@ fun ScreenTitle(
     onTrailing: (() -> Unit)? = null,
     onTitle: (() -> Unit)? = null,
     actions: List<Pair<String, () -> Unit>> = emptyList(),
+    /**
+     * The title is the screen's main control — the choice of list on the home screen — and
+     * reads as one: a row's size, the page's ink, a card with a colour theme. Dim and small, it
+     * looked like a caption, and the one thing that changes what the screen shows went unseen.
+     */
+    prominent: Boolean = false,
 ) {
     val colors = LocalColors.current
+    val card = prominent && colors.tiles && onTitle != null
     Row(
         Modifier
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.statusBars)
             // A bar of one height everywhere, tall enough to hold a square a thumb can hit. The
             // padding used to set the height; now it only keeps the title off the squares.
-            .heightIn(min = 56.dp)
-            .padding(horizontal = rowPadH, vertical = 6.dp),
+            .heightIn(min = if (prominent) 64.dp else 56.dp)
+            // The card brings its own margin, the same as the list's cards below it.
+            .padding(start = if (card) 0.dp else rowPadH, end = rowPadH, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // The arrow is a thing to hit in its own right; the title is another — inside a channel
@@ -233,20 +241,31 @@ fun ScreenTitle(
                 contentAlignment = Alignment.CenterStart,
             ) { T("←", size = LocalTypo.current.title, color = colors.dim, align = TextAlign.Start) }
         }
-        Row(
-            Modifier.weight(1f).then(
-                when {
-                    onTitle != null -> Modifier.noRippleClickable(onClick = onTitle)
-                    onBack != null -> Modifier.noRippleClickable(onClick = onBack)
-                    else -> Modifier
-                }
-            ),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // The name gives way, never the sign after it: a long channel name used to push the
-            // ▾ off the end of the line, and with it the only hint that the title opens anything.
-            T(title, Modifier.weight(1f, fill = false), size = LocalTypo.current.title, color = colors.dim, maxLines = 1, align = TextAlign.Start)
-            if (onTitle != null) T("  ▾", size = LocalTypo.current.title, color = colors.dim, maxLines = 1, softWrap = false)
+        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+            Row(
+                Modifier
+                    .then(if (prominent) Modifier else Modifier.fillMaxWidth())
+                    .then(if (card) Modifier.tileCard() else Modifier)
+                    .then(
+                        when {
+                            onTitle != null -> Modifier.noRippleClickable(onClick = onTitle)
+                            onBack != null -> Modifier.noRippleClickable(onClick = onBack)
+                            else -> Modifier
+                        }
+                    )
+                    // Inside the card the word keeps the page's inset, in line with the list's words.
+                    .then(if (card) Modifier.padding(horizontal = rowPadH - tileGap, vertical = 10.dp) else if (prominent) Modifier.padding(vertical = 10.dp) else Modifier),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // The name gives way, never the sign after it: a long channel name used to push the
+                // ▾ off the end of the line, and with it the only hint that the title opens anything.
+                T(
+                    title, Modifier.weight(1f, fill = false),
+                    size = if (prominent) LocalTypo.current.tile else LocalTypo.current.title,
+                    color = if (prominent) colors.fg else colors.dim, maxLines = 1, align = TextAlign.Start,
+                )
+                if (onTitle != null) T("  ▾", size = LocalTypo.current.title, color = colors.dim, maxLines = 1, softWrap = false)
+            }
         }
         // Each sign gets a square of its own to be hit in, and a gap of untouchable space
         // between them: side by side with nothing in between, ↻ and + shared a border, and a

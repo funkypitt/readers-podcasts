@@ -1,0 +1,1 @@
+The choice of list at the top of the home screen — channels, episodes, favourites, downloaded — now reads as the control it is: a row's size, the page's ink, a card with a colour theme, a taller bar.

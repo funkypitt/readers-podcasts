@@ -424,6 +424,8 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
                 trailing = "⋯",
                 onTrailing = { menu = true },
                 onTitle = { views = true },
+                // On the home screen the title is the choice of list, and looks like the control it is.
+                prominent = feed == null,
                 // Inside a channel the bar is for that channel: ↻ fetches it alone, and adding
                 // another feed belongs to the lists — which leaves the name room to be read.
                 actions = if (feed != null) listOf("↻" to { activity.refreshOne(feed.id); Unit })
