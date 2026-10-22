@@ -26,6 +26,7 @@ class LengthsTest {
             Episode(id = "d", feedId = "f", title = "d", published = 0L, mediaUrl = "https://example.com/a.mp3"),
         )
         assertEquals(listOf("a", "s"), Lengths.lacking(eps).map { it.id })
+        assertEquals(listOf("a"), Lengths.lackingOneByOne(eps).map { it.id })
     }
 
     @Test fun lengthsComeFromTheListingByVideoId() {

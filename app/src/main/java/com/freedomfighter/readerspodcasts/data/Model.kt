@@ -151,9 +151,13 @@ fun clock(ms: Long): String {
 /** Under this, an episode is a trailer or a snippet: left out when the setting says so. */
 const val SHORT_MS = 10 * 60 * 1000L
 
+/** A YouTube short: the channel's feed links it as /shorts/ID. Short by nature, whatever its length says. */
+val Episode.isShort: Boolean get() = mediaUrl.contains("youtube.com/shorts/")
+
 /**
- * The episodes a list shows: all of them, or without the short ones. An episode whose length
- * is not known stays. Favourites and downloads are the person's own picks and are never hidden.
+ * The episodes a list shows: all of them, or without the short ones — a YouTube short by its
+ * address, anything else by its length. An episode whose length is not known stays. Favourites
+ * and downloads are the person's own picks and are never hidden.
  */
 fun List<Episode>.withoutShort(hide: Boolean, ownPicks: Boolean = false): List<Episode> =
-    if (!hide || ownPicks) this else filter { it.durationMs <= 0L || it.durationMs >= SHORT_MS }
+    if (!hide || ownPicks) this else filter { !it.isShort && (it.durationMs <= 0L || it.durationMs >= SHORT_MS) }

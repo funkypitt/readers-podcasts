@@ -1,0 +1,1 @@
+« Hide the episodes under 10 minutes » now recognises a YouTube short by its address, whether or not its length is known yet, and the shorts are no longer asked for one by one.

@@ -129,8 +129,8 @@ object Refresher {
     /**
      * A channel's feed gives no lengths, and « hide the episodes under ten minutes » cannot act
      * on a video without one. The channel's page lists its latest videos with their lengths in
-     * one request; what it leaves out — the shorts, above all — is asked for one by one, a few
-     * at each refresh, so that a refresh never waits on a long channel. A length yt-dlp does not
+     * one request; what it leaves out is asked for one by one, a few at each refresh, so that a
+     * refresh never waits on a long channel — not the shorts, hidden by their address alone. A length yt-dlp does not
      * give back (an upcoming stream) is marked as such and not asked for again. Any failure is
      * logged and the refresh counts as done: the lengths are a comfort, the episodes the point.
      */
@@ -141,7 +141,7 @@ object Refresher {
             val listed = Extractor.listChannel(context, feed.url, 1, 30)
             Lengths.fromListing(store.episodesOf(feed.id), listed).forEach { (id, ms) -> store.updateEpisode(id) { it.copy(durationMs = ms) } }
         }.onFailure { android.util.Log.w("Podcasts", "lengths of ${feed.title} not listed", it) }
-        Lengths.lacking(store.episodesOf(feed.id)).take(ONE_BY_ONE).forEach { e ->
+        Lengths.lackingOneByOne(store.episodesOf(feed.id)).take(ONE_BY_ONE).forEach { e ->
             val got = runCatching { Extractor.describe(context, e.mediaUrl) }
                 .onFailure { android.util.Log.w("Podcasts", "length of ${e.mediaUrl} not fetched", it) }.getOrNull() ?: return@forEach
             store.updateEpisode(e.id) {
