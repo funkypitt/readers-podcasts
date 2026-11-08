@@ -1,0 +1,1 @@
+Prête pour Android 16 : l'application occupe l'écran jusqu'aux bords et garde son texte à l'écart des barres système. Un téléchargement ou une transcription qu'Android arrête le dit sur sa ligne au lieu d'échouer en silence.

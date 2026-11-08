@@ -25,6 +25,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -226,7 +227,29 @@ class DownloadService : Service() {
 
     override fun onDestroy() { scope.cancel(); super.onDestroy() }
 
-    private fun goForeground() = startForeground(NOTIF_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+    private fun goForeground() {
+        try {
+            startForeground(NOTIF_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        } catch (e: IllegalStateException) {
+            // Android 15+ ForegroundServiceStartNotAllowedException: the daily dataSync budget
+            // is spent, or the start came from the background. Say so on the rows, don't crash.
+            giveUp(getString(R.string.error_download, getString(R.string.stopped_by_system)))
+        }
+    }
+
+    /** Android 15+: the dataSync budget (6 h a day) ran out; the system wants the service gone within seconds. */
+    override fun onTimeout(startId: Int, fgsType: Int) { giveUp(getString(R.string.error_download, getString(R.string.stopped_by_system))) }
+
+    /** Stop everything queued, show [reason] on the row being fetched, and leave. */
+    private fun giveUp(reason: String) {
+        cancelled.set(true)
+        if (Live.id.isNotBlank()) { Live.errorId = Live.id; Live.error = reason; Extractor.cancel(Live.id) }
+        queue.clear(); Live.waiting.clear()
+        scope.coroutineContext.cancelChildren()
+        running = false
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
+    }
 
     private fun pushNotification() =
         (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(NOTIF_ID, buildNotification())
@@ -237,7 +260,7 @@ class DownloadService : Service() {
             NotificationChannel(CHANNEL_ID, getString(R.string.channel_downloads), NotificationManager.IMPORTANCE_LOW)
                 .apply { setSound(null, null); enableVibration(false) }
         )
-        val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java).setAction(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val cancel = PendingIntent.getService(this, 1, Intent(this, DownloadService::class.java).setAction(ACTION_CANCEL), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val title = app.store.episode(Live.id)?.title ?: getString(R.string.app_name)
         val waiting = Live.waiting.size
@@ -279,9 +302,16 @@ class DownloadService : Service() {
         private const val NOTIF_ID = 8
 
         /** [force] means the user asked for this one by name: metered or not, it is fetched. */
-        fun start(ctx: Context, id: String, force: Boolean = false) = ContextCompat.startForegroundService(
-            ctx, Intent(ctx, DownloadService::class.java).putExtra(EXTRA_ID, id).putExtra(EXTRA_FORCE, force)
-        )
+        fun start(ctx: Context, id: String, force: Boolean = false) {
+            // An automatic download after a refresh may come once the app has left the screen;
+            // Android 12+ then refuses the start (ForegroundServiceStartNotAllowedException).
+            // Better a download that waits for the next opening than a crash.
+            runCatching {
+                ContextCompat.startForegroundService(
+                    ctx, Intent(ctx, DownloadService::class.java).putExtra(EXTRA_ID, id).putExtra(EXTRA_FORCE, force)
+                )
+            }
+        }
 
         fun cancel(ctx: Context, id: String) = ContextCompat.startForegroundService(
             ctx, Intent(ctx, DownloadService::class.java).setAction(ACTION_CANCEL_ONE).putExtra(EXTRA_ID, id)

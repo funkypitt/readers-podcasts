@@ -184,6 +184,7 @@
     <string name="error_cannot_create">%1$s konnte nicht erstellt werden</string>
     <string name="error_download">Download fehlgeschlagen: %1$s</string>
     <string name="error_refresh">nicht aktualisiert: %1$s</string>
+    <string name="stopped_by_system">Android hat es beendet, die Hintergrundzeit für heute ist aufgebraucht; später noch einmal versuchen</string>
     <string name="error_transcription">Aufschreiben fehlgeschlagen: %1$s</string>
     <string name="error_translation">die Übersetzung ist fehlgeschlagen: %1$s</string>
     <string name="error_ytdlp_update">yt-dlp konnte nicht aktualisiert werden: %1$s</string>

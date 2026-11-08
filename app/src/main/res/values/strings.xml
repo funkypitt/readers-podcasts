@@ -184,6 +184,7 @@
     <string name="error_cannot_create">could not create %1$s</string>
     <string name="error_download">download failed: %1$s</string>
     <string name="error_refresh">not refreshed: %1$s</string>
+    <string name="stopped_by_system">Android stopped it, its background time for today is used up; try again later</string>
     <string name="error_transcription">could not write it down: %1$s</string>
     <string name="error_translation">the translation failed: %1$s</string>
     <string name="error_ytdlp_update">yt-dlp could not be updated: %1$s</string>

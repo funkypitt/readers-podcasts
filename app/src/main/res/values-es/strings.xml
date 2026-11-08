@@ -184,6 +184,7 @@
     <string name="error_cannot_create">no se pudo crear %1$s</string>
     <string name="error_download">la descarga falló: %1$s</string>
     <string name="error_refresh">no actualizado: %1$s</string>
+    <string name="stopped_by_system">Android lo detuvo, el tiempo en segundo plano de hoy se ha agotado; inténtelo más tarde</string>
     <string name="error_transcription">no se pudo poner por escrito: %1$s</string>
     <string name="error_translation">la traducción falló: %1$s</string>
     <string name="error_ytdlp_update">no se pudo actualizar yt-dlp: %1$s</string>

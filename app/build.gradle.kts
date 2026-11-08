@@ -6,14 +6,14 @@ plugins {
 
 android {
     namespace = "com.freedomfighter.readerspodcasts"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.freedomfighter.readerspodcasts"
         minSdk = 29
-        targetSdk = 34
-        versionCode = 32
-        versionName = "1.12.0"
+        targetSdk = 36
+        versionCode = 33
+        versionName = "1.13.0"
     }
 
     flavorDimensions += "audience"

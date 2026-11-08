@@ -1,0 +1,15 @@
+Un lecteur de podcasts qui ne montre que du texte : s'abonner, télécharger, écouter avec reprise. Il met aussi un épisode par écrit et le traduit, sur le téléphone. Ni annuaire, ni recommandations, ni compte : l'OPML et un fichier de réglages sont toute la synchronisation avec le jumeau de bureau.
+
+• S'abonner : + propose l'adresse du presse-papier ; « Ajouter à Reader's Podcasts » est dans la feuille de partage de toute app ; un OPML s'importe d'un fichier. Un nom tapé dans + cherche dans les annuaires publics.
+• Quatre listes — chaînes, épisodes, favoris, téléchargés — derrière le ▾ du titre. Tirer vers le bas actualise ; dans une chaîne, ↻ n'actualise qu'elle.
+• Un appui ouvre l'épisode (notes, liens, chapitres, repères horaires cliquables) ; c'est ▶ qui lance l'écoute. Un appui long sur un épisode le garde en favori.
+• Mettre par écrit (whisper, sur le téléphone) : on dit la langue, on choisit l'ordinaire ou la soignée. Le texte suit le son, un appui sur une ligne y envoie l'écoute ; « lire la transcription » la donne en paragraphes, comme un article ; elle s'exporte en texte.
+• Traduire (sur le téléphone) : demande un téléphone de 8 Go. Les modèles sont téléchargés une fois et partagés avec les autres apps Reader's.
+• Les transcriptions peuvent partir dans votre bibliothèque Reader's Books par WebDAV, en petits livres, si vous en donnez l'adresse.
+• Un réglage masque les épisodes de moins de dix minutes (bandes-annonces, extraits). « Effacer une fois écouté » est inactif par défaut ; actif, il épargne les favoris et ce qui a été mis par écrit.
+• Export/import OPML et JSON (réglages et position de chaque épisode) : la synchronisation avec le bureau, sans serveur. Recherche hors connexion.
+• Un widget : la dernière écoute et un bouton pour reprendre.
+
+Blanc sur noir ou noir sur blanc, serif, sans ou mono, trois tailles de texte, thèmes de couleur. Anglais, français, allemand, espagnol, portugais, russe. Le réseau ne sert qu'aux flux, aux épisodes, aux modèles et, si on le demande, à sa propre bibliothèque ; à rien d'autre. Logiciel libre, licence MIT.
+
+Pierre Gallaz · développé avec Claude Code

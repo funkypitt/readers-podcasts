@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Auto Backup (Android 6-11): keep the subscriptions, the positions and the settings, leave
+     out the speech models (gigabytes), the voice detector unpacked from the assets and any
+     audio kept internally; they would blow the 25 MB quota and cancel the whole backup. -->
+<full-backup-content>
+    <exclude domain="file" path="models" />
+    <exclude domain="file" path="vad" />
+    <exclude domain="file" path="audio" />
+</full-backup-content>

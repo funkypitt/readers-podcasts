@@ -184,6 +184,7 @@
     <string name="error_cannot_create">impossible de créer %1$s</string>
     <string name="error_download">échec du téléchargement : %1$s</string>
     <string name="error_refresh">non actualisé : %1$s</string>
+    <string name="stopped_by_system">Android l\'a arrêté, son temps en arrière-plan du jour est épuisé ; réessayez plus tard</string>
     <string name="error_transcription">la mise par écrit a échoué : %1$s</string>
     <string name="error_translation">la traduction a échoué : %1$s</string>
     <string name="error_ytdlp_update">yt-dlp n\'a pas pu être mis à jour : %1$s</string>

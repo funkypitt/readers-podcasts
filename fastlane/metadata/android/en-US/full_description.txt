@@ -1,0 +1,15 @@
+A podcast player that shows nothing but text: subscribe, download, listen and resume where you stopped. It can also write an episode down and translate it, on the phone. No directory, no recommendations, no account: an OPML file and one settings file are the whole synchronisation with the desktop twin.
+
+• Subscribe: + offers the address on the clipboard; "Add to Reader's Podcasts" sits in the share sheet of any app; an OPML file imports in one go. Typing a name in + searches the public directories.
+• Four lists — channels, episodes, favourites, downloaded — behind the ▾ of the title. Pull down to refresh; inside a channel, ↻ refreshes that one only.
+• A tap opens the episode (notes, links, chapters, clickable times); ▶ starts the sound. A long press keeps an episode as a favourite.
+• Write it down (whisper, on the phone): choose the language and a plain or careful model. The text follows the sound; a tap on a line takes the listening there; "read the transcript" gives it as paragraphs, like an article; it exports as text.
+• Translate (on the phone): needs a phone with 8 GB of memory. The models are downloaded once and shared with the other Reader's apps.
+• Transcripts can go to your Reader's Books library over WebDAV, as small books, if you give its address.
+• A setting hides episodes under ten minutes (trailers, clips). "Delete once listened" is off by default; on, it spares favourites and what has been written down.
+• OPML and JSON export and import (settings and the position of every episode): the synchronisation with the desktop, without a server. Offline search.
+• A widget: the last episode listened to and a button to resume it.
+
+White on black or black on white, serif, sans or mono, three text sizes, colour themes. English, French, German, Spanish, Portuguese, Russian. The network serves the feeds, the episodes, the models and, if you ask for it, your own library; nothing else. Free software, MIT licence.
+
+Pierre Gallaz · developed with Claude Code

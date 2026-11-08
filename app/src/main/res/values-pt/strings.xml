@@ -184,6 +184,7 @@
     <string name="error_cannot_create">não foi possível criar %1$s</string>
     <string name="error_download">a transferência falhou: %1$s</string>
     <string name="error_refresh">não atualizado: %1$s</string>
+    <string name="stopped_by_system">O Android interrompeu, o tempo em segundo plano de hoje esgotou-se; tente mais tarde</string>
     <string name="error_transcription">não foi possível pôr por escrito: %1$s</string>
     <string name="error_translation">a tradução falhou: %1$s</string>
     <string name="error_ytdlp_update">não foi possível atualizar o yt-dlp: %1$s</string>

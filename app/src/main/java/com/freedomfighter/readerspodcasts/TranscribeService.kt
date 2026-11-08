@@ -32,6 +32,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -225,8 +226,35 @@ class TranscribeService : Service() {
         super.onDestroy()
     }
 
-    private fun goForeground() =
-        startForeground(NOTIF_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+    private fun goForeground() {
+        try {
+            startForeground(NOTIF_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        } catch (e: IllegalStateException) {
+            // Android 15+ ForegroundServiceStartNotAllowedException: the daily dataSync budget
+            // is spent. Say so on the row instead of crashing.
+            giveUp()
+        }
+    }
+
+    /**
+     * Android 15+: the dataSync budget (6 h a day) ran out and the system wants the service gone
+     * within seconds. A transcription of an hour's talk can take that long; what was written so
+     * far is lost, the row says so, and the next start begins again.
+     */
+    override fun onTimeout(startId: Int, fgsType: Int) { giveUp() }
+
+    private fun giveUp() {
+        cancelled.set(true)
+        WhisperLib.cancel(); LlamaLib.cancel()
+        if (Live.id.isNotBlank()) { Live.errorId = Live.id; Live.error = getString(R.string.error_transcription, getString(R.string.stopped_by_system)) }
+        queue.clear(); Live.waiting.clear()
+        Live.id = ""; Live.phase = ""; Live.percent = 0
+        scope.coroutineContext.cancelChildren()
+        running = false
+        runCatching { if (lock?.isHeld == true) lock?.release() }
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
+    }
 
     private fun pushNotification() =
         (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(NOTIF_ID, buildNotification())
@@ -238,7 +266,7 @@ class TranscribeService : Service() {
                 .apply { setSound(null, null); enableVibration(false) }
         )
         val open = PendingIntent.getActivity(
-            this, 0, Intent(this, MainActivity::class.java),
+            this, 0, Intent(this, MainActivity::class.java).setAction(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val cancel = PendingIntent.getService(

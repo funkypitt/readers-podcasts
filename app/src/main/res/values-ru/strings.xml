@@ -188,6 +188,7 @@
     <string name="error_cannot_create">не удалось создать %1$s</string>
     <string name="error_download">ошибка загрузки: %1$s</string>
     <string name="error_refresh">не обновлено: %1$s</string>
+    <string name="stopped_by_system">Android остановил работу: время в фоне на сегодня исчерпано; попробуйте позже</string>
     <string name="error_transcription">не удалось записать сказанное: %1$s</string>
     <string name="error_translation">перевод не удался: %1$s</string>
     <string name="error_ytdlp_update">не удалось обновить yt-dlp: %1$s</string>

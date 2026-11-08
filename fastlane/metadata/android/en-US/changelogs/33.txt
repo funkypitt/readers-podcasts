@@ -1,0 +1,1 @@
+Ready for Android 16: the app fills the screen to its edges and keeps its text clear of the system bars. A download or a transcription that Android stops says so on its row instead of failing silently.

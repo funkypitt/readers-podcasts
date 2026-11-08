@@ -61,7 +61,7 @@ Les trois voies livrent le même fichier, avec la même signature.
     ./gradlew assemblePriveDebug        # l'APK de travail (YouTube par yt-dlp, GPLv3, non distribué)
     ./gradlew :app:testPriveDebugUnitTest
 
-minSdk 29, targetSdk 34. `speech/` est le sous-module
+minSdk 29, targetSdk 36. `speech/` est le sous-module
 [readers-speech](https://github.com/funkypitt/readers-speech) ; garder `ndkVersion` dans
 `app/build.gradle.kts`, sinon les bibliothèques natives partent non strippées. Licence MIT.
 
