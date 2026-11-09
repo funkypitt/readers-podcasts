@@ -48,10 +48,34 @@ object Refresher {
         }
     }
 
-    private fun subscribe(store: Store, url: String, kind: Kind): Feed {
+    /**
+     * A feed read but not kept: what a podcast found in a directory looks like, before one decides
+     * to follow it. Subscribing to it afterwards reuses this reading rather than fetching again.
+     */
+    data class Previewed(val url: String, val kind: Kind, val parsed: FeedParser.Parsed)
+
+    /** Read the feed at [raw] the way [add] would, without subscribing. */
+    suspend fun preview(raw: String): Result<Previewed> = withContext(Dispatchers.IO) {
+        runCatching {
+            val url = normalise(raw)
+            if (Youtube.looksLikeYoutube(url)) {
+                if (!BuildConfig.YOUTUBE) throw Refused(R.string.youtube_not_here)
+                val feedUrl = Youtube.channelFeed(url) ?: throw Refused(R.string.youtube_no_channel)
+                return@runCatching Previewed(feedUrl, Kind.YOUTUBE, fetch(feedUrl, feedId(feedUrl), Kind.YOUTUBE))
+            }
+            Previewed(url, Kind.RSS, fetch(url, feedId(url), Kind.RSS))
+        }
+    }
+
+    /** Subscribe to a feed already read by [preview]: the same feed, without a second fetch. */
+    suspend fun add(store: Store, previewed: Previewed): Result<Feed> = withContext(Dispatchers.IO) {
+        runCatching { subscribe(store, previewed.url, previewed.kind, previewed.parsed) }
+    }
+
+    private fun subscribe(store: Store, url: String, kind: Kind, already: FeedParser.Parsed? = null): Feed {
         val id = feedId(url)
         store.feed(id)?.let { return it }
-        val parsed = fetch(url, id, kind)
+        val parsed = already ?: fetch(url, id, kind)
         val feed = Feed(
             id = id, url = url, title = parsed.title.ifBlank { hostOf(url) }, author = parsed.author,
             kind = kind, lastFetch = System.currentTimeMillis(), serial = parsed.serial,

@@ -1,0 +1,1 @@
+A podcast found by its name is shown first: who makes it, what it is about and its latest episodes. Subscribing is a tap on « subscribe », no longer on the name.

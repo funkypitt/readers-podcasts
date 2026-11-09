@@ -220,4 +220,9 @@
         <item quantity="one">%d transcript in the library</item>
         <item quantity="other">%d transcripts in the library</item>
     </plurals>
+    <string name="preview_title">about this podcast</string>
+    <string name="preview_latest">latest episodes</string>
+    <string name="preview_no_description">this podcast gives no description of itself</string>
+    <string name="preview_no_episodes">the feed holds no episode yet</string>
+    <string name="preview_open">open this podcast</string>
 </resources>

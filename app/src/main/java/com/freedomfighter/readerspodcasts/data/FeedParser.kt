@@ -17,7 +17,11 @@ import java.util.TimeZone
  */
 object FeedParser {
 
-    data class Parsed(val title: String, val author: String, val episodes: List<Episode>, val serial: Boolean = false)
+    data class Parsed(
+        val title: String, val author: String, val episodes: List<Episode>, val serial: Boolean = false,
+        /** What the podcast says of itself, as text: shown before one subscribes to it. */
+        val description: String = "",
+    )
 
     private class Building {
         var title = ""
@@ -47,6 +51,10 @@ object FeedParser {
 
         var feedTitle = ""
         var feedAuthor = ""
+        var feedDescription = ""
+        // <itunes:subtitle> is a line; <description> is the whole text. The line stands in only
+        // when the feed gives nothing longer.
+        var feedSubtitle = ""
         var serial = false
         var inItem = false
         var item = Building()
@@ -65,6 +73,8 @@ object FeedParser {
                         tag == "author" && feedAuthor.isEmpty() -> feedAuthor = text(p).trim()
                         tag == "managingEditor" && feedAuthor.isEmpty() -> feedAuthor = text(p).trim()
                         tag == "name" && feedAuthor.isEmpty() -> feedAuthor = text(p).trim()
+                        (tag == "description" || tag == "summary") && feedDescription.isEmpty() -> feedDescription = strip(text(p)).trim()
+                        tag == "subtitle" && feedSubtitle.isEmpty() -> feedSubtitle = strip(text(p)).trim()
                         // <itunes:type>serial</itunes:type>: to be heard from the first episode on.
                         tag == "type" -> if (text(p).trim().equals("serial", true)) serial = true
                     }
@@ -83,7 +93,7 @@ object FeedParser {
         // Seed series and in more than one news feed. Two episodes with the same id are a list
         // that cannot be drawn at all, so the first one wins and the other is dropped here,
         // rather than further down where it would take a screen with it.
-        return Parsed(feedTitle, feedAuthor, out.distinctBy { it.id }, serial)
+        return Parsed(feedTitle, feedAuthor, out.distinctBy { it.id }, serial, feedDescription.ifBlank { feedSubtitle }.take(10_000))
     }
 
     private fun readItemTag(p: XmlPullParser, tag: String, item: Building) {

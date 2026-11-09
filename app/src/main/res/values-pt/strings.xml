@@ -220,4 +220,9 @@
         <item quantity="one">%d transcrição na biblioteca</item>
         <item quantity="other">%d transcrições na biblioteca</item>
     </plurals>
+    <string name="preview_title">sobre este podcast</string>
+    <string name="preview_latest">últimos episódios</string>
+    <string name="preview_no_description">este podcast não se descreve</string>
+    <string name="preview_no_episodes">o feed ainda não contém nenhum episódio</string>
+    <string name="preview_open">abrir este podcast</string>
 </resources>

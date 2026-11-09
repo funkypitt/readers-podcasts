@@ -100,6 +100,9 @@ sealed class Screen {
     /** Adding a podcast: by its address — [initial], the clipboard's if it holds one — or by its name. */
     data class Add(val initial: String = "") : Screen()
 
+    /** A podcast found by its name, shown before one subscribes to it. */
+    data class Preview(val found: Catalogue.Found) : Screen()
+
     /**
      * The player, for [id] — the episode one tapped, which is not always the one the audio
      * session holds. Showing what was playing instead of what was asked for was baffling:
@@ -557,8 +560,8 @@ private fun Hint(text: String) = Small(text, Modifier.padding(horizontal = rowPa
 // ---------------------------------------------------------------------------------------------
 // Adding a podcast. One field takes either: an address (the clipboard's is offered, selected, so
 // the first key replaces it), which is subscribed to as before; or a few words of a name, which
-// are looked up in the public directories as one types. A found podcast goes down the same road
-// as a pasted address.
+// are looked up in the public directories as one types. A found podcast is shown first
+// (PreviewScreen); the address of its feed then goes down the same road as a pasted one.
 // ---------------------------------------------------------------------------------------------
 
 /** An address rather than a name: a scheme, or a host with a dot and no spaces. */
@@ -627,10 +630,10 @@ fun AddScreen(nav: Nav, app: App, activity: MainActivity, initial: String) {
                         }
                         items(out.found, key = { Catalogue.key(it.url) }) { f ->
                             val followed = feeds.firstOrNull { Catalogue.key(it.url) == Catalogue.key(f.url) }
-                            FoundRow(f, followed != null) {
-                                if (followed != null) { app.prefs.setView(followed.id); nav.home() }
-                                else { focusManager.clearFocus(); activity.subscribe(f.url) }
-                            }
+                            // A tap shows the podcast first — what it is about, its latest
+                            // episodes — and subscribing is a word on that screen. Tapping a
+                            // name used to subscribe on the spot, which was more than one meant.
+                            FoundRow(f, followed != null) { focusManager.clearFocus(); nav.push(Screen.Preview(f)) }
                         }
                         if (out.found.isNotEmpty() || out.failed.size == 1) item {
                             Small(

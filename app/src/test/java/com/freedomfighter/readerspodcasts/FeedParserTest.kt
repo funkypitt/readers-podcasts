@@ -43,6 +43,9 @@ class FeedParserTest {
             <title>La Grande Table</title>
             <link>https://example.org</link>
             <managingEditor>France Culture</managingEditor>
+            <itunes:subtitle>Une heure de culture</itunes:subtitle>
+            <description>&lt;p&gt;Chaque jour, &lt;b&gt;une heure&lt;/b&gt; d'entretien.&lt;/p&gt;</description>
+            <image><url>https://example.org/img.png</url><title>La Grande Table</title></image>
             <item>
               <title>Le temps des orages</title>
               <guid isPermaLink="false">episode-42</guid>
@@ -73,6 +76,16 @@ class FeedParserTest {
         assertEquals("France Culture", parsed.author)
         // The item without media is not an episode and is left out.
         assertEquals(2, parsed.episodes.size)
+    }
+
+    @Test fun `the feed's own description is read as text, apart from the episodes'`() {
+        val parsed = parse(rss)
+        assertEquals("Chaque jour, une heure d'entretien.", parsed.description)
+        // The first episode keeps its own description; the feed's does not leak into it.
+        assertEquals("Un entretien avec quelqu'un.", parsed.episodes.first().description)
+        // Without a <description>, the subtitle stands in; without either, nothing.
+        assertEquals("Une heure de culture", parse(rss.replace(Regex("<description>.*?</description>\\n", RegexOption.DOT_MATCHES_ALL), "")).description)
+        assertEquals("", parse(rss.replace(Regex("<itunes:subtitle>.*?</itunes:subtitle>"), "").replace(Regex("\\s*<description>.*?</description>\\n", RegexOption.DOT_MATCHES_ALL), "")).description)
     }
 
     @Test fun `keeps title, media, size and duration`() {

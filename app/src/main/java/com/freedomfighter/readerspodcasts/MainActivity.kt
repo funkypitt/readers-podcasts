@@ -220,6 +220,7 @@ class MainActivity : ComponentActivity() {
                     Screen.Home -> HomeScreen(nav, app, activity)
                     Screen.Search -> SearchScreen(nav, app, activity)
                     is Screen.Add -> com.freedomfighter.readerspodcasts.ui.AddScreen(nav, app, activity, screen.initial)
+                    is Screen.Preview -> com.freedomfighter.readerspodcasts.ui.PreviewScreen(nav, app, activity, screen.found)
                     is Screen.Player -> PlayerScreen(nav, app, activity, screen.id)
                     is Screen.Text -> TextScreen(nav, app, activity, screen.id)
                     is Screen.Read -> com.freedomfighter.readerspodcasts.ui.ReadScreen(nav, app, activity, screen.id)
@@ -278,6 +279,18 @@ class MainActivity : ComponentActivity() {
         busy = getString(R.string.adding_feed)
         val result = Refresher.add(this@MainActivity, app.store, raw)
         busy = ""
+        subscribed(result)
+    }
+
+    /** Add a feed one has just looked at: it was read already, nothing is fetched twice. */
+    fun subscribe(previewed: Refresher.Previewed) = lifecycleScope.launch {
+        busy = getString(R.string.adding_feed)
+        val result = Refresher.add(app.store, previewed)
+        busy = ""
+        subscribed(result)
+    }
+
+    private fun subscribed(result: Result<Feed>) {
         result.onSuccess { feed ->
             app.prefs.setView(feed.id)
             nav.home()

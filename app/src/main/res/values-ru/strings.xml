@@ -230,4 +230,9 @@
         <item quantity="many">%d расшифровок в библиотеке</item>
         <item quantity="other">%d расшифровки в библиотеке</item>
     </plurals>
+    <string name="preview_title">об этом подкасте</string>
+    <string name="preview_latest">последние выпуски</string>
+    <string name="preview_no_description">у этого подкаста нет описания</string>
+    <string name="preview_no_episodes">в ленте пока нет ни одного выпуска</string>
+    <string name="preview_open">открыть этот подкаст</string>
 </resources>
