@@ -1,0 +1,1 @@
+La langue d'un épisode est désormais reconnue en écoutant plusieurs passages, pas seulement le début (qui peut être de la musique). Elle est nommée sur le bouton qui lance la mise par écrit et rappelée avec le texte (« langue entendue : anglais »). Si une langue choisie à la main n'est manifestement pas celle qu'on entend, l'app demande avant de commencer.
