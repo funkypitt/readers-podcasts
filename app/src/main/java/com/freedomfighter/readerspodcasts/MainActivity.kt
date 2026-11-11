@@ -360,8 +360,8 @@ class MainActivity : ComponentActivity() {
     fun askTranscribe(e: Episode) { transcribing = e.id }
     fun closeTranscribeSheet() { transcribing = null }
 
-    fun transcribe(e: Episode, language: String, model: String) =
-        TranscribeService.transcribe(this, e.id, language, model)
+    fun transcribe(e: Episode, language: String, model: String, sure: Boolean = false) =
+        TranscribeService.transcribe(this, e.id, language, model, sure)
 
     /** Into [target]; the weights come down first if this phone does not have them yet. */
     fun translate(e: Episode, target: String) = TranscribeService.translate(this, e.id, target)

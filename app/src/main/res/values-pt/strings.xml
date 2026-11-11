@@ -155,11 +155,15 @@
     <string name="recommended">recomendado</string>
     <string name="quality_high_hint">4 vezes mais lenta</string>
     <string name="language_last_time">da última vez</string>
-    <string name="language_to_choose">por escolher</string>
     <string name="quality_normal">corrente</string>
     <string name="quality_high">cuidada</string>
     <string name="language">língua falada</string>
-    <string name="language_auto">deixar que descubra</string>
+    <string name="language_auto">reconhecida automaticamente</string>
+    <string name="language_named">língua: %1$s</string>
+    <string name="transcribe_lang">pôr por escrito · língua: %1$s</string>
+    <string name="language_doubt">Língua que se ouve: %1$s. Língua escolhida: %2$s.</string>
+    <string name="phase_language">a reconhecer a língua falada…</string>
+    <string name="language_heard">língua ouvida: %1$s</string>
     <string name="model_not_here">o modelo não está no telemóvel</string>
     <plurals name="older_added">
         <item quantity="one">%d episódio mais antigo</item>

@@ -157,11 +157,15 @@
     <string name="recommended">рекомендуется</string>
     <string name="quality_high_hint">вчетверо медленнее</string>
     <string name="language_last_time">в прошлый раз</string>
-    <string name="language_to_choose">выбрать</string>
     <string name="quality_normal">обычная</string>
     <string name="quality_high">тщательная</string>
     <string name="language">язык речи</string>
-    <string name="language_auto">пусть определит сам</string>
+    <string name="language_auto">определяется автоматически</string>
+    <string name="language_named">язык: %1$s</string>
+    <string name="transcribe_lang">записать · язык: %1$s</string>
+    <string name="language_doubt">Слышен язык: %1$s. Выбран язык: %2$s.</string>
+    <string name="phase_language">определение языка речи…</string>
+    <string name="language_heard">услышанный язык: %1$s</string>
     <string name="model_not_here">модели нет на телефоне</string>
     <plurals name="older_added">
         <item quantity="one">%d более старый выпуск</item>

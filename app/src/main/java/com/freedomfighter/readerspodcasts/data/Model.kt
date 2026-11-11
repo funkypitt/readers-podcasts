@@ -119,7 +119,8 @@ fun autoDeletable(episode: Episode, kind: Kind?): Boolean =
  *
  * A channel is nearly always spoken in one language, and being asked it afresh every time is a
  * chore — but a language taken for granted is what wrote two talks down in the wrong one. So this
- * is a suggestion, ticked in the list and never chosen on the listener's behalf. It is read from
+ * is only listed near the top, marked as last time; what is chosen by default is listening for
+ * the language spoken, and nothing is chosen on the listener's behalf. It is read from
  * the transcripts themselves rather than kept as a setting: an episode records the language it was
  * written down in, which is the one that was asked for, or the one whisper heard when it was left
  * to work it out — and that is the better suggestion of the two.
@@ -161,3 +162,10 @@ val Episode.isShort: Boolean get() = mediaUrl.contains("youtube.com/shorts/")
  */
 fun List<Episode>.withoutShort(hide: Boolean, ownPicks: Boolean = false): List<Episode> =
     if (!hide || ownPicks) this else filter { !it.isShort && (it.durationMs <= 0L || it.durationMs >= SHORT_MS) }
+
+/**
+ * The languages offered for a transcription, in order: found by listening first (the default),
+ * then the channel's [last] language, then the phone's and the usual ones — each once.
+ */
+fun languageChoices(last: String?, device: String): List<String> =
+    (listOf("") + listOfNotNull(last?.ifBlank { null }) + com.freedomfighter.readers.speech.whisper.Prompts.choices(device)).distinct()

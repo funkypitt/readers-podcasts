@@ -82,6 +82,7 @@ import com.freedomfighter.readerspodcasts.data.Prefs
 import com.freedomfighter.readerspodcasts.data.withoutShort
 import com.freedomfighter.readerspodcasts.data.Seasons
 import com.freedomfighter.readerspodcasts.data.feedLanguage
+import com.freedomfighter.readerspodcasts.data.languageChoices
 import com.freedomfighter.readerspodcasts.data.State
 import com.freedomfighter.readerspodcasts.data.TextSize
 import com.freedomfighter.readerspodcasts.data.clock
@@ -91,7 +92,6 @@ import com.freedomfighter.readerspodcasts.net.Refresher
 import com.freedomfighter.readerspodcasts.TranscribeService
 import com.freedomfighter.readers.speech.translate.TranslateModel
 import com.freedomfighter.readers.speech.whisper.Models
-import com.freedomfighter.readers.speech.whisper.Prompts
 
 sealed class Screen {
     data object Home : Screen()
@@ -943,6 +943,7 @@ fun TextRows(episode: Episode, app: App, activity: MainActivity, nav: Nav) {
     val typo = LocalTypo.current
     val live = TranscribeService.Live
     val mine = live.id == episode.id
+    val doubt = live.doubts[episode.id]
     val reading = Prefs.deviceLanguage()
     // A text already written stays readable whatever else is going on: hiding it while its
     // translation was being worked out took away the very thing one had waited for.
@@ -957,12 +958,18 @@ fun TextRows(episode: Episode, app: App, activity: MainActivity, nav: Nav) {
             secondary = stringResource(R.string.stop_transcription), size = typo.title,
         ) { activity.cancelTranscription() }
 
+        doubt != null && !episode.transcript -> LanguageQuestion(episode, doubt, activity)
+
         episode.transcript -> {
+            if (doubt != null) LanguageQuestion(episode, doubt, activity)
             // The text as a text, for reading rather than listening: the paragraphs the .txt has,
-            // in the app, with nothing moving under them.
+            // in the app, with nothing moving under them. The language it was written down in is
+            // said under it, so a talk taken for another language shows before it is read.
             TextRow(
                 stringResource(R.string.read_transcript),
-                secondary = stringResource(R.string.read_transcript_hint), size = typo.title,
+                secondary = if (episode.transcriptLanguage.isNotBlank()) stringResource(R.string.language_heard, spokenName(episode.transcriptLanguage))
+                            else stringResource(R.string.read_transcript_hint),
+                size = typo.title,
             ) { nav.push(Screen.Read(episode.id)) }
             TranslateRow(episode, activity, reading)
         }
@@ -1007,29 +1014,29 @@ private fun TranslateRow(episode: Episode, activity: MainActivity, reading: Stri
     )
 }
 
-/**
- * Asked before every transcription: the language spoken, the phone's by default, and the
- * quality. High is Whisper large-v3-turbo — better punctuation, much slower on a telephone.
- */
 /** What is advised here: whole talks, so the model that keeps the wait to something bearable. */
 private val RECOMMENDED = Models.NORMAL
 
+/**
+ * Asked before every transcription: the language spoken and the quality. High is Whisper
+ * large-v3-turbo — better punctuation, much slower on a telephone.
+ */
 @Composable
 fun TranscribeSheet(episode: Episode, activity: MainActivity, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val colors = LocalColors.current
     val typo = LocalTypo.current
-    // No language until one is chosen. The phone's own language as a default was twice taken for
-    // granted over a talk that was in another one, and an hour of writing down is too long a wait
-    // to find that out at the end. So the list opens by itself and nothing runs before an answer.
-    // What this channel was last written down in is ticked and put first — a suggestion one taps,
-    // not a choice made on one's behalf.
+    // The language is found by listening unless one is chosen. A language given by default — the
+    // phone's, then the channel's last one — was twice taken for granted over a talk in another
+    // one, and whisper told the wrong language writes a fluent translation nobody notices until
+    // reading. What this channel was last written down in stays in the list, second, marked as
+    // last time: a shortcut one taps, not a choice made on one's behalf.
     val suggested = remember(episode.feedId) {
         feedLanguage(activity.app.store.episodes.value, episode.feedId)
     }
-    var language by remember { mutableStateOf<String?>(null) }
+    var language by remember { mutableStateOf("") }
     var quality by remember { mutableStateOf(Models.DEFAULT) }
-    var picking by remember { mutableStateOf(true) }
+    var picking by remember { mutableStateOf(false) }
     val downloading by Models.downloading.collectAsState()
     BackHandler(onBack = onDismiss)
     val tiles = colors.tiles
@@ -1045,7 +1052,7 @@ fun TranscribeSheet(episode: Episode, activity: MainActivity, onDismiss: () -> U
             if (tiles) Spacer(Modifier.height(10.dp)) else Rule(color = colors.fg)
             Small(episode.title, Modifier.padding(horizontal = rowPadH).padding(top = 14.dp, bottom = 2.dp), maxLines = 1)
             TextRow(
-                language?.let { spokenLanguage(it) } ?: stringResource(R.string.language_to_choose),
+                spokenLanguage(language),
                 secondary = stringResource(R.string.language), size = typo.title,
             ) { picking = true }
             Rule(Modifier.padding(vertical = 4.dp))
@@ -1069,44 +1076,73 @@ fun TranscribeSheet(episode: Episode, activity: MainActivity, onDismiss: () -> U
             }
             if (tiles) Canvas(Modifier.fillMaxWidth().padding(horizontal = rowPadH, vertical = 6.dp).height(1.dp)) { drawRect(colors.press) }
             else Rule(color = colors.fg)
-            Row(Modifier.fillMaxWidth()) {
-                Box(Modifier.weight(1f)) { TextRow(stringResource(R.string.action_cancel), onClick = onDismiss) }
-                Box(Modifier.weight(1f)) {
-                    // Inert until the language is settled: the only thing left to say.
-                    val chosen = language
-                    // "Start", not "write it down": half a row is not wide enough for the long
-                    // label, and the sheet says what it is about already.
-                    TextRow(
-                        stringResource(R.string.action_start),
-                        inverted = chosen != null,
-                        onClick = if (chosen == null) null else {
-                            { activity.transcribe(episode, chosen, quality); onDismiss() }
-                        },
-                    )
-                }
-            }
+            // The language is said on the button itself, the whole width: it cannot be missed on
+            // the way to pressing it. "Start", not "write it down": the sheet says what it is about.
+            TextRow(
+                stringResource(R.string.action_start),
+                inverted = true,
+                secondary = stringResource(R.string.language_named, spokenName(language)),
+                size = typo.title,
+            ) { activity.transcribe(episode, language, quality); onDismiss() }
+            TextRow(stringResource(R.string.action_cancel), size = typo.title, onClick = onDismiss)
             if (tiles) Spacer(Modifier.height(8.dp))
         }
         }
     }
     if (picking) TextMenu(
         stringResource(R.string.language),
-        (listOfNotNull(suggested) + Prompts.choices(Prefs.deviceLanguage())).distinct().map { code ->
-            val ticked = code == (language ?: suggested)
+        // Listening first, then the channel's last language, then the usual ones.
+        languageChoices(suggested, Prefs.deviceLanguage()).map { code ->
+            val ticked = code == language
+            val last = if (code == suggested) stringResource(R.string.language_last_time) else null
             MenuItem(
                 spokenLanguage(code),
-                secondary = if (ticked && code == suggested && language == null) stringResource(R.string.language_last_time)
-                            else if (ticked) "✓" else null,
+                secondary = when {
+                    ticked && last != null -> "✓ · $last"
+                    ticked -> "✓"
+                    else -> last
+                },
             ) { language = code }
         },
         onDismiss = { picking = false },
     )
 }
 
-/** The language whisper is told to expect; "" means it works it out for itself. */
+/**
+ * The episode plainly speaks another language than the one chosen by hand: said where its text
+ * would be, before minutes are spent writing it down in the wrong one. The language heard comes
+ * first and stands out; either answer is kept for this episode and not asked again.
+ */
+@Composable
+private fun LanguageQuestion(episode: Episode, doubt: TranscribeService.Doubt, activity: MainActivity) {
+    val typo = LocalTypo.current
+    Small(
+        stringResource(R.string.language_doubt, spokenName(doubt.heard), spokenName(doubt.chosen)),
+        Modifier.padding(horizontal = rowPadH, vertical = 8.dp), color = LocalColors.current.fg, maxLines = 4,
+    )
+    for (code in listOf(doubt.heard, doubt.chosen)) {
+        TextRow(
+            stringResource(R.string.transcribe_lang, spokenName(code)),
+            inverted = code == doubt.heard, size = typo.title,
+        ) {
+            TranscribeService.Live.doubts.remove(episode.id)
+            activity.transcribe(episode, code, doubt.model, sure = true)
+        }
+    }
+}
+
+/** The language whisper is told to expect, in the pick list; "" means it is found by listening. */
 @Composable
 fun spokenLanguage(code: String): String =
     if (code.isBlank()) stringResource(R.string.language_auto) else languageName(code)
+
+/** A language in the phone's own words, inside a sentence: "anglais" on a French phone. */
+@Composable
+fun spokenName(code: String): String {
+    if (code.isBlank()) return stringResource(R.string.language_auto)
+    val here = LocalContext.current.resources.configuration.locales[0]
+    return java.util.Locale(code).getDisplayLanguage(here).ifBlank { code }
+}
 
 /** A language as it is said in itself: "français", "English". */
 fun languageName(code: String): String =

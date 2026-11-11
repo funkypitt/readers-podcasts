@@ -14,6 +14,7 @@ import android.os.SystemClock
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.app.NotificationCompat
@@ -27,6 +28,7 @@ import com.freedomfighter.readers.speech.whisper.WhisperLib
 import com.freedomfighter.readerspodcasts.data.Line
 import com.freedomfighter.readerspodcasts.data.Transcripts
 import com.freedomfighter.readerspodcasts.data.spoken
+import com.freedomfighter.readerspodcasts.transcribe.LanguageDoubt
 import com.freedomfighter.readerspodcasts.transcribe.Transcriber
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -57,6 +59,8 @@ class TranscribeService : Service() {
         val translateTo: String = "",
         /** Fetch the weights of the translating model and nothing else. */
         val fetchTranslator: Boolean = false,
+        /** The language was chosen by hand and then confirmed against the one heard: not asked again. */
+        val sure: Boolean = false,
     )
 
     private val queue = ConcurrentLinkedQueue<Job>()
@@ -91,8 +95,10 @@ class TranscribeService : Service() {
                             intent.getStringExtra(EXTRA_LANGUAGE).orEmpty(),
                             intent.getStringExtra(EXTRA_MODEL) ?: Models.DEFAULT,
                             target,
+                            sure = intent.getBooleanExtra(EXTRA_SURE, false),
                         )
                     )
+                    if (target.isBlank()) Live.doubts.remove(id)
                     Live.waiting.add(id)
                 }
             }
@@ -146,11 +152,18 @@ class TranscribeService : Service() {
     private suspend fun transcribe(job: Job) {
         val episode = app.store.episode(job.id) ?: return
         val result = withContext(Dispatchers.Default) {
-            Transcriber.run(
-                this@TranscribeService, episode, job.language.ifBlank { null }, job.model,
-                { phase, percent -> Live.phase = phase; Live.percent = percent },
-                { cancelled.get() },
-            )
+            try {
+                Transcriber.run(
+                    this@TranscribeService, episode, job.language.ifBlank { null }, job.model,
+                    check = job.language.isNotBlank() && !job.sure,
+                    onProgress = { phase, percent -> Live.phase = phase; Live.percent = percent },
+                    cancelled = { cancelled.get() },
+                )
+            } catch (d: LanguageDoubt) {
+                // Not an error: a question, asked where the episode's text would be.
+                Live.doubts[job.id] = Doubt(d.heard, d.chosen, job.model)
+                null
+            }
         } ?: return
         if (cancelled.get()) return
         Live.phase = PHASE_SAVE
@@ -288,11 +301,13 @@ class TranscribeService : Service() {
     /** What the screens and the notification show about the work in hand. */
     object Live {
         var id by mutableStateOf("")
-        var phase by mutableStateOf("")   // model | transcribe | translate | save
+        var phase by mutableStateOf("")   // model | language | transcribe | translate | save
         var percent by mutableIntStateOf(0)
         var error by mutableStateOf("")
         var errorId by mutableStateOf("")
         val waiting = mutableStateListOf<String>()
+        /** Episodes stopped before transcribing: the language chosen is plainly not the one heard. */
+        val doubts = mutableStateMapOf<String, Doubt>()
 
         fun busy(which: String) = which == id || which in waiting
 
@@ -316,6 +331,9 @@ class TranscribeService : Service() {
         }
     }
 
+    /** The language heard, the one chosen by hand, and the quality asked for. */
+    data class Doubt(val heard: String, val chosen: String, val model: String)
+
     companion object {
         const val ACTION_CANCEL = "com.freedomfighter.readerspodcasts.TRANSCRIBE_CANCEL"
         const val ACTION_FETCH_TRANSLATOR = "com.freedomfighter.readerspodcasts.FETCH_TRANSLATOR"
@@ -323,7 +341,9 @@ class TranscribeService : Service() {
         const val EXTRA_LANGUAGE = "language"
         const val EXTRA_MODEL = "model"
         const val EXTRA_TRANSLATE_TO = "translate_to"
+        const val EXTRA_SURE = "sure"
         const val PHASE_MODEL = "model"
+        const val PHASE_LANGUAGE = "language"
         const val PHASE_TRANSCRIBE = "transcribe"
         const val PHASE_TRANSLATE = "translate"
         const val PHASE_SAVE = "save"
@@ -333,6 +353,7 @@ class TranscribeService : Service() {
         fun phaseLabel(ctx: Context, phase: String, percent: Int): String {
             val label = when (phase) {
                 PHASE_MODEL -> ctx.getString(R.string.phase_model, percent)
+                PHASE_LANGUAGE -> ctx.getString(R.string.phase_language)
                 PHASE_TRANSCRIBE -> ctx.getString(R.string.phase_transcribe, percent)
                 PHASE_TRANSLATE -> ctx.getString(R.string.phase_translate, percent)
                 PHASE_SAVE -> ctx.getString(R.string.phase_save)
@@ -342,11 +363,13 @@ class TranscribeService : Service() {
             return if (rest < 0) label else label + " · " + ctx.getString(R.string.still, spoken(ctx, rest))
         }
 
-        fun transcribe(ctx: Context, id: String, language: String, model: String) =
+        /** [sure]: a language chosen by hand that the person has already confirmed over the one heard. */
+        fun transcribe(ctx: Context, id: String, language: String, model: String, sure: Boolean = false) =
             ContextCompat.startForegroundService(
                 ctx,
                 Intent(ctx, TranscribeService::class.java)
                     .putExtra(EXTRA_ID, id).putExtra(EXTRA_LANGUAGE, language).putExtra(EXTRA_MODEL, model)
+                    .putExtra(EXTRA_SURE, sure)
             )
 
         fun translate(ctx: Context, id: String, target: String) =
