@@ -1,0 +1,3 @@
+Les pubs se passent plus facilement : chaque podcast peut sauter un nombre de secondes au début et à la fin de ses épisodes (« réglages de cette chaîne »), le lecteur a un saut de +30 s, et « chapitre suivant » quand l'épisode a des chapitres.
+
+La langue d'un épisode est reconnue en écoutant plusieurs passages, nommée sur le bouton qui lance la mise par écrit, et vérifiée quand on la choisit à la main.

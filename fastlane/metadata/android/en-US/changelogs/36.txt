@@ -1,0 +1,3 @@
+Ads are easier to get past: each podcast can skip a set number of seconds at the start and at the end of its episodes (« this channel's settings »), the player has a +30 s jump, and « next chapter » when an episode has chapters.
+
+The language of an episode is recognised by listening to several passages of it, named on the button that starts the transcription, and checked when chosen by hand.
