@@ -147,7 +147,7 @@ class Store(private val context: Context) {
                 localPath = old.localPath, positionMs = old.positionMs, state = old.state,
                 lastPlayed = old.lastPlayed, starred = old.starred, transcript = old.transcript,
                 transcriptLanguage = old.transcriptLanguage, translation = old.translation,
-                transcriptUri = old.transcriptUri, sent = old.sent,
+                transcriptUri = old.transcriptUri, sent = old.sent, skipSegments = old.skipSegments,
                 durationMs = if (new.durationMs > 0) new.durationMs else old.durationMs,
             )
         }
@@ -186,6 +186,7 @@ class Store(private val context: Context) {
                 addedAt = o.optLong("addedAt"), lastFetch = o.optLong("lastFetch"),
                 autoDownload = o.optBoolean("autoDownload"), keepCount = o.optInt("keepCount", 50),
                 lastError = o.optString("lastError"), serial = o.optBoolean("serial"),
+                skipStartSec = o.optInt("skipStart"), skipEndSec = o.optInt("skipEnd"),
             )
         }
     }.getOrDefault(emptyList())
@@ -198,6 +199,8 @@ class Store(private val context: Context) {
                 put("kind", f.kind.name); put("addedAt", f.addedAt); put("lastFetch", f.lastFetch)
                 put("autoDownload", f.autoDownload); put("keepCount", f.keepCount); put("lastError", f.lastError)
                 put("serial", f.serial)
+                if (f.skipStartSec > 0) put("skipStart", f.skipStartSec)
+                if (f.skipEndSec > 0) put("skipEnd", f.skipEndSec)
             })
         }
         runCatching { index.writeText(arr.toString()) }
@@ -220,6 +223,7 @@ class Store(private val context: Context) {
                 transcriptUri = o.optString("transcriptUri"),
                 season = o.optInt("season"), seasonName = o.optString("seasonName"), number = o.optInt("number"),
                 sent = o.optString("sent"),
+                skipSegments = o.optJSONArray("skipSegments")?.let { SponsorBlock.fromJson(it) },
             )
         }
     }.getOrDefault(emptyList())
@@ -241,6 +245,7 @@ class Store(private val context: Context) {
                 put("translation", e.translation); put("transcriptUri", e.transcriptUri)
                 put("season", e.season); put("seasonName", e.seasonName); put("number", e.number)
                 put("sent", e.sent)
+                e.skipSegments?.let { put("skipSegments", SponsorBlock.toJson(it)) }
             })
         }
         runCatching { File(dir, "$feedId.json").writeText(arr.toString()) }

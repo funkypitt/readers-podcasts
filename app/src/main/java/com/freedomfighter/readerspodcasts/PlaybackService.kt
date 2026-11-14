@@ -25,7 +25,11 @@ import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
 import com.freedomfighter.readerspodcasts.data.Episode
 import com.freedomfighter.readerspodcasts.data.State
+import com.freedomfighter.readerspodcasts.data.SkipSegment
+import com.freedomfighter.readerspodcasts.data.SkipWatch
+import com.freedomfighter.readerspodcasts.data.Skips
 import com.freedomfighter.readerspodcasts.data.autoDeletable
+import com.freedomfighter.readerspodcasts.net.Sponsors
 import com.freedomfighter.readerspodcasts.widget.LastWidgets
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
@@ -38,7 +42,12 @@ object NowPlaying {
     @Volatile var positionMs: Long = 0L
     @Volatile var durationMs: Long = 0L
     @Volatile var at: Long = 0L
+    /** The last stretch jumped over, for the player's « go back »; null when none. */
+    @Volatile var skipped: Skipped? = null
 }
+
+/** A segment jumped over in [episodeId], at [at] (wall clock). */
+data class Skipped(val episodeId: String, val segment: SkipSegment, val at: Long)
 
 /**
  * Playback, the standard way: Media3's ExoPlayer inside a MediaSessionService. The session
@@ -60,6 +69,23 @@ class PlaybackService : MediaSessionService() {
         }
     }
 
+    /**
+     * What is left out: the sponsors of a video, and the end of an episode when its channel says
+     * to leave its last seconds out. Watched here, in the service, so that it holds with the
+     * screen off; five times a second, which lets through a fifth of a second at most.
+     */
+    private val watch = SkipWatch()
+    /** The episode just ran to its end: a start from 0 after that is a new listening. */
+    private var endedOnce = false
+    private val watcher = object : Runnable {
+        override fun run() {
+            val p = session?.player ?: return
+            if (!p.isPlaying) return
+            check(p)
+            handler.postDelayed(this, 200)
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         val player = ExoPlayer.Builder(this)
@@ -69,6 +95,7 @@ class PlaybackService : MediaSessionService() {
             .setSeekBackIncrementMs(5_000)
             .setSeekForwardIncrementMs(10_000)
             .build()
+        val unskip = SessionCommand(ACTION_UNSKIP, Bundle.EMPTY)
         player.setPlaybackSpeed(app.prefs.settings.value.speed)
         // The system media controls (Android 13+) only show a session's CUSTOM actions besides
         // play/pause: buttons bound to player commands (seek back/forward) never appear there.
@@ -84,16 +111,29 @@ class PlaybackService : MediaSessionService() {
         session = MediaSession.Builder(this, player)
             .setSessionActivity(PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java).setAction(MainActivity.ACTION_OPEN_PLAYER), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
             .setCustomLayout(layout)
-            .setCallback(SessionCallback(listOf(back, fwd, stop)))
+            .setCallback(SessionCallback(listOf(back, fwd, stop, unskip)))
             .build()
         setMediaNotificationProvider(DefaultMediaNotificationProvider.Builder(this).build().also { it.setSmallIcon(R.drawable.ic_note) })
         player.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 handler.removeCallbacks(saver)
-                if (isPlaying) handler.post(saver) else savePosition()
+                handler.removeCallbacks(watcher)
+                if (isPlaying) { handler.post(saver); handler.post(watcher) } else savePosition()
                 changed()
             }
+            override fun onPositionDiscontinuity(oldPosition: Player.PositionInfo, newPosition: Player.PositionInfo, reason: Int) {
+                if (reason != Player.DISCONTINUITY_REASON_SEEK && reason != Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT) return
+                val p = session?.player ?: return
+                // Heard through, then started again from the top: a listening of its own.
+                if (endedOnce && newPosition.positionMs < Skips.BEGINNING_MS) {
+                    endedOnce = false
+                    begin(p)
+                    return
+                }
+                watch.seeked(newPosition.positionMs)
+            }
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                session?.player?.let { endedOnce = false; begin(it) }
                 mediaItem?.mediaId?.let { id ->
                     app.store.updateEpisode(id) {
                         it.copy(lastPlayed = System.currentTimeMillis(), state = if (it.state == State.NEW) State.STARTED else it.state)
@@ -106,7 +146,7 @@ class PlaybackService : MediaSessionService() {
                 val id = p?.currentMediaItem?.mediaId
                 if (p != null && id != null) {
                     if (playbackState == Player.STATE_READY && p.duration > 0) app.store.updateEpisode(id) { if (it.durationMs == p.duration) it else it.copy(durationMs = p.duration) }
-                    if (playbackState == Player.STATE_ENDED) finished(id)
+                    if (playbackState == Player.STATE_ENDED) { endedOnce = true; finished(id) }
                 }
                 changed()
             }
@@ -125,12 +165,49 @@ class PlaybackService : MediaSessionService() {
 
     override fun onDestroy() {
         handler.removeCallbacks(saver)
+        handler.removeCallbacks(watcher)
         savePosition()
         session?.run { player.release(); release() }
         session = null
         NowPlaying.id = ""; NowPlaying.playing = false
         LastWidgets.refresh(this)
         super.onDestroy()
+    }
+
+    /**
+     * A listening begins: past the channel's opening seconds when it starts from the beginning,
+     * with the video's sponsors when they are known — and asked for when they are not.
+     */
+    private fun begin(p: Player) {
+        NowPlaying.skipped = null
+        val e = p.currentMediaItem?.mediaId?.let { app.store.episode(it) }
+        if (e == null) { watch.segments = emptyList(); watch.begin(0); return }
+        val feed = app.store.feed(e.feedId)
+        val at = p.currentPosition
+        val start = Skips.startAt(at, (feed?.skipStartSec ?: 0) * 1000L, p.duration.takeIf { it > 0 } ?: e.durationMs)
+        watch.segments = e.skipSegments.orEmpty()
+        watch.begin(at)
+        if (start != at) p.seekTo(start)
+        // What comes back lands with the episode, where the watch reads it.
+        if (Sponsors.wanted(app, e)) Thread { Sponsors.lookUp(app, e) }.start()
+    }
+
+    /** Where playback has got to, against what is to be left out of it. */
+    private fun check(p: Player) {
+        val id = p.currentMediaItem?.mediaId ?: return
+        val e = app.store.episode(id)
+        val feed = e?.let { app.store.feed(it.feedId) }
+        val end = Skips.endAt(p.duration.takeIf { it > 0 } ?: 0L, (feed?.skipEndSec ?: 0) * 1000L)
+        watch.segments = if (app.prefs.settings.value.skipSponsors) e?.skipSegments.orEmpty() else emptyList()
+        when (val action = watch.tick(p.currentPosition, end)) {
+            is SkipWatch.Action.Skip -> {
+                NowPlaying.skipped = Skipped(id, action.segment, System.currentTimeMillis())
+                p.seekTo(action.segment.endMs)
+            }
+            // The end one asked for is the end: the player runs out as it would at the real one.
+            SkipWatch.Action.End -> p.seekTo(p.duration.takeIf { it > 0 } ?: return)
+            SkipWatch.Action.None -> Unit
+        }
     }
 
     private fun savePosition() {
@@ -212,6 +289,13 @@ class PlaybackService : MediaSessionService() {
                 ACTION_BACK5 -> session.player.seekBack()
                 ACTION_FWD10 -> session.player.seekForward()
                 ACTION_STOP -> stopPlayback()
+                // « Go back »: to the start of what was jumped over, which then plays.
+                ACTION_UNSKIP -> {
+                    val uuid = args.getString(EXTRA_UUID).orEmpty()
+                    watch.spare(uuid)
+                    NowPlaying.skipped = null
+                    session.player.seekTo(args.getLong(EXTRA_START))
+                }
             }
             return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
         }
@@ -256,6 +340,9 @@ class PlaybackService : MediaSessionService() {
         const val ACTION_STOP = "com.freedomfighter.readerspodcasts.STOP"
         const val ACTION_BACK5 = "com.freedomfighter.readerspodcasts.BACK5"
         const val ACTION_FWD10 = "com.freedomfighter.readerspodcasts.FWD10"
+        const val ACTION_UNSKIP = "com.freedomfighter.readerspodcasts.UNSKIP"
+        const val EXTRA_UUID = "uuid"
+        const val EXTRA_START = "start"
         fun mediaItem(e: Episode): MediaItem = MediaItem.Builder()
             .setMediaId(e.id)
             .setMediaMetadata(MediaMetadata.Builder().setTitle(e.title).build())

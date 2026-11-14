@@ -229,4 +229,19 @@
     <string name="preview_no_description">este podcast não se descreve</string>
     <string name="preview_no_episodes">o feed ainda não contém nenhum episódio</string>
     <string name="preview_open">abrir este podcast</string>
+    <string name="fwd30">+30 s</string>
+    <string name="next_chapter">capítulo seguinte</string>
+    <string name="go_back">voltar</string>
+    <string name="skipped_sponsor">patrocínio saltado</string>
+    <string name="skipped_selfpromo">autopromoção saltada</string>
+    <string name="skipped_interaction">apelo para subscrever saltado</string>
+    <string name="skip_sponsors">saltar patrocínios nos vídeos do YouTube</string>
+    <string name="skip_sponsors_hint">Ao descarregar ou reproduzir um vídeo, a app pergunta ao SponsorBlock, uma lista mantida por espectadores, onde estão os patrocínios, a autopromoção e os apelos para subscrever. Só é enviada parte de uma impressão digital do endereço do vídeo, nunca o próprio endereço.</string>
+    <string name="channel_settings">definições deste canal</string>
+    <string name="skip_start">saltar no início</string>
+    <string name="skip_start_hint">quando um episódio começa do início</string>
+    <string name="skip_end">saltar no fim</string>
+    <string name="skip_end_hint">o episódio acaba esse tempo antes</string>
+    <string name="skip_other">outra duração…</string>
+    <string name="skip_seconds">segundos a saltar</string>
 </resources>

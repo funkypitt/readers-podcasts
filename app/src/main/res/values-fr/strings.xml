@@ -229,4 +229,19 @@
     <string name="preview_no_description">ce podcast ne se présente pas</string>
     <string name="preview_no_episodes">le flux ne contient encore aucun épisode</string>
     <string name="preview_open">ouvrir ce podcast</string>
+    <string name="fwd30">+30 s</string>
+    <string name="next_chapter">chapitre suivant</string>
+    <string name="go_back">revenir</string>
+    <string name="skipped_sponsor">sponsor sauté</string>
+    <string name="skipped_selfpromo">autopromotion sautée</string>
+    <string name="skipped_interaction">appel à s\'abonner sauté</string>
+    <string name="skip_sponsors">sauter les sponsors des vidéos YouTube</string>
+    <string name="skip_sponsors_hint">Quand une vidéo est téléchargée ou lue, l\'app demande à SponsorBlock, une liste tenue par des spectateurs, où sont ses sponsors, son autopromotion et ses appels à s\'abonner. Seule une partie d\'une empreinte de l\'adresse de la vidéo est envoyée, jamais l\'adresse elle-même.</string>
+    <string name="channel_settings">réglages de cette chaîne</string>
+    <string name="skip_start">sauter au début</string>
+    <string name="skip_start_hint">pour un épisode écouté depuis le début</string>
+    <string name="skip_end">sauter à la fin</string>
+    <string name="skip_end_hint">l\'épisode se termine d\'autant plus tôt</string>
+    <string name="skip_other">autre durée…</string>
+    <string name="skip_seconds">secondes à sauter</string>
 </resources>

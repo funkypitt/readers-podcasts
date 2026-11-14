@@ -25,6 +25,8 @@ object Backup {
                 put(JSONObject().apply {
                     put("url", f.url); put("title", f.title); put("kind", f.kind.name)
                     put("autoDownload", f.autoDownload); put("keepCount", f.keepCount)
+                    if (f.skipStartSec > 0) put("skipStart", f.skipStartSec)
+                    if (f.skipEndSec > 0) put("skipEnd", f.skipEndSec)
                 })
             }
         })
@@ -58,6 +60,7 @@ object Backup {
                     id = feedId(url), url = url, title = o.optString("title").ifBlank { url },
                     kind = runCatching { Kind.valueOf(o.optString("kind", "RSS")) }.getOrDefault(Kind.RSS),
                     autoDownload = o.optBoolean("autoDownload"), keepCount = o.optInt("keepCount", 50),
+                    skipStartSec = o.optInt("skipStart"), skipEndSec = o.optInt("skipEnd"),
                 )
             }
         } ?: emptyList()

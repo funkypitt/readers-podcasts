@@ -229,4 +229,19 @@
     <string name="preview_no_description">dieser Podcast beschreibt sich nicht</string>
     <string name="preview_no_episodes">der Feed enthält noch keine Folge</string>
     <string name="preview_open">diesen Podcast öffnen</string>
+    <string name="fwd30">+30 s</string>
+    <string name="next_chapter">nächstes Kapitel</string>
+    <string name="go_back">zurück</string>
+    <string name="skipped_sponsor">Sponsor übersprungen</string>
+    <string name="skipped_selfpromo">Eigenwerbung übersprungen</string>
+    <string name="skipped_interaction">Abo-Aufruf übersprungen</string>
+    <string name="skip_sponsors">Sponsoren in YouTube-Videos überspringen</string>
+    <string name="skip_sponsors_hint">Wird ein Video heruntergeladen oder abgespielt, fragt die App bei SponsorBlock – einer von Zuschauern gepflegten Liste –, wo Sponsoren, Eigenwerbung und Abo-Aufrufe liegen. Gesendet wird nur ein Teil eines Fingerabdrucks der Videoadresse, nie die Adresse selbst.</string>
+    <string name="channel_settings">Einstellungen dieses Kanals</string>
+    <string name="skip_start">am Anfang überspringen</string>
+    <string name="skip_start_hint">wenn eine Folge von vorn beginnt</string>
+    <string name="skip_end">am Ende überspringen</string>
+    <string name="skip_end_hint">die Folge endet entsprechend früher</string>
+    <string name="skip_other">andere Dauer…</string>
+    <string name="skip_seconds">zu überspringende Sekunden</string>
 </resources>

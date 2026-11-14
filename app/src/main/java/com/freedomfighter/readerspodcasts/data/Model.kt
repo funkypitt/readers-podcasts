@@ -29,6 +29,9 @@ data class Feed(
     val lastError: String = "",
     /** The feed says it is meant to be heard from its first episode on (`itunes:type` serial). */
     val serial: Boolean = false,
+    /** Seconds left out at the start of an episode heard from its beginning, and at its end; 0 = none. */
+    val skipStartSec: Int = 0,
+    val skipEndSec: Int = 0,
 )
 
 /**
@@ -66,6 +69,8 @@ data class Episode(
     val number: Int = 0,
     /** What of it is on the drive, for Reader's Books: "" nothing, "t" the transcript, "t+fr" a translation as well. */
     val sent: String = "",
+    /** A YouTube video's sponsor segments, as SponsorBlock gave them; null while not asked, or the asking failed. */
+    val skipSegments: List<SkipSegment>? = null,
 ) {
     val downloaded: Boolean get() = localPath.isNotBlank()
     /** What plays: the file if it is here, the network otherwise. */

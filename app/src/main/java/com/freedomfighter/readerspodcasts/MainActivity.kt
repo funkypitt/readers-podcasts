@@ -65,6 +65,8 @@ class PlayerUi {
     var waiting by mutableStateOf(false)
     var positionMs by mutableLongStateOf(0L)
     var durationMs by mutableLongStateOf(0L)
+    /** What playback just jumped over, while it is still worth offering to go back to it. */
+    var skipped by mutableStateOf<Skipped?>(null)
 }
 
 class MainActivity : ComponentActivity() {
@@ -147,7 +149,11 @@ class MainActivity : ComponentActivity() {
             restored.feeds.forEachIndexed { i, f ->
                 busy = getString(R.string.reading_feeds, i + 1, restored.feeds.size)
                 if (app.store.feeds.value.none { it.url == f.url }) Refresher.add(this@MainActivity, app.store, f.url)
-                app.store.updateFeed(f.id) { it.copy(autoDownload = f.autoDownload, keepCount = f.keepCount) }
+                app.store.updateFeed(f.id) { it.copy(autoDownload = f.autoDownload, keepCount = f.keepCount,
+                    // The desktop's file says nothing of these: silence there is not an « off ».
+                    skipStartSec = if (f.skipStartSec > 0) f.skipStartSec else it.skipStartSec,
+                    skipEndSec = if (f.skipEndSec > 0) f.skipEndSec else it.skipEndSec,
+                ) }
             }
             // Again, because the feeds just fetched brought in the episodes those positions name.
             applyStates(restored.states)
@@ -212,6 +218,9 @@ class MainActivity : ComponentActivity() {
                             ui.waiting = c.playWhenReady && c.playbackState == Player.STATE_BUFFERING
                             ui.positionMs = c.currentPosition
                             ui.durationMs = c.duration.takeIf { it > 0 } ?: 0L
+                            ui.skipped = NowPlaying.skipped?.takeIf {
+                                it.episodeId == ui.mediaId && System.currentTimeMillis() - it.at < SKIPPED_SHOWN_MS
+                            }
                         }
                         delay(250)
                     }
@@ -225,6 +234,7 @@ class MainActivity : ComponentActivity() {
                     is Screen.Text -> TextScreen(nav, app, activity, screen.id)
                     is Screen.Read -> com.freedomfighter.readerspodcasts.ui.ReadScreen(nav, app, activity, screen.id)
                     Screen.Settings -> SettingsScreen(nav, app, activity)
+                    is Screen.Channel -> com.freedomfighter.readerspodcasts.ui.ChannelScreen(nav, app, activity, screen.id)
                 }
                 com.freedomfighter.readerspodcasts.ui.Notice(notice) { notice = "" }
                 // Saved where the person chose; now the same file to Telegram, a drive, an e-mail…
@@ -525,6 +535,15 @@ class MainActivity : ComponentActivity() {
     }
 
     fun seekTo(ms: Long) { controller?.seekTo(ms) }
+
+    /** Back to the start of what was just jumped over; it then plays, and is not jumped over again. */
+    fun unskip(s: Skipped) {
+        ui.skipped = null
+        controller?.sendCustomCommand(
+            SessionCommand(PlaybackService.ACTION_UNSKIP, Bundle.EMPTY),
+            Bundle().apply { putString(PlaybackService.EXTRA_UUID, s.segment.uuid); putLong(PlaybackService.EXTRA_START, s.segment.startMs) },
+        )
+    }
     fun setSpeed(f: Float) { app.prefs.setSpeed(f); controller?.setPlaybackSpeed(f) }
     fun stopPlayback() { controller?.sendCustomCommand(SessionCommand(PlaybackService.ACTION_STOP, Bundle.EMPTY), Bundle.EMPTY) }
 
@@ -557,5 +576,7 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         const val ACTION_OPEN_PLAYER = "com.freedomfighter.readerspodcasts.OPEN_PLAYER"
+        /** How long « sponsor skipped · go back » stays: time to hear that it happened and to answer. */
+        const val SKIPPED_SHOWN_MS = 6_000L
     }
 }

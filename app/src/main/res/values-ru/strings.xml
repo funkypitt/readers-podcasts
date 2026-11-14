@@ -239,4 +239,19 @@
     <string name="preview_no_description">у этого подкаста нет описания</string>
     <string name="preview_no_episodes">в ленте пока нет ни одного выпуска</string>
     <string name="preview_open">открыть этот подкаст</string>
+    <string name="fwd30">+30 с</string>
+    <string name="next_chapter">следующая глава</string>
+    <string name="go_back">вернуться</string>
+    <string name="skipped_sponsor">реклама спонсора пропущена</string>
+    <string name="skipped_selfpromo">самореклама пропущена</string>
+    <string name="skipped_interaction">призыв подписаться пропущен</string>
+    <string name="skip_sponsors">пропускать спонсоров в видео YouTube</string>
+    <string name="skip_sponsors_hint">Когда видео скачивается или воспроизводится, приложение спрашивает у SponsorBlock — списка, который ведут зрители, — где в нём реклама спонсоров, самореклама и призывы подписаться. Отправляется лишь часть отпечатка адреса видео, но не сам адрес.</string>
+    <string name="channel_settings">настройки этого канала</string>
+    <string name="skip_start">пропуск в начале</string>
+    <string name="skip_start_hint">если выпуск слушают с самого начала</string>
+    <string name="skip_end">пропуск в конце</string>
+    <string name="skip_end_hint">выпуск заканчивается на столько раньше</string>
+    <string name="skip_other">другая длительность…</string>
+    <string name="skip_seconds">сколько секунд пропускать</string>
 </resources>

@@ -111,6 +111,8 @@ class DownloadService : Service() {
                     val file = withContext(Dispatchers.IO) { fetch(episode) }
                     if (file != null) {
                         app.store.updateEpisode(job.id) { it.copy(localPath = file.path, bytes = file.length()) }
+                        // A video's sponsors, while the network is at hand: a short question, and a failure stays silent.
+                        app.store.episode(job.id)?.let { e -> withContext(Dispatchers.IO) { Sponsors.lookUp(app, e) } }
                     }
                 } catch (e: Exception) {
                     if (!cancelled.get()) {

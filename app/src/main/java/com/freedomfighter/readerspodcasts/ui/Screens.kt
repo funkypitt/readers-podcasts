@@ -116,6 +116,9 @@ sealed class Screen {
     /** What was said, read as a text: paragraphs, and nothing of the sound. */
     data class Read(val id: String) : Screen()
     data object Settings : Screen()
+
+    /** One channel's own settings: what to download by itself, what to leave out of its episodes. */
+    data class Channel(val id: String) : Screen()
 }
 
 class Nav {
@@ -266,9 +269,10 @@ fun EpisodeMenu(episode: Episode, app: App, activity: MainActivity, nav: Nav, on
 
 /** What a channel offers on a long press. */
 @Composable
-fun FeedMenu(feed: Feed, app: App, activity: MainActivity, onDismiss: () -> Unit) {
+fun FeedMenu(feed: Feed, app: App, activity: MainActivity, nav: Nav, onDismiss: () -> Unit) {
     TextMenu(feed.title, listOf(
         MenuItem(stringResource(R.string.refresh)) { activity.refreshOne(feed.id) },
+        MenuItem(stringResource(R.string.channel_settings)) { nav.push(Screen.Channel(feed.id)) },
         MenuItem(
             if (feed.autoDownload) stringResource(R.string.auto_download_on) else stringResource(R.string.auto_download_off),
             secondary = stringResource(R.string.auto_download),
@@ -532,6 +536,7 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
         }, onDismiss = { views = false })
 
         if (menu) TextMenu(null, buildList {
+            if (feed != null) add(MenuItem(stringResource(R.string.channel_settings), secondary = feed.title) { nav.push(Screen.Channel(feed.id)) })
             add(MenuItem(stringResource(R.string.search)) { nav.searchQuery = ""; nav.push(Screen.Search) })
             add(MenuItem(stringResource(R.string.refresh)) { activity.refreshAll() })
             add(MenuItem(stringResource(R.string.add_feed)) { nav.push(Screen.Add(clipboardUrl(clipboard.getText()?.text))) })
@@ -549,7 +554,7 @@ fun HomeScreen(nav: Nav, app: App, activity: MainActivity) {
 
         feedMenu?.let { id ->
             val f = feeds.firstOrNull { it.id == id }
-            if (f == null) feedMenu = null else FeedMenu(f, app, activity, onDismiss = { feedMenu = null })
+            if (f == null) feedMenu = null else FeedMenu(f, app, activity, nav, onDismiss = { feedMenu = null })
         }
     }
 }
@@ -855,8 +860,20 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
                         }
                     }
                     Box(Modifier.weight(1f)) {
-                        Side(start = false) { Control(stringResource(R.string.fwd10), Modifier.fillMaxWidth()) { tick(); if (current) activity.seekBy(10_000) } }
+                        Side(start = false, end = false) { Control(stringResource(R.string.fwd10), Modifier.fillMaxWidth()) { tick(); if (current) activity.seekBy(10_000) } }
                     }
+                    // A longer jump, for what is not worth hearing and goes on for a while.
+                    Box(Modifier.weight(1f)) {
+                        Side(start = false) { Control(stringResource(R.string.fwd30), Modifier.fillMaxWidth()) { tick(); if (current) activity.seekBy(30_000) } }
+                    }
+                }
+                // Said each time a stretch is jumped over, with the way back to it.
+                val skipped = ui.skipped?.takeIf { current && it.episodeId == episode.id }
+                if (skipped != null) {
+                    TextRow(
+                        stringResource(skippedLabel(skipped.segment.category)) + " · " + stringResource(R.string.go_back),
+                        inverted = true, size = typo.title,
+                    ) { tick(); activity.unskip(skipped) }
                 }
                 // Chapters, when the description holds a list of them: the row says where one is
                 // and opens the whole table, and a chapter chosen sends the sound to its start.
@@ -868,6 +885,13 @@ fun PlayerScreen(nav: Nav, app: App, activity: MainActivity, wanted: String?) {
                         secondary = stringResource(R.string.chapters_of, chapters.size),
                         size = typo.title,
                     ) { showChapters = true }
+                    Chapters.next(chapters, pos)?.let { next ->
+                        TextRow(
+                            stringResource(R.string.next_chapter),
+                            secondary = clock(next.startMs) + " · " + next.title,
+                            size = typo.title,
+                        ) { tick(); activity.seekOrPlay(episode, next.startMs) }
+                    }
                 }
                 // What the episode is about comes before what can be done with it: one opens an
                 // episode to find out whether to listen, and the notes used to start under the
@@ -1149,6 +1173,13 @@ fun languageName(code: String): String =
     java.util.Locale(code).getDisplayLanguage(java.util.Locale(code)).replaceFirstChar { it.lowercase() }
 
 
+/** The line said when a stretch of this kind has just been jumped over. */
+fun skippedLabel(category: String): Int = when (category) {
+    "selfpromo" -> R.string.skipped_selfpromo
+    "interaction" -> R.string.skipped_interaction
+    else -> R.string.skipped_sponsor
+}
+
 /**
  * The play button while the sound is on its way — a stream filling up, a video being fetched
  * first. The glyph stays and dots come and go after it: the press was taken, the sound follows.
@@ -1210,6 +1241,12 @@ fun SettingsScreen(nav: Nav, app: App, activity: MainActivity) {
                     secondary = R.string.delete_when_played_hint,
                 ) { app.prefs.setDeleteWhenPlayed(!s.deleteWhenPlayed) }
                 Setting(R.string.hide_short, onOff(s.hideShort), secondary = R.string.hide_short_hint) { app.prefs.setHideShort(!s.hideShort) }
+                // Only where YouTube plays at all; the hint says what leaves the phone, and it is
+                // not one line long, so it is a paragraph of its own.
+                if (com.freedomfighter.readerspodcasts.net.Extractor.AVAILABLE) {
+                    Setting(R.string.skip_sponsors, onOff(s.skipSponsors)) { app.prefs.setSkipSponsors(!s.skipSponsors) }
+                    Small(stringResource(R.string.skip_sponsors_hint), Modifier.padding(horizontal = rowPadH).padding(bottom = 6.dp), maxLines = 6)
+                }
                 Rule(Modifier.padding(vertical = 8.dp))
                 Small(stringResource(R.string.exchange_hint), Modifier.padding(horizontal = rowPadH).padding(bottom = 6.dp), maxLines = 6)
                 TextRow(stringResource(R.string.export_opml), secondary = Exports.OPML_NAME, size = typo.title) { activity.exportOpml() }

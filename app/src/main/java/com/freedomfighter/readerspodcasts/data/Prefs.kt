@@ -43,6 +43,8 @@ data class Settings(
     val shelfPassword: String = "",
     /** Why the last sending failed: "" (it did not), "login", or what the network said. */
     val shelfError: String = "",
+    /** Jump over the sponsors SponsorBlock knows of in a YouTube video. */
+    val skipSponsors: Boolean = true,
 )
 
 class Prefs(context: Context) {
@@ -72,6 +74,7 @@ class Prefs(context: Context) {
         shelfUsername = sp.getString("shelf_username", "") ?: "",
         shelfPassword = Secret.decrypt(sp.getString("shelf_password", "") ?: ""),
         shelfError = sp.getString("shelf_error", "") ?: "",
+        skipSponsors = sp.getBoolean("skip_sponsors", true),
     )
 
     /**
@@ -105,6 +108,7 @@ class Prefs(context: Context) {
     fun setAutoRefresh(v: Boolean) = sp.edit().putBoolean("auto_refresh", v).apply()
     fun setDeleteWhenPlayed(v: Boolean) = sp.edit().putBoolean("delete_when_played", v).apply()
     fun setHideShort(v: Boolean) = sp.edit().putBoolean("hide_short", v).apply()
+    fun setSkipSponsors(v: Boolean) = sp.edit().putBoolean("skip_sponsors", v).apply()
     fun setView(v: String) = sp.edit().putString("view", v).apply()
     /** The password is kept encrypted, and none of this leaves with the exported settings. */
     fun setShelf(url: String, username: String, password: String) = sp.edit()
@@ -125,6 +129,7 @@ class Prefs(context: Context) {
             "align" to s.align.name, "haptics" to s.haptics, "speed" to s.speed,
             "wifi_only" to s.wifiOnly, "auto_refresh" to s.autoRefresh,
             "delete_when_played" to s.deleteWhenPlayed, "hide_short" to s.hideShort, "default_view" to s.defaultView,
+            "skip_sponsors" to s.skipSponsors,
         )
     }
 
@@ -142,6 +147,7 @@ class Prefs(context: Context) {
         (m["delete_when_played"] as? Boolean)?.let { e.putBoolean("delete_when_played", it) }
         (m["hide_short"] as? Boolean)?.let { e.putBoolean("hide_short", it) }
         (m["default_view"] as? String)?.let { e.putString("default_view", it) }
+        (m["skip_sponsors"] as? Boolean)?.let { e.putBoolean("skip_sponsors", it) }
         e.apply()
     }
 

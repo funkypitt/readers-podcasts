@@ -73,4 +73,8 @@ object Chapters {
     /** The chapter one is inside at [positionMs], or null before the first. */
     fun at(chapters: List<Chapter>, positionMs: Long): Chapter? =
         chapters.lastOrNull { it.startMs <= positionMs }
+
+    /** The chapter after the one playing at [positionMs], or null in the last one. */
+    fun next(chapters: List<Chapter>, positionMs: Long): Chapter? =
+        chapters.firstOrNull { it.startMs > positionMs }
 }

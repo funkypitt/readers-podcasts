@@ -229,4 +229,19 @@
     <string name="preview_no_description">this podcast gives no description of itself</string>
     <string name="preview_no_episodes">the feed holds no episode yet</string>
     <string name="preview_open">open this podcast</string>
+    <string name="fwd30">+30 s</string>
+    <string name="next_chapter">next chapter</string>
+    <string name="go_back">go back</string>
+    <string name="skipped_sponsor">sponsor skipped</string>
+    <string name="skipped_selfpromo">self-promotion skipped</string>
+    <string name="skipped_interaction">reminder to subscribe skipped</string>
+    <string name="skip_sponsors">skip sponsors in YouTube videos</string>
+    <string name="skip_sponsors_hint">When a video is downloaded or played, the app asks SponsorBlock, a list kept by viewers, where its sponsors, self-promotion and reminders to subscribe are. Only part of a fingerprint of the video\'s address is sent, never the address itself.</string>
+    <string name="channel_settings">this channel\'s settings</string>
+    <string name="skip_start">skip at the start</string>
+    <string name="skip_start_hint">when an episode starts from the beginning</string>
+    <string name="skip_end">skip at the end</string>
+    <string name="skip_end_hint">the episode ends that much earlier</string>
+    <string name="skip_other">another length…</string>
+    <string name="skip_seconds">seconds to skip</string>
 </resources>
