@@ -14,7 +14,7 @@ La **privée** s'abonne aux chaînes YouTube (`@nom`, `/channel/…`, une liste 
 « charger plus d'épisodes » remonte au-delà des quinze que porte le flux. Un abonnement à une chaîne n'a rien de particulier —
 YouTube publie `feeds/videos.xml?channel_id=…`, un flux Atom ordinaire ; ce qui diffère est le
 média, une page de visionnage et non un fichier, et c'est yt-dlp qui en tire la piste audio.
-L'app garde yt-dlp à jour toute seule, une fois par semaine, parce que YouTube change et que
+L'app garde yt-dlp à jour toute seule, une fois par jour au plus avant un téléchargement (une fois par semaine jusqu'à la 1.16.0), parce que YouTube change et que
 yt-dlp suit en quelques jours. Elle porte le même identifiant de paquet que la publique et un
 `versionCode` bien plus haut : elle s'installe donc par-dessus, garde les abonnements et les
 positions, et F-Droid ne la remplace pas.

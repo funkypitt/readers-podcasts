@@ -156,12 +156,13 @@ class DownloadService : Service() {
     /**
      * yt-dlp, kept current without being asked. YouTube changes and yt-dlp follows within days;
      * an app that waited to be told would simply stop working one morning, with an error about
-     * a version nobody had thought about. Once a week, and a failure here is not one: the
+     * a version nobody had thought about. At most once a day, before a download (a week let a
+     * yt-dlp that YouTube no longer answered sit for days); a failure here is not one: the
      * download is attempted all the same.
      */
     private fun freshenYtdlp() {
         val last = app.prefs.settings.value.ytdlpUpdated
-        if (System.currentTimeMillis() - last < 7 * 24 * 60 * 60 * 1000L) return
+        if (System.currentTimeMillis() - last < 24 * 60 * 60 * 1000L) return
         Live.phase = getString(R.string.updating_ytdlp)
         // Only a real success is written down: an update that threw and was noted as done is
         // an app that never updates again and answers 403 for ever.

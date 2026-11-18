@@ -1285,8 +1285,8 @@ fun SettingsScreen(nav: Nav, app: App, activity: MainActivity) {
                 Setting(R.string.haptics, onOff(s.haptics)) { app.prefs.setHaptics(!s.haptics) }
                 if (com.freedomfighter.readerspodcasts.net.Extractor.AVAILABLE) {
                     Rule(Modifier.padding(vertical = 8.dp))
-                    // The app keeps yt-dlp current by itself, once a week; this row is for the
-                    // morning when YouTube changes and one does not want to wait for the week.
+                    // The app keeps yt-dlp current by itself, once a day before a download; this row
+                    // is for the morning when YouTube changes and one does not want to wait.
                     // It shows the version in place, so "already up to date" can be checked.
                     val context = LocalContext.current
                     val version = remember(activity.busy) { com.freedomfighter.readerspodcasts.net.Extractor.version(context) }
